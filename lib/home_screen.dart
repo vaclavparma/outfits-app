@@ -1,0 +1,184 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'collections_tab.dart';
+import 'models.dart';
+import 'outfit_tab.dart';
+import 'sheets.dart';
+import 'theme.dart';
+import 'wardrobe_store.dart';
+import 'wardrobe_tab.dart';
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                const SizedBox(height: 8),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 220),
+                        switchInCurve: Curves.easeOut,
+                        switchOutCurve: Curves.easeIn,
+                        transitionBuilder: (child, animation) => FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: Tween<Offset>(begin: const Offset(0, 0.02), end: Offset.zero).animate(animation),
+                            child: child,
+                          ),
+                        ),
+                        child: KeyedSubtree(
+                          key: ValueKey(store.screen),
+                          child: switch (store.screen) {
+                            WardrobeTabKind.outfit => OutfitTab(
+                                onPick: (zone) => openPickSheet(context, zone),
+                                onOpenLayers: () => openLayerSheet(context),
+                                onOpenSave: () => openSaveOutfitSheet(context),
+                              ),
+                            WardrobeTabKind.wardrobe => WardrobeTab(
+                                onOpenItem: (item) => openItemSheet(context, item),
+                              ),
+                            WardrobeTabKind.collections => const CollectionsTab(),
+                          },
+                        ),
+                      ),
+                      if (store.screen == WardrobeTabKind.wardrobe)
+                        Positioned(
+                          right: 20,
+                          bottom: 16,
+                          child: RoundIconButtonAdd(onTap: () => openAddItemSheet(context)),
+                        ),
+                    ],
+                  ),
+                ),
+                _BottomTabs(current: store.screen, onSelect: store.setScreen),
+              ],
+            ),
+            if (store.toast.isNotEmpty)
+              Positioned(
+                left: 20,
+                right: 20,
+                bottom: 84,
+                child: _Toast(message: store.toast),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class RoundIconButtonAdd extends StatelessWidget {
+  final VoidCallback onTap;
+  const RoundIconButtonAdd({super.key, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 48,
+        height: 48,
+        decoration: const BoxDecoration(
+          color: AppColors.ink,
+          shape: BoxShape.circle,
+          boxShadow: [BoxShadow(color: Color(0x33000000), blurRadius: 10, offset: Offset(0, 3))],
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(width: 15, height: 1.5, color: Colors.white),
+            Container(width: 1.5, height: 15, color: Colors.white),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Toast extends StatelessWidget {
+  final String message;
+  const _Toast({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.ink,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 12, offset: Offset(0, 4))],
+      ),
+      child: Text(
+        message,
+        style: AppText.sans(size: 11.5, height: 1.35, color: Colors.white),
+      ),
+    );
+  }
+}
+
+class _BottomTabs extends StatelessWidget {
+  final WardrobeTabKind current;
+  final void Function(WardrobeTabKind) onSelect;
+
+  const _BottomTabs({required this.current, required this.onSelect});
+
+  @override
+  Widget build(BuildContext context) {
+    const tabs = [
+      (WardrobeTabKind.outfit, 'Outfit'),
+      (WardrobeTabKind.wardrobe, 'Šatník'),
+      (WardrobeTabKind.collections, 'Kolekce'),
+    ];
+    return Container(
+      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.hairline))),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+      child: Row(
+        children: [
+          for (final (kind, label) in tabs)
+            Expanded(
+              child: GestureDetector(
+                onTap: () => onSelect(kind),
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Column(
+                    children: [
+                      Text(
+                        label.toUpperCase(),
+                        style: AppText.mono(
+                          size: 10.5,
+                          letterSpacing: 1.3,
+                          color: current == kind ? AppColors.ink : AppColors.mutedSoft,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        width: 4,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: current == kind ? AppColors.accent : Colors.transparent,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
