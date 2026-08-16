@@ -2,7 +2,7 @@
     <uses-permission
         android:name="android.permission.CAMERA"/>
     <application
-        android:label="what_to_wear"
+        android:label="Outfits"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

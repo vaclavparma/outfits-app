@@ -39,7 +39,11 @@ class _CollectionsTabState extends State<CollectionsTab> {
                   padding: const EdgeInsets.only(bottom: 20),
                   child: Text(
                     'Zatím žádné kolekce. Založ první níže.',
-                    style: AppText.sans(size: 13, color: AppColors.mutedTag, height: 1.5),
+                    style: AppText.sans(
+                      size: 13,
+                      color: AppColors.mutedTag,
+                      height: 1.5,
+                    ),
                   ),
                 ),
               for (final name in store.cols)
@@ -53,29 +57,56 @@ class _CollectionsTabState extends State<CollectionsTab> {
                         children: [
                           Expanded(
                             child: GestureDetector(
-                              onTap: () => _renameCollection(context, store, name),
+                              onTap: () =>
+                                  _renameCollection(context, store, name),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(name, style: AppText.sans(size: 13, color: AppColors.ink)),
+                                  Text(
+                                    name,
+                                    style: AppText.sans(
+                                      size: 13,
+                                      color: AppColors.ink,
+                                    ),
+                                  ),
                                   const SizedBox(width: 6),
-                                  const Icon(Icons.edit_outlined, size: 13, color: AppColors.mutedSoft),
+                                  const Icon(
+                                    Icons.edit_outlined,
+                                    size: 13,
+                                    color: AppColors.mutedSoft,
+                                  ),
                                 ],
                               ),
                             ),
                           ),
                           Row(
                             children: [
-                              Text('${(store.saved[name] ?? []).length} outfitů',
-                                  style: AppText.mono(size: 9, letterSpacing: 1, color: AppColors.mutedSoft)),
+                              Text(
+                                '${(store.saved[name] ?? []).length} outfitů',
+                                style: AppText.mono(
+                                  size: 9,
+                                  letterSpacing: 1,
+                                  color: AppColors.mutedSoft,
+                                ),
+                              ),
                               const SizedBox(width: 10),
                               RoundIconButton(
                                 size: 22,
                                 background: Colors.white,
-                                borderColor: const Color(0xFFEAE9E7),
-                                onTap: () => _confirmDeleteCollection(context, store, name),
-                                child: const Text('×',
-                                    style: TextStyle(fontSize: 14, color: AppColors.muted, height: 1)),
+                                borderColor: AppColors.removeButtonBorder,
+                                onTap: () => _confirmDeleteCollection(
+                                  context,
+                                  store,
+                                  name,
+                                ),
+                                child: const Text(
+                                  '×',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: AppColors.muted,
+                                    height: 1,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -88,20 +119,34 @@ class _CollectionsTabState extends State<CollectionsTab> {
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              border: Border.all(color: const Color(0xFFE2E0DC)),
+                              border: Border.all(
+                                color: AppColors.emptyStateBorder,
+                              ),
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: Text(
-                              'Zatím prázdné. Ulož outfit a vyber tuto kolekci.',
-                              style: AppText.sans(size: 11, color: AppColors.mutedTag, height: 1.5),
+                              'Zatím prázdné.',
+                              style: AppText.sans(
+                                size: 11,
+                                color: AppColors.mutedTag,
+                                height: 1.5,
+                              ),
                             ),
                           ),
                         )
                       else
                         Column(
                           children: [
-                            for (var k = 0; k < (store.saved[name] ?? []).length; k++)
-                              _OutfitRow(colName: name, index: k, outfit: store.saved[name]![k]),
+                            for (
+                              var k = 0;
+                              k < (store.saved[name] ?? []).length;
+                              k++
+                            )
+                              _OutfitRow(
+                                colName: name,
+                                index: k,
+                                outfit: store.saved[name]![k],
+                              ),
                           ],
                         ),
                     ],
@@ -112,7 +157,9 @@ class _CollectionsTabState extends State<CollectionsTab> {
         ),
         Container(
           padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-          decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.hairline))),
+          decoration: const BoxDecoration(
+            border: Border(top: BorderSide(color: AppColors.hairline)),
+          ),
           child: Row(
             children: [
               Expanded(
@@ -120,7 +167,10 @@ class _CollectionsTabState extends State<CollectionsTab> {
                   controller: _newColController,
                   decoration: InputDecoration(
                     hintText: 'Nová kolekce',
-                    hintStyle: AppText.sans(size: 13, color: AppColors.mutedTag),
+                    hintStyle: AppText.sans(
+                      size: 13,
+                      color: AppColors.mutedTag,
+                    ),
                     filled: true,
                     fillColor: Colors.white,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14),
@@ -139,8 +189,15 @@ class _CollectionsTabState extends State<CollectionsTab> {
                   store.addCollection(_newColController.text);
                   _newColController.clear();
                 },
-                child: const Text('+',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w300, color: Colors.white, height: 1)),
+                child: const Text(
+                  '+',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w300,
+                    color: Colors.white,
+                    height: 1,
+                  ),
+                ),
               ),
             ],
           ),
@@ -150,82 +207,45 @@ class _CollectionsTabState extends State<CollectionsTab> {
   }
 }
 
-Future<void> _renameCollection(BuildContext context, WardrobeStore store, String name) async {
-  final newName = await showDialog<String>(
-    context: context,
-    builder: (dialogContext) => _RenameCollectionDialog(initialName: name),
+Future<void> _renameCollection(
+  BuildContext context,
+  WardrobeStore store,
+  String name,
+) async {
+  final newName = await promptTextDialog(
+    context,
+    title: 'Přejmenovat kolekci',
+    initialValue: name,
   );
   if (newName != null) store.renameCollection(name, newName);
 }
 
-class _RenameCollectionDialog extends StatefulWidget {
-  final String initialName;
-  const _RenameCollectionDialog({required this.initialName});
-
-  @override
-  State<_RenameCollectionDialog> createState() => _RenameCollectionDialogState();
-}
-
-class _RenameCollectionDialogState extends State<_RenameCollectionDialog> {
-  late final TextEditingController _controller = TextEditingController(text: widget.initialName);
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      backgroundColor: Colors.white,
-      title: Text('Přejmenovat kolekci', style: AppText.sans(size: 16, color: AppColors.ink)),
-      content: TextField(
-        controller: _controller,
-        autofocus: true,
-        style: AppText.sans(size: 14, color: AppColors.ink),
-        decoration: InputDecoration(
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text('Zrušit', style: AppText.sans(size: 13, color: AppColors.muted)),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(_controller.text),
-          child: Text('Uložit', style: AppText.sans(size: 13, weight: FontWeight.w500, color: AppColors.accent)),
-        ),
-      ],
-    );
-  }
-}
-
-Future<void> _confirmDeleteCollection(BuildContext context, WardrobeStore store, String name) async {
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      backgroundColor: Colors.white,
-      title: Text('Smazat kolekci?', style: AppText.sans(size: 16, color: AppColors.ink)),
-      content: Text(
-        'Kolekce „$name“ a všechny uložené outfity v ní budou smazány.',
-        style: AppText.sans(size: 13, color: AppColors.label, height: 1.4),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(dialogContext).pop(false),
-          child: Text('Zrušit', style: AppText.sans(size: 13, color: AppColors.muted)),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(dialogContext).pop(true),
-          child: Text('Smazat', style: AppText.sans(size: 13, weight: FontWeight.w500, color: AppColors.accent)),
-        ),
-      ],
-    ),
+Future<void> _confirmDeleteCollection(
+  BuildContext context,
+  WardrobeStore store,
+  String name,
+) async {
+  final confirmed = await confirmDialog(
+    context,
+    title: 'Smazat kolekci?',
+    message: 'Kolekce „$name“ a vše v ní bude smazáno. Tuto akci nelze vrátit.',
   );
-  if (confirmed == true) store.deleteCollection(name);
+  if (confirmed) store.deleteCollection(name);
+}
+
+Future<void> _confirmDeleteOutfit(
+  BuildContext context,
+  WardrobeStore store,
+  String colName,
+  int index,
+  String outfitName,
+) async {
+  final confirmed = await confirmDialog(
+    context,
+    title: 'Smazat outfit?',
+    message: '„$outfitName“ bude smazán. Tuto akci nelze vrátit.',
+  );
+  if (confirmed) store.deleteOutfit(colName, index);
 }
 
 class _OutfitRow extends StatelessWidget {
@@ -233,19 +253,20 @@ class _OutfitRow extends StatelessWidget {
   final int index;
   final SavedOutfit outfit;
 
-  const _OutfitRow({required this.colName, required this.index, required this.outfit});
+  const _OutfitRow({
+    required this.colName,
+    required this.index,
+    required this.outfit,
+  });
 
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
-    ClothingItem? findItem(String id) {
-      for (final i in store.items) {
-        if (i.id == id) return i;
-      }
-      return null;
-    }
-
-    final thumbs = outfit.itemIds.take(4).map(findItem).whereType<ClothingItem>().toList();
+    final thumbs = outfit.itemIds
+        .take(4)
+        .map(store.itemById)
+        .whereType<ClothingItem>()
+        .toList();
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Container(
@@ -273,7 +294,9 @@ class _OutfitRow extends StatelessWidget {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         clipBehavior: Clip.antiAlias,
-                        child: (it.imagePath != null && File(it.imagePath!).existsSync())
+                        child:
+                            (it.imagePath != null &&
+                                File(it.imagePath!).existsSync())
                             ? Image.file(File(it.imagePath!), fit: BoxFit.cover)
                             : const DiagonalStripes(),
                       ),
@@ -283,15 +306,23 @@ class _OutfitRow extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(outfit.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppText.sans(size: 13, color: AppColors.ink)),
+                          Text(
+                            outfit.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppText.sans(size: 13, color: AppColors.ink),
+                          ),
                           const SizedBox(height: 3),
-                          Text(outfit.meta,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppText.mono(size: 8.5, letterSpacing: 0.4, color: AppColors.mutedTag)),
+                          Text(
+                            outfit.meta,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppText.mono(
+                              size: 8.5,
+                              letterSpacing: 0.4,
+                              color: AppColors.mutedTag,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -302,9 +333,22 @@ class _OutfitRow extends StatelessWidget {
             RoundIconButton(
               size: 24,
               background: Colors.white,
-              borderColor: const Color(0xFFEAE9E7),
-              onTap: () => store.deleteOutfit(colName, index),
-              child: const Text('×', style: TextStyle(fontSize: 14, color: AppColors.muted, height: 1)),
+              borderColor: AppColors.removeButtonBorder,
+              onTap: () => _confirmDeleteOutfit(
+                context,
+                store,
+                colName,
+                index,
+                outfit.name,
+              ),
+              child: const Text(
+                '×',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.muted,
+                  height: 1,
+                ),
+              ),
             ),
           ],
         ),

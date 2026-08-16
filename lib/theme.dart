@@ -20,6 +20,8 @@ class AppColors {
   static const rowBorder = Color(0xFFECEAE7);
   static const chipBorderIdle = Color(0xFFE6E5E3);
   static const chipTextIdle = Color(0xFF5C5955);
+  static const removeButtonBorder = Color(0xFFEAE9E7);
+  static const emptyStateBorder = Color(0xFFE2E0DC);
 
   /// oklch(0.55 0.09 25) converted to sRGB — the warm clay accent used for
   /// primary actions and links throughout the mockup.

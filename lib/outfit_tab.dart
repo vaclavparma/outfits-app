@@ -37,13 +37,20 @@ class OutfitTab extends StatelessWidget {
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final topCardWidth = isDress ? 208.0 : 176.0;
-                    final hasRoomForTile = store.layers.length < WardrobeStore.kMaxLayers;
+                    final hasRoomForTile =
+                        store.layers.length < WardrobeStore.kMaxLayers;
                     final naturalLayersWidth = store.layers.isEmpty
                         ? 58.0
-                        : store.layers.length * 120.0 + (hasRoomForTile ? 10 + 58 : 0);
-                    final maxAvailable = (constraints.maxWidth - topCardWidth - 18).clamp(58.0, 999.0);
-                    final layersBoxWidth =
-                        naturalLayersWidth < maxAvailable ? naturalLayersWidth : maxAvailable;
+                        : store.layers.length * 120.0 +
+                              (hasRoomForTile ? 10 + 58 : 0);
+                    final maxAvailable =
+                        (constraints.maxWidth - topCardWidth - 18).clamp(
+                          58.0,
+                          999.0,
+                        );
+                    final layersBoxWidth = naturalLayersWidth < maxAvailable
+                        ? naturalLayersWidth
+                        : maxAvailable;
                     return SingleChildScrollView(
                       physics: const NeverScrollableScrollPhysics(),
                       child: Column(
@@ -59,13 +66,20 @@ class OutfitTab extends StatelessWidget {
                                   width: topCardWidth,
                                   height: isDress ? 342 : 172,
                                   rotationDeg: -1.6,
-                                  slotLabel: isDress ? 'šaty · celé tělo' : 'top',
+                                  slotLabel: isDress
+                                      ? 'šaty · celé tělo'
+                                      : 'top',
                                   name: top == null ? 'Přidej top' : null,
                                   imagePath: top?.imagePath,
                                   onTap: () => onPick(WardrobeZone.top),
-                                  onSwipe: (dir) => store.step(WardrobeZone.top, dir),
+                                  onSwipe: (dir) =>
+                                      store.step(WardrobeZone.top, dir),
                                   shadow: const [
-                                    BoxShadow(color: Color(0x0D000000), blurRadius: 3, offset: Offset(0, 1)),
+                                    BoxShadow(
+                                      color: Color(0x0D000000),
+                                      blurRadius: 3,
+                                      offset: Offset(0, 1),
+                                    ),
                                   ],
                                 ),
                                 const SizedBox(width: 10),
@@ -77,33 +91,51 @@ class OutfitTab extends StatelessWidget {
                                       scrollDirection: Axis.horizontal,
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          for (var k = 0; k < store.layers.length; k++)
+                                          for (
+                                            var k = 0;
+                                            k < store.layers.length;
+                                            k++
+                                          )
                                             _LayerCard(
                                               itemId: store.layers[k],
                                               index: k,
                                               onOpenLayers: onOpenLayers,
                                             ),
-                                          if (store.layers.isNotEmpty) const SizedBox(width: 10),
-                                          if (store.layers.length < WardrobeStore.kMaxLayers)
+                                          if (store.layers.isNotEmpty)
+                                            const SizedBox(width: 10),
+                                          if (store.layers.length <
+                                              WardrobeStore.kMaxLayers)
                                             GestureDetector(
                                               onTap: onOpenLayers,
                                               child: Transform.rotate(
-                                                angle: -1.5 * 3.1415926535 / 180,
+                                                angle:
+                                                    -1.5 * 3.1415926535 / 180,
                                                 child: Container(
                                                   width: 58,
                                                   height: 136,
                                                   decoration: BoxDecoration(
-                                                    borderRadius: BorderRadius.circular(16),
-                                                    border: Border.all(color: AppColors.dashedBorder),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16,
+                                                        ),
+                                                    border: Border.all(
+                                                      color: AppColors
+                                                          .dashedBorder,
+                                                    ),
                                                   ),
                                                   alignment: Alignment.center,
-                                                  child: Text('+',
-                                                      style: AppText.sans(
-                                                          size: 22,
-                                                          weight: FontWeight.w300,
-                                                          color: AppColors.mutedSoft)),
+                                                  child: Text(
+                                                    '+',
+                                                    style: AppText.sans(
+                                                      size: 22,
+                                                      weight: FontWeight.w300,
+                                                      color:
+                                                          AppColors.mutedSoft,
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
                                             ),
@@ -122,13 +154,20 @@ class OutfitTab extends StatelessWidget {
                                 width: 190,
                                 height: 208,
                                 rotationDeg: 1.4,
-                                slotLabel: bot != null && bot.cat == 'sukne' ? 'sukně' : 'spodek',
+                                slotLabel: bot != null && bot.cat == 'sukne'
+                                    ? 'sukně'
+                                    : 'spodek',
                                 name: bot == null ? 'Přidej spodek' : null,
                                 imagePath: bot?.imagePath,
                                 onTap: () => onPick(WardrobeZone.bottom),
-                                onSwipe: (dir) => store.step(WardrobeZone.bottom, dir),
+                                onSwipe: (dir) =>
+                                    store.step(WardrobeZone.bottom, dir),
                                 shadow: const [
-                                  BoxShadow(color: Color(0x0D000000), blurRadius: 3, offset: Offset(0, 1)),
+                                  BoxShadow(
+                                    color: Color(0x0D000000),
+                                    blurRadius: 3,
+                                    offset: Offset(0, 1),
+                                  ),
                                 ],
                               ),
                             ),
@@ -142,9 +181,14 @@ class OutfitTab extends StatelessWidget {
                               name: shoe == null ? 'Přidej boty' : null,
                               imagePath: shoe?.imagePath,
                               onTap: () => onPick(WardrobeZone.shoes),
-                              onSwipe: (dir) => store.step(WardrobeZone.shoes, dir),
+                              onSwipe: (dir) =>
+                                  store.step(WardrobeZone.shoes, dir),
                               shadow: const [
-                                BoxShadow(color: Color(0x0D000000), blurRadius: 3, offset: Offset(0, 1)),
+                                BoxShadow(
+                                  color: Color(0x0D000000),
+                                  blurRadius: 3,
+                                  offset: Offset(0, 1),
+                                ),
                               ],
                             ),
                           ),
@@ -169,7 +213,10 @@ class OutfitTab extends StatelessWidget {
                         border: Border.all(color: AppColors.cardBorder),
                       ),
                       alignment: Alignment.center,
-                      child: Text('Zamíchat', style: AppText.sans(size: 12.5, color: AppColors.label)),
+                      child: Text(
+                        'Zamíchat',
+                        style: AppText.sans(size: 12.5, color: AppColors.label),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -183,8 +230,14 @@ class OutfitTab extends StatelessWidget {
                           borderRadius: BorderRadius.circular(22),
                         ),
                         alignment: Alignment.center,
-                        child: Text('Uložit outfit',
-                            style: AppText.sans(size: 13, weight: FontWeight.w500, color: Colors.white)),
+                        child: Text(
+                          'Uložit outfit',
+                          style: AppText.sans(
+                            size: 13,
+                            weight: FontWeight.w500,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -203,18 +256,16 @@ class _LayerCard extends StatelessWidget {
   final int index;
   final VoidCallback onOpenLayers;
 
-  const _LayerCard({required this.itemId, required this.index, required this.onOpenLayers});
+  const _LayerCard({
+    required this.itemId,
+    required this.index,
+    required this.onOpenLayers,
+  });
 
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
-    ClothingItem? it;
-    for (final i in store.items) {
-      if (i.id == itemId) {
-        it = i;
-        break;
-      }
-    }
+    final it = store.itemById(itemId);
     return Padding(
       padding: const EdgeInsets.only(right: 10),
       child: Stack(
@@ -233,9 +284,16 @@ class _LayerCard extends StatelessWidget {
             child: RoundIconButton(
               size: 22,
               background: Colors.white,
-              borderColor: const Color(0xFFEAE9E7),
+              borderColor: AppColors.removeButtonBorder,
               onTap: () => store.removeLayer(index),
-              child: const Text('×', style: TextStyle(fontSize: 14, color: AppColors.muted, height: 1)),
+              child: const Text(
+                '×',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.muted,
+                  height: 1,
+                ),
+              ),
             ),
           ),
         ],

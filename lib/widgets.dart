@@ -14,9 +14,7 @@ class DiagonalStripes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.expand(
-      child: CustomPaint(painter: _StripePainter()),
-    );
+    return SizedBox.expand(child: CustomPaint(painter: _StripePainter()));
   }
 }
 
@@ -102,7 +100,10 @@ class GarmentCard extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.45)],
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.45),
+                    ],
                     stops: const [0.55, 1],
                   ),
                 ),
@@ -117,7 +118,9 @@ class GarmentCard extends StatelessWidget {
                 style: AppText.mono(
                   size: 8,
                   letterSpacing: 1.1,
-                  color: hasImage ? Colors.white.withValues(alpha: 0.85) : AppColors.mutedLabel,
+                  color: hasImage
+                      ? Colors.white.withValues(alpha: 0.85)
+                      : AppColors.mutedLabel,
                 ),
               ),
             ),
@@ -142,7 +145,9 @@ class GarmentCard extends StatelessWidget {
                     ),
                   if (tags.isNotEmpty)
                     Padding(
-                      padding: EdgeInsets.only(top: name != null && name!.isNotEmpty ? 3 : 0),
+                      padding: EdgeInsets.only(
+                        top: name != null && name!.isNotEmpty ? 3 : 0,
+                      ),
                       child: Text(
                         tags,
                         maxLines: 1,
@@ -150,7 +155,9 @@ class GarmentCard extends StatelessWidget {
                         style: AppText.mono(
                           size: 8.5,
                           letterSpacing: 0.6,
-                          color: hasImage ? Colors.white.withValues(alpha: 0.75) : AppColors.mutedTag,
+                          color: hasImage
+                              ? Colors.white.withValues(alpha: 0.75)
+                              : AppColors.mutedTag,
                         ),
                       ),
                     ),
@@ -280,9 +287,137 @@ class SectionHeader extends StatelessWidget {
         children: [
           Text(title, style: AppText.sans(size: 13, color: AppColors.ink)),
           if (trailing != null)
-            Text(trailing!, style: AppText.mono(size: 9, letterSpacing: 1, color: AppColors.mutedSoft)),
+            Text(
+              trailing!,
+              style: AppText.mono(
+                size: 9,
+                letterSpacing: 1,
+                color: AppColors.mutedSoft,
+              ),
+            ),
         ],
       ),
+    );
+  }
+}
+
+/// Shared "are you sure" dialog for destructive actions (deleting a
+/// collection, tag, item, outfit...). Returns true only if the user
+/// confirmed.
+Future<bool> confirmDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  String confirmLabel = 'Smazat',
+}) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      backgroundColor: Colors.white,
+      title: Text(title, style: AppText.sans(size: 16, color: AppColors.ink)),
+      content: Text(
+        message,
+        style: AppText.sans(size: 13, color: AppColors.label, height: 1.4),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: Text(
+            'Zrušit',
+            style: AppText.sans(size: 13, color: AppColors.muted),
+          ),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: Text(
+            confirmLabel,
+            style: AppText.sans(
+              size: 13,
+              weight: FontWeight.w500,
+              color: AppColors.accent,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+  return confirmed == true;
+}
+
+/// Shared "rename" dialog — a titled text field pre-filled with
+/// [initialValue], returning the edited text or null if cancelled.
+Future<String?> promptTextDialog(
+  BuildContext context, {
+  required String title,
+  required String initialValue,
+}) {
+  return showDialog<String>(
+    context: context,
+    builder: (dialogContext) =>
+        _TextPromptDialog(title: title, initialValue: initialValue),
+  );
+}
+
+class _TextPromptDialog extends StatefulWidget {
+  final String title;
+  final String initialValue;
+  const _TextPromptDialog({required this.title, required this.initialValue});
+
+  @override
+  State<_TextPromptDialog> createState() => _TextPromptDialogState();
+}
+
+class _TextPromptDialogState extends State<_TextPromptDialog> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.initialValue,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: Colors.white,
+      title: Text(
+        widget.title,
+        style: AppText.sans(size: 16, color: AppColors.ink),
+      ),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        style: AppText.sans(size: 14, color: AppColors.ink),
+        decoration: InputDecoration(
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 10,
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(
+            'Zrušit',
+            style: AppText.sans(size: 13, color: AppColors.muted),
+          ),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_controller.text),
+          child: Text(
+            'Uložit',
+            style: AppText.sans(
+              size: 13,
+              weight: FontWeight.w500,
+              color: AppColors.accent,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

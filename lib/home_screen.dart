@@ -34,7 +34,10 @@ class HomeScreen extends StatelessWidget {
                         transitionBuilder: (child, animation) => FadeTransition(
                           opacity: animation,
                           child: SlideTransition(
-                            position: Tween<Offset>(begin: const Offset(0, 0.02), end: Offset.zero).animate(animation),
+                            position: Tween<Offset>(
+                              begin: const Offset(0, 0.02),
+                              end: Offset.zero,
+                            ).animate(animation),
                             child: child,
                           ),
                         ),
@@ -42,14 +45,16 @@ class HomeScreen extends StatelessWidget {
                           key: ValueKey(store.screen),
                           child: switch (store.screen) {
                             WardrobeTabKind.outfit => OutfitTab(
-                                onPick: (zone) => openPickSheet(context, zone),
-                                onOpenLayers: () => openLayerSheet(context),
-                                onOpenSave: () => openSaveOutfitSheet(context),
-                              ),
+                              onPick: (zone) => openPickSheet(context, zone),
+                              onOpenLayers: () => openLayerSheet(context),
+                              onOpenSave: () => openSaveOutfitSheet(context),
+                            ),
                             WardrobeTabKind.wardrobe => WardrobeTab(
-                                onOpenItem: (item) => openItemSheet(context, item),
-                              ),
-                            WardrobeTabKind.collections => const CollectionsTab(),
+                              onOpenItem: (item) =>
+                                  openItemSheet(context, item),
+                            ),
+                            WardrobeTabKind.collections =>
+                              const CollectionsTab(),
                           },
                         ),
                       ),
@@ -57,7 +62,9 @@ class HomeScreen extends StatelessWidget {
                         Positioned(
                           right: 20,
                           bottom: 16,
-                          child: RoundIconButtonAdd(onTap: () => openAddItemSheet(context)),
+                          child: RoundIconButtonAdd(
+                            onTap: () => openAddItemSheet(context),
+                          ),
                         ),
                     ],
                   ),
@@ -93,7 +100,13 @@ class RoundIconButtonAdd extends StatelessWidget {
         decoration: const BoxDecoration(
           color: AppColors.ink,
           shape: BoxShape.circle,
-          boxShadow: [BoxShadow(color: Color(0x33000000), blurRadius: 10, offset: Offset(0, 3))],
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x33000000),
+              blurRadius: 10,
+              offset: Offset(0, 3),
+            ),
+          ],
         ),
         child: Stack(
           alignment: Alignment.center,
@@ -118,7 +131,13 @@ class _Toast extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.ink,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 12, offset: Offset(0, 4))],
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33000000),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Text(
         message,
@@ -142,7 +161,9 @@ class _BottomTabs extends StatelessWidget {
       (WardrobeTabKind.collections, 'Kolekce'),
     ];
     return Container(
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.hairline))),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: AppColors.hairline)),
+      ),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
       child: Row(
         children: [
@@ -160,7 +181,9 @@ class _BottomTabs extends StatelessWidget {
                         style: AppText.mono(
                           size: 10.5,
                           letterSpacing: 1.3,
-                          color: current == kind ? AppColors.ink : AppColors.mutedSoft,
+                          color: current == kind
+                              ? AppColors.ink
+                              : AppColors.mutedSoft,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -168,7 +191,9 @@ class _BottomTabs extends StatelessWidget {
                         width: 4,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: current == kind ? AppColors.accent : Colors.transparent,
+                          color: current == kind
+                              ? AppColors.accent
+                              : Colors.transparent,
                           shape: BoxShape.circle,
                         ),
                       ),

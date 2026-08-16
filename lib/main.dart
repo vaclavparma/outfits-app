@@ -17,7 +17,7 @@ class SatnikApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => WardrobeStore()..load(),
       child: MaterialApp(
-        title: 'Šatník',
+        title: 'Outfits',
         debugShowCheckedModeBanner: false,
         theme: buildAppTheme(),
         home: const HomeScreen(),

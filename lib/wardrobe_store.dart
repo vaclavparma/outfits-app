@@ -34,32 +34,53 @@ class WardrobeStore extends ChangeNotifier {
   String get toast => _toast;
 
   Future<void> load() async {
+    Map<String, dynamic> data;
     try {
       final file = await _localFile();
       if (!await file.exists()) return;
       final raw = await file.readAsString();
-      final data = jsonDecode(raw) as Map<String, dynamic>;
-      if (data['items'] != null) {
-        items = (data['items'] as List<dynamic>)
-            .map((e) => ClothingItem.fromJson(e as Map<String, dynamic>))
-            .toList();
-      }
-      if (data['cols'] != null) {
-        cols = (data['cols'] as List<dynamic>).map((e) => e as String).toList();
-      }
-      if (data['saved'] != null) {
-        final savedJson = data['saved'] as Map<String, dynamic>;
-        saved = savedJson.map((key, value) => MapEntry(
-              key,
-              (value as List<dynamic>)
-                  .map((e) => SavedOutfit.fromJson(e as Map<String, dynamic>))
-                  .toList(),
-            ));
-      }
-      notifyListeners();
+      data = jsonDecode(raw) as Map<String, dynamic>;
     } catch (_) {
-      // Corrupt or missing state — fall back to the seed data.
+      // Missing or unreadable state file — start from the empty defaults.
+      return;
     }
+
+    // Each section is parsed independently, and each entry within a section
+    // is parsed independently too, so a single corrupt item/outfit can't
+    // wipe out the rest of the wardrobe.
+    try {
+      final rawItems = data['items'] as List<dynamic>? ?? [];
+      final parsedItems = <ClothingItem>[];
+      for (final e in rawItems) {
+        try {
+          parsedItems.add(ClothingItem.fromJson(e as Map<String, dynamic>));
+        } catch (_) {}
+      }
+      items = parsedItems;
+    } catch (_) {}
+
+    try {
+      cols = (data['cols'] as List<dynamic>? ?? [])
+          .map((e) => e as String)
+          .toList();
+    } catch (_) {}
+
+    try {
+      final rawSaved = data['saved'] as Map<String, dynamic>? ?? {};
+      final parsedSaved = <String, List<SavedOutfit>>{};
+      rawSaved.forEach((key, value) {
+        final outfits = <SavedOutfit>[];
+        for (final e in (value as List<dynamic>? ?? [])) {
+          try {
+            outfits.add(SavedOutfit.fromJson(e as Map<String, dynamic>));
+          } catch (_) {}
+        }
+        parsedSaved[key] = outfits;
+      });
+      saved = parsedSaved;
+    } catch (_) {}
+
+    notifyListeners();
   }
 
   Future<File> _localFile() async {
@@ -73,9 +94,15 @@ class WardrobeStore extends ChangeNotifier {
       final data = {
         'items': items.map((e) => e.toJson()).toList(),
         'cols': cols,
-        'saved': saved.map((key, value) => MapEntry(key, value.map((e) => e.toJson()).toList())),
+        'saved': saved.map(
+          (key, value) => MapEntry(key, value.map((e) => e.toJson()).toList()),
+        ),
       };
-      await file.writeAsString(jsonEncode(data));
+      // Write to a temp file and rename over the real one, so a crash or
+      // kill mid-write can never leave a half-written/corrupt state file.
+      final tmp = File('${file.path}.tmp');
+      await tmp.writeAsString(jsonEncode(data));
+      await tmp.rename(file.path);
     } catch (_) {
       // Best-effort persistence; nothing the UI can do about a write failure.
     }
@@ -96,7 +123,15 @@ class WardrobeStore extends ChangeNotifier {
     });
   }
 
-  List<ClothingItem> byCat(String cat) => items.where((i) => i.cat == cat).toList();
+  ClothingItem? itemById(String id) {
+    for (final i in items) {
+      if (i.id == id) return i;
+    }
+    return null;
+  }
+
+  List<ClothingItem> byCat(String cat) =>
+      items.where((i) => i.cat == cat).toList();
   List<ClothingItem> get topList => [...byCat('tricka'), ...byCat('saty')];
   List<ClothingItem> get botList => [...byCat('kalhoty'), ...byCat('sukne')];
   List<ClothingItem> get shoeList => byCat('boty');
@@ -146,7 +181,10 @@ class WardrobeStore extends ChangeNotifier {
   }
 
   void removeLayer(int index) {
-    layers = [for (var j = 0; j < layers.length; j++) if (j != index) layers[j]];
+    layers = [
+      for (var j = 0; j < layers.length; j++)
+        if (j != index) layers[j],
+    ];
     notifyListeners();
   }
 
@@ -155,15 +193,29 @@ class WardrobeStore extends ChangeNotifier {
     final imagesDir = Directory(p.join(dir.path, 'satnik_images'));
     if (!await imagesDir.exists()) await imagesDir.create(recursive: true);
     final ext = p.extension(sourcePath);
-    final dest = p.join(imagesDir.path, '${DateTime.now().microsecondsSinceEpoch}$ext');
+    final dest = p.join(
+      imagesDir.path,
+      '${DateTime.now().microsecondsSinceEpoch}$ext',
+    );
     await File(sourcePath).copy(dest);
     return dest;
   }
 
-  Future<ClothingItem> addItem(String cat, List<String> tags, {String? sourceImagePath}) async {
+  Future<ClothingItem> addItem(
+    String cat,
+    List<String> tags, {
+    String? sourceImagePath,
+  }) async {
     String? imagePath;
+    var photoFailed = false;
     if (sourceImagePath != null) {
-      imagePath = await _newImageCopy(sourceImagePath);
+      try {
+        imagePath = await _newImageCopy(sourceImagePath);
+      } catch (_) {
+        // Keep the item usable (category + tags) even if the photo couldn't
+        // be saved — losing the whole item over a storage hiccup is worse.
+        photoFailed = true;
+      }
     }
     final item = ClothingItem(
       id: '$cat-new-${DateTime.now().microsecondsSinceEpoch}',
@@ -174,7 +226,13 @@ class WardrobeStore extends ChangeNotifier {
     items = [...items, item];
     notifyListeners();
     await _persist();
-    flash('Uloženo do „${categoryLabel(cat)}“${imagePath != null ? ' · fotka v souborech apky' : ''}');
+    if (photoFailed) {
+      flash('Uloženo do „${categoryLabel(cat)}“ · fotku se nepodařilo uložit');
+    } else {
+      flash(
+        'Uloženo do „${categoryLabel(cat)}“${imagePath != null ? ' · fotka v souborech apky' : ''}',
+      );
+    }
     return item;
   }
 
@@ -200,7 +258,9 @@ class WardrobeStore extends ChangeNotifier {
   }
 
   Future<void> deleteTag(String tag) async {
-    items = items.map((i) => i..tags = i.tags.where((t) => t != tag).toList()).toList();
+    items = items
+        .map((i) => i..tags = i.tags.where((t) => t != tag).toList())
+        .toList();
     if (tagFilter == tag) tagFilter = null;
     notifyListeners();
     await _persist();
@@ -208,7 +268,8 @@ class WardrobeStore extends ChangeNotifier {
   }
 
   void useItem(ClothingItem it) {
-    int find(List<ClothingItem> list, String id) => list.indexWhere((x) => x.id == id);
+    int find(List<ClothingItem> list, String id) =>
+        list.indexWhere((x) => x.id == id);
     if (it.cat == 'tricka' || it.cat == 'saty') {
       final i = find(topList, it.id);
       if (i >= 0) {
@@ -228,7 +289,9 @@ class WardrobeStore extends ChangeNotifier {
         screen = WardrobeTabKind.outfit;
       }
     } else {
-      if (!layers.contains(it.id) && layers.length < kMaxLayers) layers = [...layers, it.id];
+      if (!layers.contains(it.id) && layers.length < kMaxLayers) {
+        layers = [...layers, it.id];
+      }
       screen = WardrobeTabKind.outfit;
     }
     notifyListeners();
@@ -239,6 +302,14 @@ class WardrobeStore extends ChangeNotifier {
     layers = layers.where((id) => id != it.id).toList();
     notifyListeners();
     await _persist();
+    if (it.imagePath != null) {
+      try {
+        final file = File(it.imagePath!);
+        if (await file.exists()) await file.delete();
+      } catch (_) {
+        // Best-effort cleanup — a stray photo file left behind is harmless.
+      }
+    }
     flash('Smazáno: ${shortCategoryLabel(it.cat)}');
   }
 
@@ -276,7 +347,13 @@ class WardrobeStore extends ChangeNotifier {
 
   Future<void> deleteOutfit(String colName, int index) async {
     final list = saved[colName] ?? [];
-    saved = {...saved, colName: [for (var j = 0; j < list.length; j++) if (j != index) list[j]]};
+    saved = {
+      ...saved,
+      colName: [
+        for (var j = 0; j < list.length; j++)
+          if (j != index) list[j],
+      ],
+    };
     notifyListeners();
     await _persist();
     flash('Outfit smazán');
@@ -298,13 +375,15 @@ class WardrobeStore extends ChangeNotifier {
     final parts = <ClothingItem>[
       if (top != null) top,
       for (final id in layers)
-        if (items.any((i) => i.id == id)) items.firstWhere((i) => i.id == id),
+        if (itemById(id) case final item?) item,
       if (!isDress && bot != null) bot,
       if (shoe != null) shoe,
     ];
 
     final total = cols.fold<int>(0, (a, k) => a + (saved[k]?.length ?? 0));
-    final name = rawName.trim().isNotEmpty ? rawName.trim() : 'Outfit ${total + 1}';
+    final name = rawName.trim().isNotEmpty
+        ? rawName.trim()
+        : 'Outfit ${total + 1}';
     final col = targetCol.isNotEmpty ? targetCol : cols.first;
 
     final entry = SavedOutfit(
@@ -312,7 +391,10 @@ class WardrobeStore extends ChangeNotifier {
       meta: parts.map((i) => shortCategoryLabel(i.cat)).join(' · '),
       itemIds: parts.map((i) => i.id).toList(),
     );
-    saved = {...saved, col: [...(saved[col] ?? []), entry]};
+    saved = {
+      ...saved,
+      col: [...(saved[col] ?? []), entry],
+    };
     notifyListeners();
     await _persist();
     flash('„$name“ uloženo do kolekce $col');
@@ -322,13 +404,7 @@ class WardrobeStore extends ChangeNotifier {
     final newIdx = {...idx};
     final newLayers = <String>[];
     for (final id in o.itemIds) {
-      ClothingItem? it;
-      for (final i in items) {
-        if (i.id == id) {
-          it = i;
-          break;
-        }
-      }
+      final it = itemById(id);
       if (it == null) continue;
       if (it.cat == 'tricka' || it.cat == 'saty') {
         newIdx[WardrobeZone.top] = topList.indexWhere((x) => x.id == id);

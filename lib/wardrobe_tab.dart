@@ -16,14 +16,10 @@ class WardrobeTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
 
-    final allTags = <String>[];
-    for (final i in store.items) {
-      for (final t in i.tags) {
-        if (!allTags.contains(t)) allTags.add(t);
-      }
-    }
+    final allTags = distinctTags(store.items);
 
-    bool visible(ClothingItem it) => store.tagFilter == null || it.tags.contains(store.tagFilter);
+    bool visible(ClothingItem it) =>
+        store.tagFilter == null || it.tags.contains(store.tagFilter);
 
     final sections = kCategories
         .map((c) => (c, store.byCat(c.key).where(visible).toList()))
@@ -37,7 +33,11 @@ class WardrobeTab extends StatelessWidget {
           child: Text(
             'Šatník je prázdný.\nPřidej první kus tlačítkem + vpravo nahoře.',
             textAlign: TextAlign.center,
-            style: AppText.sans(size: 13, color: AppColors.mutedTag, height: 1.5),
+            style: AppText.sans(
+              size: 13,
+              color: AppColors.mutedTag,
+              height: 1.5,
+            ),
           ),
         ),
       );
@@ -55,7 +55,11 @@ class WardrobeTab extends StatelessWidget {
                 runSpacing: 7,
                 children: [
                   for (final t in allTags)
-                    SelectChip(label: t, active: store.tagFilter == t, onTap: () => store.toggleTagFilter(t)),
+                    SelectChip(
+                      label: t,
+                      active: store.tagFilter == t,
+                      onTap: () => store.toggleTagFilter(t),
+                    ),
                 ],
               ),
             ),
@@ -64,7 +68,11 @@ class WardrobeTab extends StatelessWidget {
               onTap: () => openManageTagsSheet(context),
               child: const Padding(
                 padding: EdgeInsets.all(4),
-                child: Icon(Icons.edit_outlined, size: 18, color: AppColors.mutedSoft),
+                child: Icon(
+                  Icons.edit_outlined,
+                  size: 18,
+                  color: AppColors.mutedSoft,
+                ),
               ),
             ),
           ],
