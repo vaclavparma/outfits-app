@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Design tokens lifted from the Šatník mockup (Satnik.dc.html).
 class AppColors {
@@ -39,7 +38,8 @@ class AppText {
     double? height,
     double? letterSpacing,
   }) {
-    return GoogleFonts.libreFranklin(
+    return TextStyle(
+      fontFamily: 'Libre Franklin',
       fontSize: size,
       fontWeight: weight,
       color: color,
@@ -55,7 +55,8 @@ class AppText {
     double? height,
     double letterSpacing = 0.4,
   }) {
-    return GoogleFonts.ibmPlexMono(
+    return TextStyle(
+      fontFamily: 'IBM Plex Mono',
       fontSize: size,
       fontWeight: weight,
       color: color,
@@ -69,7 +70,7 @@ ThemeData buildAppTheme() {
   return ThemeData(
     useMaterial3: true,
     scaffoldBackgroundColor: AppColors.background,
-    fontFamily: GoogleFonts.libreFranklin().fontFamily,
+    fontFamily: 'Libre Franklin',
     colorScheme: ColorScheme.fromSeed(
       seedColor: AppColors.accent,
       surface: AppColors.background,
