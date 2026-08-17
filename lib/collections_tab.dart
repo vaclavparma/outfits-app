@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'collection_detail_screen.dart';
+import 'models.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
 import 'widgets.dart';
@@ -22,7 +23,7 @@ class CollectionsTab extends StatelessWidget {
         crossAxisCount: 2,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 1.3,
+        childAspectRatio: 0.82,
       ),
       itemCount: store.cols.length + 1,
       itemBuilder: (context, i) {
@@ -33,49 +34,87 @@ class CollectionsTab extends StatelessWidget {
           );
         }
         final name = store.cols[i];
-        final count = (store.saved[name] ?? []).length;
-        return GestureDetector(
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => CollectionDetailScreen(name: name),
-            ),
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: AppColors.rowBorder),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            padding: const EdgeInsets.all(14),
-            alignment: Alignment.bottomLeft,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.sans(
-                    size: 14,
-                    weight: FontWeight.w500,
-                    color: AppColors.ink,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  count == 1 ? '1 outfit' : '$count outfitů',
-                  style: AppText.mono(
-                    size: 9,
-                    letterSpacing: 0.6,
-                    color: AppColors.mutedSoft,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+        return _CollectionCard(name: name);
       },
+    );
+  }
+}
+
+class _CollectionCard extends StatelessWidget {
+  final String name;
+  const _CollectionCard({required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final outfits = store.saved[name] ?? [];
+    final cover = outfits.isEmpty
+        ? null
+        : outfits.last.itemIds
+              .map(store.itemById)
+              .whereType<ClothingItem>()
+              .toList();
+
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => CollectionDetailScreen(name: name)),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: AppColors.rowBorder),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: cover == null
+                  ? Container(
+                      color: AppColors.cardFill,
+                      alignment: Alignment.center,
+                      child: const Icon(
+                        Icons.checkroom_outlined,
+                        size: 28,
+                        color: AppColors.mutedSoft,
+                      ),
+                    )
+                  : OutfitCollage(items: cover),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.sans(
+                      size: 14,
+                      weight: FontWeight.w500,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    outfits.length == 1
+                        ? '1 outfit'
+                        : '${outfits.length} outfitů',
+                    style: AppText.mono(
+                      size: 9,
+                      letterSpacing: 0.6,
+                      color: AppColors.mutedSoft,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

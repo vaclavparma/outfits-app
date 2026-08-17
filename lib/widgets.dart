@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'models.dart';
 import 'theme.dart';
 
 /// Diagonal hatch pattern used as a placeholder for garments without a photo,
@@ -479,6 +480,75 @@ class _TextPromptDialogState extends State<_TextPromptDialog> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// A compact collage of an outfit's item photos, so it reads at a glance —
+/// one big tile for a single item, a big-plus-stacked split for 2-3, and a
+/// full 2x2 grid for 4. Used both for an outfit's own card and as a
+/// collection's cover preview (its most recent outfit).
+class OutfitCollage extends StatelessWidget {
+  final List<ClothingItem> items;
+  const OutfitCollage({super.key, required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    final shown = items.take(4).toList();
+    if (shown.isEmpty) {
+      return const DiagonalStripes();
+    }
+    if (shown.length == 1) {
+      return _tile(shown[0]);
+    }
+    if (shown.length >= 4) {
+      return GridView.count(
+        crossAxisCount: 2,
+        physics: const NeverScrollableScrollPhysics(),
+        mainAxisSpacing: 2,
+        crossAxisSpacing: 2,
+        children: shown.take(4).map(_tile).toList(),
+      );
+    }
+    // 2 or 3 items: one big tile on the left, the rest stacked on the right.
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          flex: 3,
+          child: Padding(
+            padding: const EdgeInsets.only(right: 2),
+            child: _tile(shown[0]),
+          ),
+        ),
+        Expanded(
+          flex: 2,
+          child: Column(
+            children: [
+              for (var i = 1; i < shown.length; i++)
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      top: i > 1 ? 1 : 0,
+                      bottom: i < shown.length - 1 ? 1 : 0,
+                    ),
+                    child: _tile(shown[i]),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _tile(ClothingItem it) {
+    final hasImage = it.imagePath != null && File(it.imagePath!).existsSync();
+    return Container(
+      color: AppColors.cardFill,
+      child: hasImage
+          ? Image.file(File(it.imagePath!), fit: BoxFit.cover)
+          : const DiagonalStripes(),
     );
   }
 }

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -200,7 +198,7 @@ class _OutfitCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(child: _OutfitCollage(items: items)),
+            Expanded(child: OutfitCollage(items: items)),
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
               child: Row(
@@ -273,72 +271,4 @@ Future<void> _confirmDeleteOutfit(
     message: '„$outfitName“ bude smazán. Tuto akci nelze vrátit.',
   );
   if (confirmed) store.deleteOutfit(colName, index);
-}
-
-/// A compact collage of an outfit's item photos, so it reads at a glance —
-/// one big tile for a single item, a big-plus-stacked split for 2-3, and a
-/// full 2x2 grid for 4.
-class _OutfitCollage extends StatelessWidget {
-  final List<ClothingItem> items;
-  const _OutfitCollage({required this.items});
-
-  @override
-  Widget build(BuildContext context) {
-    final shown = items.take(4).toList();
-    if (shown.isEmpty) {
-      return const DiagonalStripes();
-    }
-    if (shown.length == 1) {
-      return _tile(shown[0]);
-    }
-    if (shown.length >= 4) {
-      return GridView.count(
-        crossAxisCount: 2,
-        physics: const NeverScrollableScrollPhysics(),
-        mainAxisSpacing: 2,
-        crossAxisSpacing: 2,
-        children: shown.take(4).map(_tile).toList(),
-      );
-    }
-    // 2 or 3 items: one big tile on the left, the rest stacked on the right.
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(
-          flex: 3,
-          child: Padding(
-            padding: const EdgeInsets.only(right: 2),
-            child: _tile(shown[0]),
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Column(
-            children: [
-              for (var i = 1; i < shown.length; i++)
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      top: i > 1 ? 1 : 0,
-                      bottom: i < shown.length - 1 ? 1 : 0,
-                    ),
-                    child: _tile(shown[i]),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _tile(ClothingItem it) {
-    final hasImage = it.imagePath != null && File(it.imagePath!).existsSync();
-    return Container(
-      color: AppColors.cardFill,
-      child: hasImage
-          ? Image.file(File(it.imagePath!), fit: BoxFit.cover)
-          : const DiagonalStripes(),
-    );
-  }
 }
