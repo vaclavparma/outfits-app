@@ -505,9 +505,25 @@ class _ItemDetail extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 14),
-            Text(
-              categoryLabel(context, cur.cat),
-              style: AppText.sans(size: 15, color: AppColors.ink),
+            Expanded(
+              child: Text(
+                categoryLabel(context, cur.cat),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.sans(size: 15, color: AppColors.ink),
+              ),
+            ),
+            const SizedBox(width: 8),
+            RoundIconButton(
+              size: 36,
+              background: Colors.white,
+              borderColor: AppColors.cardBorder,
+              onTap: () => store.togglePinned(cur.id),
+              child: Icon(
+                cur.pinned ? Icons.push_pin : Icons.push_pin_outlined,
+                size: 16,
+                color: cur.pinned ? AppColors.accent : AppColors.muted,
+              ),
             ),
           ],
         ),

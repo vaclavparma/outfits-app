@@ -35,18 +35,22 @@ class OutfitTab extends StatelessWidget {
         final isDress = top != null && top.cat == 'saty';
         final topCardWidth = isDress ? 190.0 : 176.0;
         final topCardHeight = isDress ? 310.0 : 172.0;
-        final topCard = GarmentCard(
-          width: topCardWidth,
-          height: topCardHeight,
-          rotationDeg: -1.6,
-          slotLabel: isDress ? l10n.slotDressFull : l10n.slotTop,
-          name: top == null ? l10n.addTopPlaceholder : null,
-          imagePath: top?.imagePath,
-          onTap: () => onPick(WardrobeZone.top),
-          onSwipe: (dir) => store.step(WardrobeZone.top, dir),
-          shadow: const [
-            BoxShadow(color: Color(0x0D000000), blurRadius: 3, offset: Offset(0, 1)),
-          ],
+        final topCard = _withPinToggle(
+          top,
+          store,
+          GarmentCard(
+            width: topCardWidth,
+            height: topCardHeight,
+            rotationDeg: -1.6,
+            slotLabel: isDress ? l10n.slotDressFull : l10n.slotTop,
+            name: top == null ? l10n.addTopPlaceholder : null,
+            imagePath: top?.imagePath,
+            onTap: () => onPick(WardrobeZone.top),
+            onSwipe: (dir) => store.step(WardrobeZone.top, dir),
+            shadow: const [
+              BoxShadow(color: Color(0x0D000000), blurRadius: 3, offset: Offset(0, 1)),
+            ],
+          ),
         );
         // No layers yet: the "+" tile is just an affordance, not a real
         // garment, so it tucks in behind the top card instead of taking a
@@ -96,18 +100,48 @@ class OutfitTab extends StatelessWidget {
                       if (!isDress)
                         Transform.translate(
                           offset: const Offset(14, -12),
-                          child: GarmentCard(
-                            width: 190,
-                            height: 208,
-                            rotationDeg: 1.4,
-                            slotLabel: bot != null && bot.cat == 'sukne'
-                                ? l10n.slotSkirt
-                                : l10n.slotBottom,
-                            name: bot == null ? l10n.addBottomPlaceholder : null,
-                            imagePath: bot?.imagePath,
-                            onTap: () => onPick(WardrobeZone.bottom),
+                          child: _withPinToggle(
+                            bot,
+                            store,
+                            GarmentCard(
+                              width: 190,
+                              height: 208,
+                              rotationDeg: 1.4,
+                              slotLabel: bot != null && bot.cat == 'sukne'
+                                  ? l10n.slotSkirt
+                                  : l10n.slotBottom,
+                              name: bot == null
+                                  ? l10n.addBottomPlaceholder
+                                  : null,
+                              imagePath: bot?.imagePath,
+                              onTap: () => onPick(WardrobeZone.bottom),
+                              onSwipe: (dir) =>
+                                  store.step(WardrobeZone.bottom, dir),
+                              shadow: const [
+                                BoxShadow(
+                                  color: Color(0x0D000000),
+                                  blurRadius: 3,
+                                  offset: Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      Transform.translate(
+                        offset: const Offset(-22, -10),
+                        child: _withPinToggle(
+                          shoe,
+                          store,
+                          GarmentCard(
+                            width: 158,
+                            height: 110,
+                            rotationDeg: -2.2,
+                            slotLabel: l10n.slotShoes,
+                            name: shoe == null ? l10n.addShoesPlaceholder : null,
+                            imagePath: shoe?.imagePath,
+                            onTap: () => onPick(WardrobeZone.shoes),
                             onSwipe: (dir) =>
-                                store.step(WardrobeZone.bottom, dir),
+                                store.step(WardrobeZone.shoes, dir),
                             shadow: const [
                               BoxShadow(
                                 color: Color(0x0D000000),
@@ -116,25 +150,6 @@ class OutfitTab extends StatelessWidget {
                               ),
                             ],
                           ),
-                        ),
-                      Transform.translate(
-                        offset: const Offset(-22, -10),
-                        child: GarmentCard(
-                          width: 158,
-                          height: 110,
-                          rotationDeg: -2.2,
-                          slotLabel: l10n.slotShoes,
-                          name: shoe == null ? l10n.addShoesPlaceholder : null,
-                          imagePath: shoe?.imagePath,
-                          onTap: () => onPick(WardrobeZone.shoes),
-                          onSwipe: (dir) => store.step(WardrobeZone.shoes, dir),
-                          shadow: const [
-                            BoxShadow(
-                              color: Color(0x0D000000),
-                              blurRadius: 3,
-                              offset: Offset(0, 1),
-                            ),
-                          ],
                         ),
                       ),
                     ],
@@ -340,7 +355,63 @@ class _LayerCard extends StatelessWidget {
             ),
           ),
         ),
+        if (it != null)
+          Positioned(
+            top: -8,
+            left: -8,
+            child: _PinButton(
+              pinned: it.pinned,
+              onTap: () => store.togglePinned(it.id),
+            ),
+          ),
       ],
+    );
+  }
+}
+
+/// Wraps [card] with a top-left pin toggle when [item] isn't null — an
+/// empty "add" slot has nothing to pin. Positioned relative to [card]'s own
+/// (unrotated) layout box, so it stays put regardless of the card's own
+/// [GarmentCard.rotationDeg].
+Widget _withPinToggle(ClothingItem? item, WardrobeStore store, Widget card) {
+  if (item == null) return card;
+  return Stack(
+    clipBehavior: Clip.none,
+    children: [
+      card,
+      Positioned(
+        top: -8,
+        left: -8,
+        child: _PinButton(
+          pinned: item.pinned,
+          onTap: () => store.togglePinned(item.id),
+        ),
+      ),
+    ],
+  );
+}
+
+/// Small round toggle — filled pin in the accent color once pinned, a
+/// muted outline otherwise — marking a garment as exempt from
+/// [WardrobeStore.shuffle].
+class _PinButton extends StatelessWidget {
+  final bool pinned;
+  final VoidCallback onTap;
+
+  const _PinButton({required this.pinned, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return RoundIconButton(
+      size: 26,
+      background: Colors.white,
+      borderColor: AppColors.removeButtonBorder,
+      onTap: onTap,
+      child: Icon(
+        pinned ? Icons.push_pin : Icons.push_pin_outlined,
+        size: 14,
+        color: pinned ? AppColors.accent : AppColors.muted,
+      ),
     );
   }
 }

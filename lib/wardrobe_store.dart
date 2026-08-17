@@ -215,16 +215,43 @@ class WardrobeStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Randomizes each zone and every layer — except any slot whose current
+  /// item is [ClothingItem.pinned], which is left exactly as it is. If the
+  /// bottom is pinned, the top is also kept off dresses — a dress replaces
+  /// the bottom slot entirely, which would silently bench the pinned item.
   void shuffle() {
     final rng = Random();
-    idx = {
-      WardrobeZone.top: rng.nextInt(99),
-      WardrobeZone.bottom: rng.nextInt(99),
-      WardrobeZone.shoes: rng.nextInt(99),
-    };
+    final newIdx = {...idx};
+    final botPinned = at(botList, WardrobeZone.bottom)?.pinned ?? false;
+    for (final zone in WardrobeZone.values) {
+      if (at(zoneList(zone), zone)?.pinned ?? false) continue;
+      if (zone == WardrobeZone.top && botPinned) {
+        final noDress = topList.where((it) => it.cat != 'saty').toList();
+        if (noDress.isNotEmpty) {
+          newIdx[zone] = topList.indexOf(noDress[rng.nextInt(noDress.length)]);
+        }
+        continue;
+      }
+      newIdx[zone] = rng.nextInt(99);
+    }
+    idx = newIdx;
+
     if (layers.isNotEmpty) {
-      final pool = byCat('bundy')..shuffle(rng);
-      layers = pool.take(layers.length).map((i) => i.id).toList();
+      final pinnedIds = layers
+          .where((id) => itemById(id)?.pinned ?? false)
+          .toSet();
+      final pool = byCat('bundy').where((it) => !pinnedIds.contains(it.id)).toList()
+        ..shuffle(rng);
+      var next = 0;
+      layers = [
+        for (final id in layers)
+          if (pinnedIds.contains(id))
+            id
+          else if (next < pool.length)
+            pool[next++].id
+          else
+            id, // no unpinned alternative available — leave it as-is
+      ];
     }
     notifyListeners();
   }
@@ -297,6 +324,14 @@ class WardrobeStore extends ChangeNotifier {
 
   void setTags(String id, List<String> tags) {
     items = items.map((i) => i.id == id ? (i..tags = tags) : i).toList();
+    notifyListeners();
+    _persist();
+  }
+
+  void togglePinned(String id) {
+    items = items
+        .map((i) => i.id == id ? (i..pinned = !i.pinned) : i)
+        .toList();
     notifyListeners();
     _persist();
   }

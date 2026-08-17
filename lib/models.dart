@@ -58,11 +58,16 @@ class ClothingItem {
   List<String> tags;
   String? imagePath;
 
+  /// When true and this item is the one currently showing in its outfit
+  /// zone (or as a layer), [WardrobeStore.shuffle] leaves that slot alone.
+  bool pinned;
+
   ClothingItem({
     required this.id,
     required this.cat,
     List<String>? tags,
     this.imagePath,
+    this.pinned = false,
   }) : tags = tags ?? [];
 
   String get tagsLabel => tags.isEmpty ? '' : tags.join(' · ');
@@ -72,6 +77,7 @@ class ClothingItem {
     'cat': cat,
     'tags': tags,
     'imagePath': imagePath,
+    'pinned': pinned,
   };
 
   factory ClothingItem.fromJson(Map<String, dynamic> json) => ClothingItem(
@@ -81,6 +87,7 @@ class ClothingItem {
         .map((e) => e as String)
         .toList(),
     imagePath: json['imagePath'] as String?,
+    pinned: json['pinned'] as bool? ?? false,
   );
 }
 
