@@ -33,11 +33,7 @@ class HomeScreen extends StatelessWidget {
                         onTap: () => openAboutSheet(context),
                         child: const Padding(
                           padding: EdgeInsets.all(4),
-                          child: Icon(
-                            Icons.info_outline,
-                            size: 20,
-                            color: AppColors.mutedSoft,
-                          ),
+                          child: Icon(Icons.info_outline, size: 20, color: AppColors.mutedSoft),
                         ),
                       ),
                     ],
@@ -51,10 +47,7 @@ class HomeScreen extends StatelessWidget {
                     transitionBuilder: (child, animation) => FadeTransition(
                       opacity: animation,
                       child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0, 0.02),
-                          end: Offset.zero,
-                        ).animate(animation),
+                        position: Tween<Offset>(begin: const Offset(0, 0.02), end: Offset.zero).animate(animation),
                         child: child,
                       ),
                     ),
@@ -66,9 +59,7 @@ class HomeScreen extends StatelessWidget {
                           onOpenLayers: () => openLayerSheet(context),
                           onOpenSave: () => openSaveOutfitSheet(context),
                         ),
-                        WardrobeTabKind.wardrobe => WardrobeTab(
-                          onOpenItem: (item) => openItemSheet(context, item),
-                        ),
+                        WardrobeTabKind.wardrobe => WardrobeTab(onOpenItem: (item) => openItemSheet(context, item)),
                         WardrobeTabKind.collections => const CollectionsTab(),
                       },
                     ),
@@ -77,13 +68,7 @@ class HomeScreen extends StatelessWidget {
                 _BottomTabs(current: store.screen, onSelect: store.setScreen),
               ],
             ),
-            if (store.toast.isNotEmpty)
-              Positioned(
-                left: 20,
-                right: 20,
-                bottom: 84,
-                child: _Toast(message: store.toast),
-              ),
+            if (store.toast.isNotEmpty) Positioned(left: 20, right: 20, top: 2, child: _Toast(message: store.toast)),
           ],
         ),
       ),
@@ -100,19 +85,24 @@ class _Toast extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.ink,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x33000000),
-            blurRadius: 12,
-            offset: Offset(0, 4),
+        border: Border.all(color: AppColors.rowBorder),
+        boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 16, offset: Offset(0, 6))],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            margin: const EdgeInsets.only(right: 10),
+            decoration: const BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
+          ),
+          Flexible(
+            child: Text(message, style: AppText.sans(size: 11.5, height: 1.35, color: AppColors.ink)),
           ),
         ],
-      ),
-      child: Text(
-        message,
-        style: AppText.sans(size: 11.5, height: 1.35, color: Colors.white),
       ),
     );
   }
@@ -152,9 +142,7 @@ class _BottomTabs extends StatelessWidget {
                         style: AppText.mono(
                           size: 10.5,
                           letterSpacing: 1.3,
-                          color: current == kind
-                              ? AppColors.ink
-                              : AppColors.mutedSoft,
+                          color: current == kind ? AppColors.ink : AppColors.mutedSoft,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -162,9 +150,7 @@ class _BottomTabs extends StatelessWidget {
                         width: 4,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: current == kind
-                              ? AppColors.accent
-                              : Colors.transparent,
+                          color: current == kind ? AppColors.accent : Colors.transparent,
                           shape: BoxShape.circle,
                         ),
                       ),

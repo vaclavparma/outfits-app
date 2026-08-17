@@ -254,7 +254,6 @@ class WardrobeStore extends ChangeNotifier {
     if (tagFilter == oldTag) tagFilter = newTag;
     notifyListeners();
     await _persist();
-    flash('Tag „$oldTag“ přejmenován na „$newTag“');
   }
 
   Future<void> deleteTag(String tag) async {
@@ -264,7 +263,6 @@ class WardrobeStore extends ChangeNotifier {
     if (tagFilter == tag) tagFilter = null;
     notifyListeners();
     await _persist();
-    flash('Tag „$tag“ smazán');
   }
 
   void useItem(ClothingItem it) {
@@ -292,7 +290,6 @@ class WardrobeStore extends ChangeNotifier {
         // Best-effort cleanup — a stray photo file left behind is harmless.
       }
     }
-    flash('Smazáno: ${shortCategoryLabel(it.cat)}');
   }
 
   Future<void> addCollection(String rawName) async {
@@ -302,7 +299,6 @@ class WardrobeStore extends ChangeNotifier {
     saved = {...saved, name: []};
     notifyListeners();
     await _persist();
-    flash('Kolekce „$name“ přidána');
   }
 
   /// Renames a collection, returning the name that ended up in effect (the
@@ -321,7 +317,6 @@ class WardrobeStore extends ChangeNotifier {
     saved = newSaved;
     notifyListeners();
     await _persist();
-    flash('Kolekce přejmenována na „$newName“');
     return newName;
   }
 
@@ -330,7 +325,6 @@ class WardrobeStore extends ChangeNotifier {
     saved = {...saved}..remove(name);
     notifyListeners();
     await _persist();
-    flash('Kolekce „$name“ smazána');
   }
 
   Future<void> deleteOutfit(String colName, int index) async {
@@ -344,7 +338,6 @@ class WardrobeStore extends ChangeNotifier {
     };
     notifyListeners();
     await _persist();
-    flash('Outfit smazán');
   }
 
   Future<void> saveOutfit({
@@ -405,7 +398,6 @@ class WardrobeStore extends ChangeNotifier {
     layers = newLayers;
     screen = WardrobeTabKind.outfit;
     notifyListeners();
-    flash('Načteno: ${o.name}');
   }
 
   void toggleTagFilter(String tag) {
