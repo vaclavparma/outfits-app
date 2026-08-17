@@ -40,6 +40,30 @@ class _StripePainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
+/// A garment photo, decoded at roughly the size it's actually displayed at
+/// (rather than full camera resolution) and falling back to
+/// [DiagonalStripes] if the file is missing or unreadable — so callers don't
+/// need to stat the file on every build just to pick a placeholder.
+class GarmentImage extends StatelessWidget {
+  final String path;
+  const GarmentImage(this.path, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    return LayoutBuilder(
+      builder: (context, constraints) => Image.file(
+        File(path),
+        fit: BoxFit.cover,
+        cacheWidth: constraints.maxWidth.isFinite
+            ? (constraints.maxWidth * dpr).round()
+            : null,
+        errorBuilder: (context, error, stackTrace) => const DiagonalStripes(),
+      ),
+    );
+  }
+}
+
 /// A garment "card": rounded, textured or photo-filled tile with a small
 /// uppercase mono slot label and a name/tags caption, as used across the
 /// outfit builder, wardrobe grid and pick sheets.
@@ -75,7 +99,7 @@ class GarmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = imagePath != null && File(imagePath!).existsSync();
+    final hasImage = imagePath != null;
     Widget card = Container(
       width: width,
       height: height,
@@ -89,9 +113,7 @@ class GarmentCard extends StatelessWidget {
       child: Stack(
         children: [
           if (hasImage)
-            Positioned.fill(
-              child: Image.file(File(imagePath!), fit: BoxFit.cover),
-            )
+            Positioned.fill(child: GarmentImage(imagePath!))
           else
             const DiagonalStripes(),
           if (hasImage)
@@ -543,12 +565,10 @@ class OutfitCollage extends StatelessWidget {
   }
 
   Widget _tile(ClothingItem it) {
-    final hasImage = it.imagePath != null && File(it.imagePath!).existsSync();
+    final path = it.imagePath;
     return Container(
       color: AppColors.cardFill,
-      child: hasImage
-          ? Image.file(File(it.imagePath!), fit: BoxFit.cover)
-          : const DiagonalStripes(),
+      child: path == null ? const DiagonalStripes() : GarmentImage(path),
     );
   }
 }

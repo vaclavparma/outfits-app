@@ -106,3 +106,12 @@ class SavedOutfit {
 enum WardrobeTabKind { outfit, wardrobe, collections }
 
 enum WardrobeZone { top, bottom, shoes }
+
+/// Which builder zone a category occupies, or null for layer-only
+/// categories (outerwear) that go into [WardrobeStore.layers] instead.
+WardrobeZone? zoneForCategory(String cat) => switch (cat) {
+  'tricka' || 'saty' => WardrobeZone.top,
+  'kalhoty' || 'sukne' => WardrobeZone.bottom,
+  'boty' => WardrobeZone.shoes,
+  _ => null,
+};

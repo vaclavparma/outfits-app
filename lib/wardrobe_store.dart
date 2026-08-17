@@ -268,32 +268,14 @@ class WardrobeStore extends ChangeNotifier {
   }
 
   void useItem(ClothingItem it) {
-    int find(List<ClothingItem> list, String id) =>
-        list.indexWhere((x) => x.id == id);
-    if (it.cat == 'tricka' || it.cat == 'saty') {
-      final i = find(topList, it.id);
-      if (i >= 0) {
-        idx = {...idx, WardrobeZone.top: i};
-        screen = WardrobeTabKind.outfit;
-      }
-    } else if (it.cat == 'kalhoty' || it.cat == 'sukne') {
-      final i = find(botList, it.id);
-      if (i >= 0) {
-        idx = {...idx, WardrobeZone.bottom: i};
-        screen = WardrobeTabKind.outfit;
-      }
-    } else if (it.cat == 'boty') {
-      final i = find(shoeList, it.id);
-      if (i >= 0) {
-        idx = {...idx, WardrobeZone.shoes: i};
-        screen = WardrobeTabKind.outfit;
-      }
-    } else {
-      if (!layers.contains(it.id) && layers.length < kMaxLayers) {
-        layers = [...layers, it.id];
-      }
-      screen = WardrobeTabKind.outfit;
+    final zone = zoneForCategory(it.cat);
+    if (zone != null) {
+      final i = zoneList(zone).indexWhere((x) => x.id == it.id);
+      if (i >= 0) idx = {...idx, zone: i};
+    } else if (!layers.contains(it.id) && layers.length < kMaxLayers) {
+      layers = [...layers, it.id];
     }
+    screen = WardrobeTabKind.outfit;
     notifyListeners();
   }
 
@@ -412,12 +394,9 @@ class WardrobeStore extends ChangeNotifier {
     for (final id in o.itemIds) {
       final it = itemById(id);
       if (it == null) continue;
-      if (it.cat == 'tricka' || it.cat == 'saty') {
-        newIdx[WardrobeZone.top] = topList.indexWhere((x) => x.id == id);
-      } else if (it.cat == 'kalhoty' || it.cat == 'sukne') {
-        newIdx[WardrobeZone.bottom] = botList.indexWhere((x) => x.id == id);
-      } else if (it.cat == 'boty') {
-        newIdx[WardrobeZone.shoes] = shoeList.indexWhere((x) => x.id == id);
+      final zone = zoneForCategory(it.cat);
+      if (zone != null) {
+        newIdx[zone] = zoneList(zone).indexWhere((x) => x.id == id);
       } else {
         newLayers.add(id);
       }

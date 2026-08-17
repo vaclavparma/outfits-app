@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -75,6 +73,14 @@ final TextStyle _sheetTitleStyle = AppText.sans(
   weight: FontWeight.w300,
   color: AppColors.ink,
   letterSpacing: -0.2,
+);
+
+/// Small uppercase-mono label above a form field/section within a sheet
+/// (e.g. "kategorie", "tagy", "kolekce").
+final TextStyle _sectionLabelStyle = AppText.mono(
+  size: 9.5,
+  letterSpacing: 1.3,
+  color: AppColors.mutedSoft,
 );
 
 void openPickSheet(BuildContext context, WardrobeZone zone) {
@@ -229,11 +235,9 @@ class _LayerChoices extends StatelessWidget {
                         borderRadius: BorderRadius.circular(7),
                       ),
                       clipBehavior: Clip.antiAlias,
-                      child:
-                          (it.imagePath != null &&
-                              File(it.imagePath!).existsSync())
-                          ? Image.file(File(it.imagePath!), fit: BoxFit.cover)
-                          : const DiagonalStripes(),
+                      child: it.imagePath == null
+                          ? const DiagonalStripes()
+                          : GarmentImage(it.imagePath!),
                     ),
                     const SizedBox(width: 12),
                     Text(
@@ -314,14 +318,7 @@ class _AddItemFormState extends State<_AddItemForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'kategorie',
-          style: AppText.mono(
-            size: 9.5,
-            letterSpacing: 1.3,
-            color: AppColors.mutedSoft,
-          ),
-        ),
+        Text('kategorie', style: _sectionLabelStyle),
         const SizedBox(height: 8),
         Wrap(
           spacing: 7,
@@ -338,14 +335,7 @@ class _AddItemFormState extends State<_AddItemForm> {
           ],
         ),
         const SizedBox(height: 18),
-        Text(
-          'tagy (nepovinné)',
-          style: AppText.mono(
-            size: 9.5,
-            letterSpacing: 1.3,
-            color: AppColors.mutedSoft,
-          ),
-        ),
+        Text('tagy (nepovinné)', style: _sectionLabelStyle),
         const SizedBox(height: 8),
         Wrap(
           spacing: 7,
@@ -471,14 +461,7 @@ class _ItemDetailState extends State<_ItemDetail> {
           ],
         ),
         const SizedBox(height: 18),
-        Text(
-          'tagy oblečení',
-          style: AppText.mono(
-            size: 9.5,
-            letterSpacing: 1.3,
-            color: AppColors.mutedSoft,
-          ),
-        ),
+        Text('tagy oblečení', style: _sectionLabelStyle),
         const SizedBox(height: 9),
         Wrap(
           spacing: 7,
@@ -683,14 +666,7 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'název outfitu',
-          style: AppText.mono(
-            size: 9.5,
-            letterSpacing: 1.3,
-            color: AppColors.mutedSoft,
-          ),
-        ),
+        Text('název outfitu', style: _sectionLabelStyle),
         const SizedBox(height: 8),
         TextField(
           controller: _nameController,
@@ -708,14 +684,7 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
           style: AppText.sans(size: 14, color: AppColors.ink),
         ),
         const SizedBox(height: 18),
-        Text(
-          'kolekce',
-          style: AppText.mono(
-            size: 9.5,
-            letterSpacing: 1.3,
-            color: AppColors.mutedSoft,
-          ),
-        ),
+        Text('kolekce', style: _sectionLabelStyle),
         const SizedBox(height: 8),
         if (hasCols)
           Wrap(
