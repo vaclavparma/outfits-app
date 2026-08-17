@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -31,6 +33,52 @@ class OutfitTab extends StatelessWidget {
         final bot = store.at(store.botList, WardrobeZone.bottom);
         final shoe = store.at(store.shoeList, WardrobeZone.shoes);
         final isDress = top != null && top.cat == 'saty';
+        final topCardWidth = isDress ? 190.0 : 176.0;
+        final topCardHeight = isDress ? 310.0 : 172.0;
+        final topCard = GarmentCard(
+          width: topCardWidth,
+          height: topCardHeight,
+          rotationDeg: -1.6,
+          slotLabel: isDress ? l10n.slotDressFull : l10n.slotTop,
+          name: top == null ? l10n.addTopPlaceholder : null,
+          imagePath: top?.imagePath,
+          onTap: () => onPick(WardrobeZone.top),
+          onSwipe: (dir) => store.step(WardrobeZone.top, dir),
+          shadow: const [
+            BoxShadow(color: Color(0x0D000000), blurRadius: 3, offset: Offset(0, 1)),
+          ],
+        );
+        // No layers yet: the "+" tile is just an affordance, not a real
+        // garment, so it tucks in behind the top card instead of taking a
+        // full lane beside it. Once there's a real layer, it pulls onto the
+        // top card instead so it reads as worn over it.
+        final topWithLayers = store.layers.isEmpty
+            ? _PeekingStack(
+                frontWidth: topCardWidth,
+                frontHeight: topCardHeight,
+                front: topCard,
+                backWidth: 74,
+                backHeight: 136,
+                back: _AddLayerTile(onTap: onOpenLayers),
+              )
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  topCard,
+                  const SizedBox(width: 6),
+                  Transform.translate(
+                    offset: const Offset(-22, 0),
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 18),
+                      child: _LayersCluster(
+                        layers: store.layers,
+                        onOpenLayers: onOpenLayers,
+                      ),
+                    ),
+                  ),
+                ],
+              );
 
         return Column(
           children: [
@@ -43,48 +91,7 @@ class OutfitTab extends StatelessWidget {
                     children: [
                       Padding(
                         padding: const EdgeInsets.only(right: 8),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            GarmentCard(
-                              width: isDress ? 208 : 176,
-                              height: isDress ? 342 : 172,
-                              rotationDeg: -1.6,
-                              slotLabel: isDress
-                                  ? l10n.slotDressFull
-                                  : l10n.slotTop,
-                              name: top == null ? l10n.addTopPlaceholder : null,
-                              imagePath: top?.imagePath,
-                              onTap: () => onPick(WardrobeZone.top),
-                              onSwipe: (dir) =>
-                                  store.step(WardrobeZone.top, dir),
-                              shadow: const [
-                                BoxShadow(
-                                  color: Color(0x0D000000),
-                                  blurRadius: 3,
-                                  offset: Offset(0, 1),
-                                ),
-                              ],
-                            ),
-                            SizedBox(width: store.layers.isEmpty ? 10 : 6),
-                            Transform.translate(
-                              // Only pull the cluster onto the top card once there's
-                              // an actual layer photo to overlap with — sliding the
-                              // empty dashed "+" tile onto the shirt looks broken.
-                              offset: store.layers.isEmpty
-                                  ? Offset.zero
-                                  : const Offset(-22, 0),
-                              child: Padding(
-                                padding: const EdgeInsets.only(top: 18),
-                                child: _LayersCluster(
-                                  layers: store.layers,
-                                  onOpenLayers: onOpenLayers,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                        child: topWithLayers,
                       ),
                       if (!isDress)
                         Transform.translate(
@@ -203,21 +210,23 @@ class _LayersCluster extends StatelessWidget {
       return _AddLayerTile(onTap: onOpenLayers);
     }
     if (layers.length == 1) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Same rotation as the "front" slot in the 2-layer fan below, so
-          // this card doesn't visibly shift when a second layer is added.
-          _LayerCard(
-            itemId: layers[0],
-            index: 0,
-            onOpenLayers: onOpenLayers,
-            rotationDeg: 1.5,
-          ),
-          const SizedBox(width: 10),
-          _AddLayerTile(onTap: onOpenLayers),
-        ],
+      // The "+" for a possible 2nd layer is, again, just an affordance —
+      // tuck it in behind the real layer card instead of giving it its own
+      // full-width slot next to it.
+      return _PeekingStack(
+        frontWidth: 110,
+        frontHeight: 136,
+        // Same rotation as the "front" slot in the 2-layer fan below, so
+        // this card doesn't visibly shift when a second layer is added.
+        front: _LayerCard(
+          itemId: layers[0],
+          index: 0,
+          onOpenLayers: onOpenLayers,
+          rotationDeg: 1.5,
+        ),
+        backWidth: 74,
+        backHeight: 136,
+        back: _AddLayerTile(onTap: onOpenLayers),
       );
     }
     // Two layers: fan them so both cards — and both remove buttons — stay
@@ -332,6 +341,52 @@ class _LayerCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Lays [back] out so it peeks from behind [front]'s bottom-right corner,
+/// instead of sitting fully beside it — [front] paints last (on top),
+/// hiding most of [back] except a sliver on the right and a strip below.
+/// Used for the "+" add-layer affordance, so an empty slot reads as
+/// waiting behind whatever's currently on top rather than claiming a full
+/// lane of its own.
+class _PeekingStack extends StatelessWidget {
+  // How far `back`'s left edge tucks under `front`'s right edge, and how
+  // far `back` pokes out below `front`'s bottom edge.
+  static const _overlapX = 24.0;
+  static const _peekY = 20.0;
+
+  final double frontWidth;
+  final double frontHeight;
+  final Widget front;
+  final double backWidth;
+  final double backHeight;
+  final Widget back;
+
+  const _PeekingStack({
+    required this.frontWidth,
+    required this.frontHeight,
+    required this.front,
+    required this.backWidth,
+    required this.backHeight,
+    required this.back,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final left = frontWidth - _overlapX;
+    final top = frontHeight - backHeight + _peekY;
+    return SizedBox(
+      width: math.max(frontWidth, left + backWidth),
+      height: math.max(frontHeight, top + backHeight),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(left: left, top: top, child: back),
+          Positioned(left: 0, top: 0, child: front),
+        ],
+      ),
     );
   }
 }

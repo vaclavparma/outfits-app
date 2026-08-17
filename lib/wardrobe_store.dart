@@ -204,6 +204,10 @@ class WardrobeStore extends ChangeNotifier {
       WardrobeZone.bottom: rng.nextInt(99),
       WardrobeZone.shoes: rng.nextInt(99),
     };
+    if (layers.isNotEmpty) {
+      final pool = byCat('bundy')..shuffle(rng);
+      layers = pool.take(layers.length).map((i) => i.id).toList();
+    }
     notifyListeners();
   }
 

@@ -29,49 +29,60 @@ Future<T?> _showSheet<T>(
     backgroundColor: Colors.transparent,
     barrierColor: const Color(0x47141414),
     builder: (sheetContext) {
-      return ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(sheetContext).size.height * 0.85,
+      // Push the whole sheet up above the keyboard — without this, a
+      // focused text field can end up hidden behind it, since the fixed
+      // maxHeight below doesn't otherwise account for the keyboard's inset.
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
         ),
-        child: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(26),
-              topRight: Radius.circular(26),
-            ),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(sheetContext).size.height * 0.85,
           ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 34),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(title(sheetContext), style: _sheetTitleStyle),
-                    ),
-                    if (showCloseLink)
-                      GestureDetector(
-                        onTap: () => Navigator.of(sheetContext).pop(),
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(26),
+                topRight: Radius.circular(26),
+              ),
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 34),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
                         child: Text(
-                          AppLocalizations.of(sheetContext)!.close,
-                          style: AppText.mono(
-                            size: 10,
-                            letterSpacing: 1,
-                            color: AppColors.mutedTag,
-                          ),
+                          title(sheetContext),
+                          style: _sheetTitleStyle,
                         ),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                content,
-              ],
+                      if (showCloseLink)
+                        GestureDetector(
+                          onTap: () => Navigator.of(sheetContext).pop(),
+                          child: Text(
+                            AppLocalizations.of(sheetContext)!.close,
+                            style: AppText.mono(
+                              size: 10,
+                              letterSpacing: 1,
+                              color: AppColors.mutedTag,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  content,
+                ],
+              ),
             ),
           ),
         ),
@@ -202,6 +213,7 @@ void openLayerSheet(BuildContext context) {
     context,
     (ctx) => AppLocalizations.of(ctx)!.addLayerTitle,
     const _LayerChoices(),
+    showCloseLink: false,
   );
 }
 
@@ -218,18 +230,45 @@ class _LayerChoices extends StatelessWidget {
         style: AppText.sans(size: 12, color: AppColors.mutedTag),
       );
     }
-    final choices = store
+    final available = store
         .byCat('bundy')
         .where((it) => !store.layers.contains(it.id))
         .toList();
-    if (choices.isEmpty) {
+    if (available.isEmpty) {
       return Text(
         l10n.noMoreLayers,
         style: AppText.sans(size: 12, color: AppColors.mutedTag),
       );
     }
+    final availableTags = distinctTags(available);
+    final choices = store.tagFilter == null
+        ? available
+        : available.where((it) => it.tags.contains(store.tagFilter)).toList();
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (availableTags.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Wrap(
+              spacing: 7,
+              runSpacing: 7,
+              children: [
+                for (final t in availableTags)
+                  SelectChip(
+                    label: t,
+                    active: store.tagFilter == t,
+                    onTap: () => store.toggleTagFilter(t),
+                  ),
+              ],
+            ),
+          ),
+        if (choices.isEmpty)
+          Text(
+            l10n.noMoreLayers,
+            style: AppText.sans(size: 12, color: AppColors.mutedTag),
+          ),
         for (final it in choices)
           Padding(
             padding: const EdgeInsets.only(bottom: 7),
@@ -247,12 +286,12 @@ class _LayerChoices extends StatelessWidget {
                 child: Row(
                   children: [
                     Container(
-                      width: 32,
-                      height: 40,
+                      width: 64,
+                      height: 80,
                       decoration: BoxDecoration(
                         color: AppColors.cardFill,
                         border: Border.all(color: AppColors.cardBorder),
-                        borderRadius: BorderRadius.circular(7),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       clipBehavior: Clip.antiAlias,
                       child: it.imagePath == null
