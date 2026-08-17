@@ -18,7 +18,7 @@ class WardrobeTab extends StatelessWidget {
     final store = context.watch<WardrobeStore>();
     final l10n = AppLocalizations.of(context)!;
 
-    final allTags = distinctTags(store.items);
+    final allTags = store.knownTags;
 
     bool visible(ClothingItem it) =>
         store.tagFilter == null || it.tags.contains(store.tagFilter);
@@ -40,43 +40,45 @@ class WardrobeTab extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 6, 20, 12),
           sliver: SliverMainAxisGroup(
             slivers: [
-              if (allTags.isNotEmpty)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Wrap(
-                            spacing: 7,
-                            runSpacing: 7,
-                            children: [
-                              for (final t in allTags)
-                                SelectChip(
-                                  label: t,
-                                  active: store.tagFilter == t,
-                                  onTap: () => store.toggleTagFilter(t),
-                                ),
-                            ],
+              // Always shown, even with zero known tags — "Spravovat tagy"
+              // (behind the pencil icon) is the only place tags get
+              // created, so it must stay reachable when the list is empty.
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Wrap(
+                          spacing: 7,
+                          runSpacing: 7,
+                          children: [
+                            for (final t in allTags)
+                              SelectChip(
+                                label: t,
+                                active: store.tagFilter == t,
+                                onTap: () => store.toggleTagFilter(t),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => openManageTagsSheet(context),
+                        child: const Padding(
+                          padding: EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.edit_outlined,
+                            size: 18,
+                            color: AppColors.mutedSoft,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        GestureDetector(
-                          onTap: () => openManageTagsSheet(context),
-                          child: const Padding(
-                            padding: EdgeInsets.all(4),
-                            child: Icon(
-                              Icons.edit_outlined,
-                              size: 18,
-                              color: AppColors.mutedSoft,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
+              ),
               for (final (cat, its) in sections) ...[
                 SliverToBoxAdapter(
                   child: SectionHeader(

@@ -10,7 +10,6 @@
   "delete": "Delete",
   "create": "Create",
   "add": "add",
-  "close": "close",
   "actionCannotBeUndone": "This action can't be undone.",
   "noTags": "no tags",
   "rename": "Rename",
@@ -88,8 +87,6 @@
   "fromGallery": "From gallery",
 
   "itemDetailTitle": "Clothing detail",
-  "sectionItemTags": "item tags",
-  "customTagHint": "custom tag",
   "useInOutfit": "Use in outfit",
   "deleteItemTitle": "Delete this item?",
   "deleteItemMessage": "This item will be deleted.",
@@ -100,6 +97,7 @@
   "needCollectionHint": "Create a collection in the Collections tab first.",
 
   "manageTagsTitle": "Manage tags",
+  "newTagHint": "new tag",
   "noTagsYet": "No tags yet.",
   "renameTagTitle": "Rename tag",
   "deleteTagTitle": "Delete tag?",
@@ -160,12 +158,5 @@
   "showDressesLabel": "Show dresses in wardrobe",
   "showDressesHint": "Hides the dresses category in the wardrobe and when adding clothes. Dresses already in your wardrobe stay put.",
   "showSkirtsLabel": "Show skirts in wardrobe",
-  "showSkirtsHint": "Hides the skirts category in the wardrobe and when adding clothes. Skirts already in your wardrobe stay put.",
-
-  "tagWork": "work",
-  "tagCasual": "casual",
-  "tagSummer": "summer",
-  "tagEvening": "evening",
-  "tagWinter": "winter",
-  "tagBasic": "basic"
+  "showSkirtsHint": "Hides the skirts category in the wardrobe and when adding clothes. Skirts already in your wardrobe stay put."
 }

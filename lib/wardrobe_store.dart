@@ -29,6 +29,13 @@ class WardrobeStore extends ChangeNotifier {
   Map<String, List<SavedOutfit>> saved = {};
   String? tagFilter;
 
+  /// All tags known to the app, managed explicitly via the "manage tags"
+  /// sheet — independent of which items currently carry them, so a tag
+  /// stays filterable/assignable even if no item happens to have it right
+  /// now (and doesn't vanish just because the last item wearing it was
+  /// deleted).
+  List<String> knownTags = [];
+
   /// `null` follows the system/device locale; otherwise an explicit locale
   /// code like `'cs'` or `'en'` picked in settings.
   String? localeCode;
@@ -100,6 +107,16 @@ class WardrobeStore extends ChangeNotifier {
     } catch (_) {}
 
     try {
+      final rawKnownTags = data['knownTags'] as List<dynamic>?;
+      knownTags = rawKnownTags == null
+          // Migrating from before `knownTags` existed: seed it from
+          // whatever tags are already in use, so they stay manageable
+          // instead of quietly disappearing from the tag list.
+          ? distinctTags(items)
+          : rawKnownTags.map((e) => e as String).toList();
+    } catch (_) {}
+
+    try {
       localeCode = data['localeCode'] as String?;
     } catch (_) {}
 
@@ -128,6 +145,7 @@ class WardrobeStore extends ChangeNotifier {
         'saved': saved.map(
           (key, value) => MapEntry(key, value.map((e) => e.toJson()).toList()),
         ),
+        'knownTags': knownTags,
         'localeCode': localeCode,
         'showDresses': showDresses,
         'showSkirts': showSkirts,
@@ -277,6 +295,17 @@ class WardrobeStore extends ChangeNotifier {
     _persist();
   }
 
+  /// Adds a brand-new known tag (a no-op if it already exists) — the only
+  /// place new tags get created; assigning a tag to an item can only pick
+  /// from this list, never coin a new one on the fly.
+  Future<void> addKnownTag(String rawTag) async {
+    final tag = rawTag.trim().toLowerCase();
+    if (tag.isEmpty || knownTags.contains(tag)) return;
+    knownTags = [...knownTags, tag];
+    notifyListeners();
+    await _persist();
+  }
+
   Future<void> renameTag(String oldTag, String rawNewTag) async {
     final newTag = rawNewTag.trim().toLowerCase();
     if (newTag.isEmpty || newTag == oldTag) return;
@@ -286,6 +315,14 @@ class WardrobeStore extends ChangeNotifier {
       if (!tags.contains(newTag)) tags.add(newTag);
       return i..tags = tags;
     }).toList();
+    // Merge into `newTag` if it's already a known tag, rather than ending
+    // up with two list entries for what's now the same word.
+    final mergedTags = <String>[];
+    for (final t in knownTags) {
+      final mapped = t == oldTag ? newTag : t;
+      if (!mergedTags.contains(mapped)) mergedTags.add(mapped);
+    }
+    knownTags = mergedTags;
     if (tagFilter == oldTag) tagFilter = newTag;
     notifyListeners();
     await _persist();
@@ -295,6 +332,7 @@ class WardrobeStore extends ChangeNotifier {
     items = items
         .map((i) => i..tags = i.tags.where((t) => t != tag).toList())
         .toList();
+    knownTags = knownTags.where((t) => t != tag).toList();
     if (tagFilter == tag) tagFilter = null;
     notifyListeners();
     await _persist();

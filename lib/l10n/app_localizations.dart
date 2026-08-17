@@ -146,12 +146,6 @@ abstract class AppLocalizations {
   /// **'přidat'**
   String get add;
 
-  /// No description provided for @close.
-  ///
-  /// In cs, this message translates to:
-  /// **'zavřít'**
-  String get close;
-
   /// No description provided for @actionCannotBeUndone.
   ///
   /// In cs, this message translates to:
@@ -404,18 +398,6 @@ abstract class AppLocalizations {
   /// **'Detail oblečení'**
   String get itemDetailTitle;
 
-  /// No description provided for @sectionItemTags.
-  ///
-  /// In cs, this message translates to:
-  /// **'tagy oblečení'**
-  String get sectionItemTags;
-
-  /// No description provided for @customTagHint.
-  ///
-  /// In cs, this message translates to:
-  /// **'vlastní tag'**
-  String get customTagHint;
-
   /// No description provided for @useInOutfit.
   ///
   /// In cs, this message translates to:
@@ -463,6 +445,12 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Spravovat tagy'**
   String get manageTagsTitle;
+
+  /// No description provided for @newTagHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'nový tag'**
+  String get newTagHint;
 
   /// No description provided for @noTagsYet.
   ///
@@ -589,42 +577,6 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Skryje kategorii sukní v šatníku a při přidávání oblečení. Sukně, které už máš v šatníku, zůstanou beze změny.'**
   String get showSkirtsHint;
-
-  /// No description provided for @tagWork.
-  ///
-  /// In cs, this message translates to:
-  /// **'práce'**
-  String get tagWork;
-
-  /// No description provided for @tagCasual.
-  ///
-  /// In cs, this message translates to:
-  /// **'volno'**
-  String get tagCasual;
-
-  /// No description provided for @tagSummer.
-  ///
-  /// In cs, this message translates to:
-  /// **'léto'**
-  String get tagSummer;
-
-  /// No description provided for @tagEvening.
-  ///
-  /// In cs, this message translates to:
-  /// **'večer'**
-  String get tagEvening;
-
-  /// No description provided for @tagWinter.
-  ///
-  /// In cs, this message translates to:
-  /// **'zima'**
-  String get tagWinter;
-
-  /// No description provided for @tagBasic.
-  ///
-  /// In cs, this message translates to:
-  /// **'basic'**
-  String get tagBasic;
 }
 
 class _AppLocalizationsDelegate

@@ -10,7 +10,6 @@
   "delete": "Smazat",
   "create": "Vytvořit",
   "add": "přidat",
-  "close": "zavřít",
   "actionCannotBeUndone": "Tuto akci nelze vrátit.",
   "noTags": "bez tagů",
   "rename": "Přejmenovat",
@@ -88,8 +87,6 @@
   "fromGallery": "Z galerie",
 
   "itemDetailTitle": "Detail oblečení",
-  "sectionItemTags": "tagy oblečení",
-  "customTagHint": "vlastní tag",
   "useInOutfit": "Použít v outfitu",
   "deleteItemTitle": "Smazat oblečení?",
   "deleteItemMessage": "Oblečení bude smazáno.",
@@ -100,6 +97,7 @@
   "needCollectionHint": "Nejdřív vytvoř kolekci v záložce Kolekce.",
 
   "manageTagsTitle": "Spravovat tagy",
+  "newTagHint": "nový tag",
   "noTagsYet": "Zatím žádné tagy.",
   "renameTagTitle": "Přejmenovat tag",
   "deleteTagTitle": "Smazat tag?",
@@ -160,12 +158,5 @@
   "showDressesLabel": "Zobrazovat šaty v šatníku",
   "showDressesHint": "Skryje kategorii šatů v šatníku a při přidávání oblečení. Šaty, které už máš v šatníku, zůstanou beze změny.",
   "showSkirtsLabel": "Zobrazovat sukně v šatníku",
-  "showSkirtsHint": "Skryje kategorii sukní v šatníku a při přidávání oblečení. Sukně, které už máš v šatníku, zůstanou beze změny.",
-
-  "tagWork": "práce",
-  "tagCasual": "volno",
-  "tagSummer": "léto",
-  "tagEvening": "večer",
-  "tagWinter": "zima",
-  "tagBasic": "basic"
+  "showSkirtsHint": "Skryje kategorii sukní v šatníku a při přidávání oblečení. Sukně, které už máš v šatníku, zůstanou beze změny."
 }

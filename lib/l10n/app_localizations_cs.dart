@@ -33,9 +33,6 @@ class AppLocalizationsCs extends AppLocalizations {
   String get add => 'přidat';
 
   @override
-  String get close => 'zavřít';
-
-  @override
   String get actionCannotBeUndone => 'Tuto akci nelze vrátit.';
 
   @override
@@ -194,12 +191,6 @@ class AppLocalizationsCs extends AppLocalizations {
   String get itemDetailTitle => 'Detail oblečení';
 
   @override
-  String get sectionItemTags => 'tagy oblečení';
-
-  @override
-  String get customTagHint => 'vlastní tag';
-
-  @override
   String get useInOutfit => 'Použít v outfitu';
 
   @override
@@ -222,6 +213,9 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get manageTagsTitle => 'Spravovat tagy';
+
+  @override
+  String get newTagHint => 'nový tag';
 
   @override
   String get noTagsYet => 'Zatím žádné tagy.';
@@ -301,22 +295,4 @@ class AppLocalizationsCs extends AppLocalizations {
   @override
   String get showSkirtsHint =>
       'Skryje kategorii sukní v šatníku a při přidávání oblečení. Sukně, které už máš v šatníku, zůstanou beze změny.';
-
-  @override
-  String get tagWork => 'práce';
-
-  @override
-  String get tagCasual => 'volno';
-
-  @override
-  String get tagSummer => 'léto';
-
-  @override
-  String get tagEvening => 'večer';
-
-  @override
-  String get tagWinter => 'zima';
-
-  @override
-  String get tagBasic => 'basic';
 }

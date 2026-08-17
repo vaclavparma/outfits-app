@@ -21,22 +21,6 @@ const List<ClothingCategory> kCategories = [
   ClothingCategory('boty'),
 ];
 
-/// Localized quick-tag suggestions offered when adding/tagging an item.
-/// These are plain suggested words, not a fixed taxonomy — tags themselves
-/// are freeform strings, so switching locale only changes which words get
-/// suggested, not any tag already stored on an item.
-List<String> kQuickTags(BuildContext context) {
-  final l10n = AppLocalizations.of(context)!;
-  return [
-    l10n.tagWork,
-    l10n.tagCasual,
-    l10n.tagSummer,
-    l10n.tagEvening,
-    l10n.tagWinter,
-    l10n.tagBasic,
-  ];
-}
-
 String categoryLabel(BuildContext context, String key) {
   final l10n = AppLocalizations.of(context)!;
   return switch (key) {

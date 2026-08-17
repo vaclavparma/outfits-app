@@ -17,12 +17,13 @@ const Map<WardrobeZone, String> _zoneDefaultCategory = {
 /// [title] is resolved inside the sheet's own builder (via [sheetContext]),
 /// not by the caller, so it stays correct if the locale changes while the
 /// sheet is open (e.g. switching language from the settings sheet itself).
+/// Sheets close via the standard swipe-down/tap-outside gestures — there's
+/// no explicit "close" link in the header.
 Future<T?> _showSheet<T>(
   BuildContext context,
   String Function(BuildContext) title,
-  Widget content, {
-  bool showCloseLink = true,
-}) {
+  Widget content,
+) {
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
@@ -54,31 +55,7 @@ Future<T?> _showSheet<T>(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          title(sheetContext),
-                          style: _sheetTitleStyle,
-                        ),
-                      ),
-                      if (showCloseLink)
-                        GestureDetector(
-                          onTap: () => Navigator.of(sheetContext).pop(),
-                          child: Text(
-                            AppLocalizations.of(sheetContext)!.close,
-                            style: AppText.mono(
-                              size: 10,
-                              letterSpacing: 1,
-                              color: AppColors.mutedTag,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
+                  Text(title(sheetContext), style: _sheetTitleStyle),
                   const SizedBox(height: 16),
                   content,
                 ],
@@ -143,7 +120,7 @@ class _PickGrid extends StatelessWidget {
     final fullList = store.zoneList(zone);
     final current = store.at(fullList, zone);
 
-    final zoneTags = distinctTags(fullList);
+    final allTags = store.knownTags;
     final filtered = store.tagFilter == null
         ? fullList
         : fullList.where((it) => it.tags.contains(store.tagFilter)).toList();
@@ -152,14 +129,14 @@ class _PickGrid extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (zoneTags.isNotEmpty)
+        if (allTags.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 14),
             child: Wrap(
               spacing: 7,
               runSpacing: 7,
               children: [
-                for (final t in zoneTags)
+                for (final t in allTags)
                   SelectChip(
                     label: t,
                     active: store.tagFilter == t,
@@ -213,7 +190,6 @@ void openLayerSheet(BuildContext context) {
     context,
     (ctx) => AppLocalizations.of(ctx)!.addLayerTitle,
     const _LayerChoices(),
-    showCloseLink: false,
   );
 }
 
@@ -240,7 +216,7 @@ class _LayerChoices extends StatelessWidget {
         style: AppText.sans(size: 12, color: AppColors.mutedTag),
       );
     }
-    final availableTags = distinctTags(available);
+    final availableTags = store.knownTags;
     final choices = store.tagFilter == null
         ? available
         : available.where((it) => it.tags.contains(store.tagFilter)).toList();
@@ -341,13 +317,18 @@ class _AddItemForm extends StatefulWidget {
 
 class _AddItemFormState extends State<_AddItemForm> {
   late String _cat;
-  final List<String> _tags = [];
+  late final List<String> _tags;
   bool _busy = false;
 
   @override
   void initState() {
     super.initState();
     _cat = widget.presetCategory ?? 'boty';
+    // Start with whatever tag filter is active in the wardrobe grid already
+    // checked, so adding an item while filtered to e.g. "zima" doesn't
+    // require re-picking that same tag by hand.
+    final activeFilter = context.read<WardrobeStore>().tagFilter;
+    _tags = [if (activeFilter != null) activeFilter];
   }
 
   Future<void> _pick(ImageSource source) async {
@@ -383,7 +364,8 @@ class _AddItemFormState extends State<_AddItemForm> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final categories = context.watch<WardrobeStore>().visibleCategories;
+    final store = context.watch<WardrobeStore>();
+    final categories = store.visibleCategories;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -403,23 +385,25 @@ class _AddItemFormState extends State<_AddItemForm> {
               ),
           ],
         ),
-        const SizedBox(height: 18),
-        Text(l10n.sectionTagsOptional, style: _sectionLabelStyle),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 7,
-          runSpacing: 7,
-          children: [
-            for (final t in kQuickTags(context))
-              SelectChip(
-                label: t,
-                active: _tags.contains(t),
-                onTap: () => setState(
-                  () => _tags.contains(t) ? _tags.remove(t) : _tags.add(t),
+        if (store.knownTags.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          Text(l10n.sectionTagsOptional, style: _sectionLabelStyle),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: [
+              for (final t in store.knownTags)
+                SelectChip(
+                  label: t,
+                  active: _tags.contains(t),
+                  onTap: () => setState(
+                    () => _tags.contains(t) ? _tags.remove(t) : _tags.add(t),
+                  ),
                 ),
-              ),
-          ],
-        ),
+            ],
+          ),
+        ],
         const SizedBox(height: 18),
         Row(
           children: [
@@ -486,33 +470,17 @@ void openItemSheet(BuildContext context, ClothingItem item) {
   );
 }
 
-class _ItemDetail extends StatefulWidget {
+class _ItemDetail extends StatelessWidget {
   final String itemId;
   const _ItemDetail({required this.itemId});
-
-  @override
-  State<_ItemDetail> createState() => _ItemDetailState();
-}
-
-class _ItemDetailState extends State<_ItemDetail> {
-  final _tagController = TextEditingController();
-
-  @override
-  void dispose() {
-    _tagController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
     final l10n = AppLocalizations.of(context)!;
-    final cur = store.itemById(widget.itemId);
+    final cur = store.itemById(itemId);
     if (cur == null) return const SizedBox.shrink();
     final tags = cur.tags;
-    final suggest = kQuickTags(
-      context,
-    ).where((t) => !tags.contains(t)).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -537,128 +505,21 @@ class _ItemDetailState extends State<_ItemDetail> {
           ],
         ),
         const SizedBox(height: 18),
-        Text(l10n.sectionItemTags, style: _sectionLabelStyle),
-        const SizedBox(height: 9),
         Wrap(
           spacing: 7,
           runSpacing: 7,
           children: [
-            for (final t in tags)
-              Container(
-                height: 30,
-                padding: const EdgeInsets.only(left: 12, right: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.ink,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(t, style: AppText.mono(size: 11, color: Colors.white)),
-                    const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: () => store.setTags(
-                        cur.id,
-                        tags.where((x) => x != t).toList(),
-                      ),
-                      child: Container(
-                        width: 18,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: const Text(
-                          '×',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.white,
-                            height: 1,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+            for (final t in store.knownTags)
+              SelectChip(
+                label: t,
+                active: tags.contains(t),
+                onTap: () => store.setTags(
+                  cur.id,
+                  tags.contains(t)
+                      ? tags.where((x) => x != t).toList()
+                      : [...tags, t],
                 ),
               ),
-            if (tags.isEmpty)
-              Text(
-                l10n.noTags,
-                style: AppText.mono(
-                  size: 11,
-                  color: AppColors.mutedSoft,
-                  height: 1.6,
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 9),
-        Wrap(
-          spacing: 7,
-          runSpacing: 7,
-          children: [
-            for (final t in suggest)
-              GestureDetector(
-                onTap: () => store.setTags(cur.id, [...tags, t]),
-                child: Container(
-                  height: 30,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: AppColors.dashedBorder),
-                  ),
-                  child: Center(
-                    widthFactor: 1,
-                    heightFactor: 1,
-                    child: Text(
-                      '+ $t',
-                      style: AppText.mono(size: 11, color: AppColors.muted),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 9),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _tagController,
-                decoration: InputDecoration(
-                  hintText: l10n.customTagHint,
-                  hintStyle: AppText.sans(size: 13, color: AppColors.mutedTag),
-                  filled: true,
-                  fillColor: AppColors.background,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: AppColors.cardBorder),
-                  ),
-                ),
-                style: AppText.sans(size: 13, color: AppColors.ink),
-              ),
-            ),
-            const SizedBox(width: 8),
-            RoundIconButton(
-              size: 42,
-              onTap: () {
-                final t = _tagController.text.trim().toLowerCase();
-                if (t.isEmpty || tags.contains(t)) return;
-                store.setTags(cur.id, [...tags, t]);
-                _tagController.clear();
-              },
-              child: const Text(
-                '+',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w300,
-                  color: Colors.white,
-                  height: 1,
-                ),
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 18),
@@ -840,56 +701,138 @@ void openManageTagsSheet(BuildContext context) {
   );
 }
 
-class _ManageTagsList extends StatelessWidget {
+class _ManageTagsList extends StatefulWidget {
   const _ManageTagsList();
+
+  @override
+  State<_ManageTagsList> createState() => _ManageTagsListState();
+}
+
+class _ManageTagsListState extends State<_ManageTagsList> {
+  final _newTagController = TextEditingController();
+
+  @override
+  void dispose() {
+    _newTagController.dispose();
+    super.dispose();
+  }
+
+  void _addTag(WardrobeStore store) {
+    final tag = _newTagController.text.trim().toLowerCase();
+    if (tag.isEmpty) return;
+    store.addKnownTag(tag);
+    _newTagController.clear();
+  }
 
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
-    final allTags = distinctTags(store.items);
-    if (allTags.isEmpty) {
-      return Text(
-        AppLocalizations.of(context)!.noTagsYet,
-        style: AppText.sans(size: 12.5, color: AppColors.mutedTag, height: 1.4),
-      );
-    }
+    final l10n = AppLocalizations.of(context)!;
+    final allTags = store.knownTags;
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (final tag in allTags)
+        // This is the only place a brand-new tag gets created — assigning
+        // tags to an item can only pick from what's already here.
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _newTagController,
+                decoration: InputDecoration(
+                  hintText: l10n.newTagHint,
+                  hintStyle: AppText.sans(size: 13, color: AppColors.mutedTag),
+                  filled: true,
+                  fillColor: AppColors.background,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(color: AppColors.cardBorder),
+                  ),
+                ),
+                style: AppText.sans(size: 13, color: AppColors.ink),
+                onSubmitted: (_) => _addTag(store),
+              ),
+            ),
+            const SizedBox(width: 8),
+            RoundIconButton(
+              size: 42,
+              onTap: () => _addTag(store),
+              child: const Text(
+                '+',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w300,
+                  color: Colors.white,
+                  height: 1,
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (allTags.isEmpty)
           Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.rowBorder),
-                borderRadius: BorderRadius.circular(14),
+            padding: const EdgeInsets.only(top: 14),
+            child: Text(
+              l10n.noTagsYet,
+              style: AppText.sans(
+                size: 12.5,
+                color: AppColors.mutedTag,
+                height: 1.4,
               ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      tag,
-                      style: AppText.sans(size: 13, color: AppColors.ink),
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.only(top: 14),
+            child: Column(
+              children: [
+                for (final tag in allTags)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.rowBorder),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              tag,
+                              style: AppText.sans(
+                                size: 13,
+                                color: AppColors.ink,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.edit_outlined,
+                              size: 17,
+                              color: AppColors.mutedSoft,
+                            ),
+                            onPressed: () => _renameTag(context, store, tag),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              size: 18,
+                              color: AppColors.mutedSoft,
+                            ),
+                            onPressed: () =>
+                                _confirmDeleteTag(context, store, tag),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.edit_outlined,
-                      size: 17,
-                      color: AppColors.mutedSoft,
-                    ),
-                    onPressed: () => _renameTag(context, store, tag),
-                  ),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.delete_outline,
-                      size: 18,
-                      color: AppColors.mutedSoft,
-                    ),
-                    onPressed: () => _confirmDeleteTag(context, store, tag),
-                  ),
-                ],
-              ),
+              ],
             ),
           ),
       ],
@@ -949,7 +892,6 @@ void openSettingsSheet(BuildContext context) {
     context,
     (ctx) => AppLocalizations.of(ctx)!.settingsTitle,
     const _SettingsContent(),
-    showCloseLink: false,
   );
 }
 

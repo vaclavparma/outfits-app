@@ -33,9 +33,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get add => 'add';
 
   @override
-  String get close => 'close';
-
-  @override
   String get actionCannotBeUndone => 'This action can\'t be undone.';
 
   @override
@@ -191,12 +188,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get itemDetailTitle => 'Clothing detail';
 
   @override
-  String get sectionItemTags => 'item tags';
-
-  @override
-  String get customTagHint => 'custom tag';
-
-  @override
   String get useInOutfit => 'Use in outfit';
 
   @override
@@ -220,6 +211,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get manageTagsTitle => 'Manage tags';
+
+  @override
+  String get newTagHint => 'new tag';
 
   @override
   String get noTagsYet => 'No tags yet.';
@@ -299,22 +293,4 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get showSkirtsHint =>
       'Hides the skirts category in the wardrobe and when adding clothes. Skirts already in your wardrobe stay put.';
-
-  @override
-  String get tagWork => 'work';
-
-  @override
-  String get tagCasual => 'casual';
-
-  @override
-  String get tagSummer => 'summer';
-
-  @override
-  String get tagEvening => 'evening';
-
-  @override
-  String get tagWinter => 'winter';
-
-  @override
-  String get tagBasic => 'basic';
 }
