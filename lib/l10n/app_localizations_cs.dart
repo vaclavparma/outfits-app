@@ -42,21 +42,6 @@ class AppLocalizationsCs extends AppLocalizations {
   String get rename => 'Přejmenovat';
 
   @override
-  String get slotTop => 'top';
-
-  @override
-  String get slotDressFull => 'šaty · celé tělo';
-
-  @override
-  String get slotBottom => 'spodek';
-
-  @override
-  String get slotSkirt => 'sukně';
-
-  @override
-  String get slotShoes => 'boty';
-
-  @override
   String get addTopPlaceholder => 'Přidej top';
 
   @override

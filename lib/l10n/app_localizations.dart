@@ -164,36 +164,6 @@ abstract class AppLocalizations {
   /// **'Přejmenovat'**
   String get rename;
 
-  /// No description provided for @slotTop.
-  ///
-  /// In cs, this message translates to:
-  /// **'top'**
-  String get slotTop;
-
-  /// No description provided for @slotDressFull.
-  ///
-  /// In cs, this message translates to:
-  /// **'šaty · celé tělo'**
-  String get slotDressFull;
-
-  /// No description provided for @slotBottom.
-  ///
-  /// In cs, this message translates to:
-  /// **'spodek'**
-  String get slotBottom;
-
-  /// No description provided for @slotSkirt.
-  ///
-  /// In cs, this message translates to:
-  /// **'sukně'**
-  String get slotSkirt;
-
-  /// No description provided for @slotShoes.
-  ///
-  /// In cs, this message translates to:
-  /// **'boty'**
-  String get slotShoes;
-
   /// No description provided for @addTopPlaceholder.
   ///
   /// In cs, this message translates to:

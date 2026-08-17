@@ -42,21 +42,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rename => 'Rename';
 
   @override
-  String get slotTop => 'top';
-
-  @override
-  String get slotDressFull => 'dress · full outfit';
-
-  @override
-  String get slotBottom => 'bottom';
-
-  @override
-  String get slotSkirt => 'skirt';
-
-  @override
-  String get slotShoes => 'shoes';
-
-  @override
   String get addTopPlaceholder => 'Add a top';
 
   @override

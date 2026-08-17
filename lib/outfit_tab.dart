@@ -17,12 +17,7 @@ class OutfitTab extends StatelessWidget {
   final void Function({int? replaceIndex}) onOpenLayers;
   final VoidCallback onOpenSave;
 
-  const OutfitTab({
-    super.key,
-    required this.onPick,
-    required this.onOpenLayers,
-    required this.onOpenSave,
-  });
+  const OutfitTab({super.key, required this.onPick, required this.onOpenLayers, required this.onOpenSave});
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +30,7 @@ class OutfitTab extends StatelessWidget {
         final isDress = top != null && top.cat == 'saty';
         // With one or more layers next to it, the top card gives up a bit of
         // its own size so the layer cards beside it have room to breathe.
-        final topScale = store.layers.isEmpty ? 1.0 : 0.86;
+        final topScale = store.layers.isEmpty ? 1.0 : 0.74;
         final topCardWidth = (isDress ? 190.0 : 176.0) * topScale;
         final topCardHeight = (isDress ? 310.0 : 172.0) * topScale;
         final topCard = _withPinToggle(
@@ -45,14 +40,11 @@ class OutfitTab extends StatelessWidget {
             width: topCardWidth,
             height: topCardHeight,
             rotationDeg: -1.6,
-            slotLabel: isDress ? l10n.slotDressFull : l10n.slotTop,
             name: top == null ? l10n.addTopPlaceholder : null,
             imagePath: top?.imagePath,
             onTap: () => onPick(WardrobeZone.top),
             onSwipe: (dir) => store.step(WardrobeZone.top, dir),
-            shadow: const [
-              BoxShadow(color: Color(0x0D000000), blurRadius: 3, offset: Offset(0, 1)),
-            ],
+            shadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 3, offset: Offset(0, 1))],
           ),
         );
         // No layers yet: the "+" tile is just an affordance, not a real
@@ -78,10 +70,7 @@ class OutfitTab extends StatelessWidget {
                     offset: const Offset(-22, 0),
                     child: Padding(
                       padding: const EdgeInsets.only(top: 18),
-                      child: _LayersCluster(
-                        layers: store.layers,
-                        onOpenLayers: onOpenLayers,
-                      ),
+                      child: _LayersCluster(layers: store.layers, onOpenLayers: onOpenLayers),
                     ),
                   ),
                 ],
@@ -96,10 +85,7 @@ class OutfitTab extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: topWithLayers,
-                      ),
+                      Padding(padding: const EdgeInsets.only(right: 8), child: topWithLayers),
                       if (!isDress)
                         Transform.translate(
                           offset: const Offset(14, -12),
@@ -107,26 +93,14 @@ class OutfitTab extends StatelessWidget {
                             bot,
                             store,
                             GarmentCard(
-                              width: store.layers.isEmpty ? 190 : 178,
-                              height: store.layers.isEmpty ? 208 : 196,
+                              width: store.layers.isEmpty ? 190 : 158,
+                              height: store.layers.isEmpty ? 208 : 174,
                               rotationDeg: 1.4,
-                              slotLabel: bot != null && bot.cat == 'sukne'
-                                  ? l10n.slotSkirt
-                                  : l10n.slotBottom,
-                              name: bot == null
-                                  ? l10n.addBottomPlaceholder
-                                  : null,
+                              name: bot == null ? l10n.addBottomPlaceholder : null,
                               imagePath: bot?.imagePath,
                               onTap: () => onPick(WardrobeZone.bottom),
-                              onSwipe: (dir) =>
-                                  store.step(WardrobeZone.bottom, dir),
-                              shadow: const [
-                                BoxShadow(
-                                  color: Color(0x0D000000),
-                                  blurRadius: 3,
-                                  offset: Offset(0, 1),
-                                ),
-                              ],
+                              onSwipe: (dir) => store.step(WardrobeZone.bottom, dir),
+                              shadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 3, offset: Offset(0, 1))],
                             ),
                           ),
                         ),
@@ -139,19 +113,11 @@ class OutfitTab extends StatelessWidget {
                             width: 158,
                             height: 110,
                             rotationDeg: -2.2,
-                            slotLabel: l10n.slotShoes,
                             name: shoe == null ? l10n.addShoesPlaceholder : null,
                             imagePath: shoe?.imagePath,
                             onTap: () => onPick(WardrobeZone.shoes),
-                            onSwipe: (dir) =>
-                                store.step(WardrobeZone.shoes, dir),
-                            shadow: const [
-                              BoxShadow(
-                                color: Color(0x0D000000),
-                                blurRadius: 3,
-                                offset: Offset(0, 1),
-                              ),
-                            ],
+                            onSwipe: (dir) => store.step(WardrobeZone.shoes, dir),
+                            shadow: const [BoxShadow(color: Color(0x0D000000), blurRadius: 3, offset: Offset(0, 1))],
                           ),
                         ),
                       ),
@@ -174,10 +140,7 @@ class OutfitTab extends StatelessWidget {
                         border: Border.all(color: AppColors.cardBorder),
                       ),
                       alignment: Alignment.center,
-                      child: Text(
-                        l10n.shuffleButton,
-                        style: AppText.sans(size: 12.5, color: AppColors.label),
-                      ),
+                      child: Text(l10n.shuffleButton, style: AppText.sans(size: 12.5, color: AppColors.label)),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -186,18 +149,11 @@ class OutfitTab extends StatelessWidget {
                       onTap: onOpenSave,
                       child: Container(
                         height: 44,
-                        decoration: BoxDecoration(
-                          color: AppColors.accent,
-                          borderRadius: BorderRadius.circular(22),
-                        ),
+                        decoration: BoxDecoration(color: AppColors.accent, borderRadius: BorderRadius.circular(22)),
                         alignment: Alignment.center,
                         child: Text(
                           l10n.saveOutfitButton,
-                          style: AppText.sans(
-                            size: 13,
-                            weight: FontWeight.w500,
-                            color: Colors.white,
-                          ),
+                          style: AppText.sans(size: 13, weight: FontWeight.w500, color: Colors.white),
                         ),
                       ),
                     ),
@@ -236,12 +192,7 @@ class _LayersCluster extends StatelessWidget {
         frontHeight: 136,
         // Same rotation as the "front" slot in the 2-layer fan below, so
         // this card doesn't visibly shift when a second layer is added.
-        front: _LayerCard(
-          itemId: layers[0],
-          index: 0,
-          onOpenLayers: onOpenLayers,
-          rotationDeg: 1.5,
-        ),
+        front: _LayerCard(itemId: layers[0], index: 0, onOpenLayers: onOpenLayers, rotationDeg: 1.5),
         backWidth: 74,
         backHeight: 136,
         back: _AddLayerTile(onTap: () => onOpenLayers()),
@@ -255,30 +206,20 @@ class _LayersCluster extends StatelessWidget {
     // layer renders on top, like an outer garment worn over the first — kept
     // to a modest overlap so the first layer stays clearly visible too.
     return SizedBox(
-      width: 178,
-      height: 150,
+      width: 196,
+      height: 154,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Positioned(
             left: 0,
             top: 0,
-            child: _LayerCard(
-              itemId: layers[0],
-              index: 0,
-              onOpenLayers: onOpenLayers,
-              rotationDeg: 1.5,
-            ),
+            child: _LayerCard(itemId: layers[0], index: 0, onOpenLayers: onOpenLayers, rotationDeg: 1.5),
           ),
           Positioned(
-            left: 68,
-            top: 14,
-            child: _LayerCard(
-              itemId: layers[1],
-              index: 1,
-              onOpenLayers: onOpenLayers,
-              rotationDeg: 5,
-            ),
+            left: 86,
+            top: -12,
+            child: _LayerCard(itemId: layers[1], index: 1, onOpenLayers: onOpenLayers, rotationDeg: 5),
           ),
         ],
       ),
@@ -306,11 +247,7 @@ class _AddLayerTile extends StatelessWidget {
           alignment: Alignment.center,
           child: Text(
             '+',
-            style: AppText.sans(
-              size: 22,
-              weight: FontWeight.w300,
-              color: AppColors.mutedSoft,
-            ),
+            style: AppText.sans(size: 22, weight: FontWeight.w300, color: AppColors.mutedSoft),
           ),
         ),
       ),
@@ -324,12 +261,7 @@ class _LayerCard extends StatelessWidget {
   final void Function({int? replaceIndex}) onOpenLayers;
   final double rotationDeg;
 
-  const _LayerCard({
-    required this.itemId,
-    required this.index,
-    required this.onOpenLayers,
-    this.rotationDeg = 2.4,
-  });
+  const _LayerCard({required this.itemId, required this.index, required this.onOpenLayers, this.rotationDeg = 2.4});
 
   @override
   Widget build(BuildContext context) {
@@ -353,20 +285,14 @@ class _LayerCard extends StatelessWidget {
             background: Colors.white,
             borderColor: AppColors.removeButtonBorder,
             onTap: () => store.removeLayer(index),
-            child: const Text(
-              '×',
-              style: TextStyle(fontSize: 15, color: AppColors.muted, height: 1),
-            ),
+            child: const Text('×', style: TextStyle(fontSize: 15, color: AppColors.muted, height: 1)),
           ),
         ),
         if (it != null)
           Positioned(
             top: -8,
             left: -8,
-            child: _PinButton(
-              pinned: it.pinned,
-              onTap: () => store.togglePinned(it.id),
-            ),
+            child: _PinButton(pinned: it.pinned, onTap: () => store.togglePinned(it.id)),
           ),
       ],
     );
@@ -386,10 +312,7 @@ Widget _withPinToggle(ClothingItem? item, WardrobeStore store, Widget card) {
       Positioned(
         top: -8,
         left: -8,
-        child: _PinButton(
-          pinned: item.pinned,
-          onTap: () => store.togglePinned(item.id),
-        ),
+        child: _PinButton(pinned: item.pinned, onTap: () => store.togglePinned(item.id)),
       ),
     ],
   );
