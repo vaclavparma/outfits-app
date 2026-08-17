@@ -26,7 +26,7 @@ class WardrobeTab extends StatelessWidget {
     // Every category is always shown (even empty ones) so there's always a
     // + tile to add the first item of that kind — no separate empty state
     // or floating add button needed.
-    final sections = kCategories
+    final sections = store.visibleCategories
         .map((c) => (c, store.byCat(c.key).where(visible).toList()))
         .toList();
 

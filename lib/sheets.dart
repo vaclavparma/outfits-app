@@ -14,7 +14,15 @@ const Map<WardrobeZone, String> _zoneDefaultCategory = {
   WardrobeZone.shoes: 'boty',
 };
 
-Future<T?> _showSheet<T>(BuildContext context, String title, Widget content) {
+/// [title] is resolved inside the sheet's own builder (via [sheetContext]),
+/// not by the caller, so it stays correct if the locale changes while the
+/// sheet is open (e.g. switching language from the settings sheet itself).
+Future<T?> _showSheet<T>(
+  BuildContext context,
+  String Function(BuildContext) title,
+  Widget content, {
+  bool showCloseLink = true,
+}) {
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
@@ -44,18 +52,21 @@ Future<T?> _showSheet<T>(BuildContext context, String title, Widget content) {
                   textBaseline: TextBaseline.alphabetic,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(child: Text(title, style: _sheetTitleStyle)),
-                    GestureDetector(
-                      onTap: () => Navigator.of(sheetContext).pop(),
-                      child: Text(
-                        AppLocalizations.of(sheetContext)!.close,
-                        style: AppText.mono(
-                          size: 10,
-                          letterSpacing: 1,
-                          color: AppColors.mutedTag,
+                    Expanded(
+                      child: Text(title(sheetContext), style: _sheetTitleStyle),
+                    ),
+                    if (showCloseLink)
+                      GestureDetector(
+                        onTap: () => Navigator.of(sheetContext).pop(),
+                        child: Text(
+                          AppLocalizations.of(sheetContext)!.close,
+                          style: AppText.mono(
+                            size: 10,
+                            letterSpacing: 1,
+                            color: AppColors.mutedTag,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -85,17 +96,16 @@ final TextStyle _sectionLabelStyle = AppText.mono(
 );
 
 void openPickSheet(BuildContext context, WardrobeZone zone) {
-  final l10n = AppLocalizations.of(context)!;
-  final titles = {
-    WardrobeZone.top: l10n.pickTopTitle,
-    WardrobeZone.bottom: l10n.pickBottomTitle,
-    WardrobeZone.shoes: l10n.pickShoesTitle,
-  };
-  _showSheet(
-    context,
-    titles[zone]!,
-    _PickGrid(zone: zone, hostContext: context),
-  );
+  String title(BuildContext ctx) {
+    final l10n = AppLocalizations.of(ctx)!;
+    return switch (zone) {
+      WardrobeZone.top => l10n.pickTopTitle,
+      WardrobeZone.bottom => l10n.pickBottomTitle,
+      WardrobeZone.shoes => l10n.pickShoesTitle,
+    };
+  }
+
+  _showSheet(context, title, _PickGrid(zone: zone, hostContext: context));
 }
 
 class _PickGrid extends StatelessWidget {
@@ -188,7 +198,11 @@ class _PickGrid extends StatelessWidget {
 }
 
 void openLayerSheet(BuildContext context) {
-  _showSheet(context, AppLocalizations.of(context)!.addLayerTitle, const _LayerChoices());
+  _showSheet(
+    context,
+    (ctx) => AppLocalizations.of(ctx)!.addLayerTitle,
+    const _LayerChoices(),
+  );
 }
 
 class _LayerChoices extends StatelessWidget {
@@ -271,7 +285,7 @@ void openAddItemSheet(
 }) {
   _showSheet(
     context,
-    AppLocalizations.of(context)!.addItemTitle,
+    (ctx) => AppLocalizations.of(ctx)!.addItemTitle,
     _AddItemForm(presetCategory: presetCategory, onAdded: onAdded),
   );
 }
@@ -330,6 +344,7 @@ class _AddItemFormState extends State<_AddItemForm> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final categories = context.watch<WardrobeStore>().visibleCategories;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -339,7 +354,7 @@ class _AddItemFormState extends State<_AddItemForm> {
           spacing: 7,
           runSpacing: 7,
           children: [
-            for (final c in kCategories)
+            for (final c in categories)
               SelectChip(
                 label: categoryLabel(context, c.key),
                 active: _cat == c.key,
@@ -427,7 +442,7 @@ class _AddItemFormState extends State<_AddItemForm> {
 void openItemSheet(BuildContext context, ClothingItem item) {
   _showSheet(
     context,
-    AppLocalizations.of(context)!.itemDetailTitle,
+    (ctx) => AppLocalizations.of(ctx)!.itemDetailTitle,
     _ItemDetail(itemId: item.id),
   );
 }
@@ -661,7 +676,7 @@ class _ItemDetailState extends State<_ItemDetail> {
 void openSaveOutfitSheet(BuildContext context) {
   _showSheet(
     context,
-    AppLocalizations.of(context)!.saveOutfitButton,
+    (ctx) => AppLocalizations.of(ctx)!.saveOutfitButton,
     const _SaveOutfitForm(),
   );
 }
@@ -781,7 +796,7 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
 void openManageTagsSheet(BuildContext context) {
   _showSheet(
     context,
-    AppLocalizations.of(context)!.manageTagsTitle,
+    (ctx) => AppLocalizations.of(ctx)!.manageTagsTitle,
     const _ManageTagsList(),
   );
 }
@@ -888,4 +903,150 @@ Future<void> _confirmDeleteTag(
     confirmLabel: l10n.delete,
   );
   if (confirmed) store.deleteTag(tag);
+}
+
+void openSettingsSheet(BuildContext context) {
+  _showSheet(
+    context,
+    (ctx) => AppLocalizations.of(ctx)!.settingsTitle,
+    const _SettingsContent(),
+    showCloseLink: false,
+  );
+}
+
+class _SettingsContent extends StatelessWidget {
+  const _SettingsContent();
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.sectionLanguage, style: _sectionLabelStyle),
+        const SizedBox(height: 8),
+        _SettingsCard(
+          child: Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: [
+              SelectChip(
+                label: l10n.languageSystemOption,
+                active: store.localeCode == null,
+                mono: false,
+                height: 34,
+                onTap: () => store.setLocale(null),
+              ),
+              // Each language's own name, not translated — a language
+              // picker conventionally shows every option in its own
+              // language so it stays legible no matter which one is active.
+              SelectChip(
+                label: 'Čeština',
+                active: store.localeCode == 'cs',
+                mono: false,
+                height: 34,
+                onTap: () => store.setLocale('cs'),
+              ),
+              SelectChip(
+                label: 'English',
+                active: store.localeCode == 'en',
+                mono: false,
+                height: 34,
+                onTap: () => store.setLocale('en'),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
+        _SettingsCard(
+          child: _ToggleRow(
+            label: l10n.showDressesLabel,
+            hint: l10n.showDressesHint,
+            value: store.showDresses,
+            onChanged: store.setShowDresses,
+          ),
+        ),
+        const SizedBox(height: 12),
+        _SettingsCard(
+          child: _ToggleRow(
+            label: l10n.showSkirtsLabel,
+            hint: l10n.showSkirtsHint,
+            value: store.showSkirts,
+            onChanged: store.setShowSkirts,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Shared bordered-card chrome for a settings section — used for the
+/// language picker and every on/off row, so they all read as one family of
+/// controls instead of the language picker looking like a bare label.
+class _SettingsCard extends StatelessWidget {
+  final Widget child;
+  const _SettingsCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.rowBorder),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: child,
+    );
+  }
+}
+
+/// A settings on/off row: label + explanatory hint on the left, switch on
+/// the right.
+class _ToggleRow extends StatelessWidget {
+  final String label;
+  final String hint;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _ToggleRow({
+    required this.label,
+    required this.hint,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: AppText.sans(size: 13, color: AppColors.ink)),
+              const SizedBox(height: 4),
+              Text(
+                hint,
+                style: AppText.sans(
+                  size: 11.5,
+                  color: AppColors.mutedTag,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        Switch.adaptive(
+          value: value,
+          activeThumbColor: AppColors.accent,
+          onChanged: onChanged,
+        ),
+      ],
+    );
+  }
 }

@@ -29,6 +29,25 @@ class WardrobeStore extends ChangeNotifier {
   Map<String, List<SavedOutfit>> saved = {};
   String? tagFilter;
 
+  /// `null` follows the system/device locale; otherwise an explicit locale
+  /// code like `'cs'` or `'en'` picked in settings.
+  String? localeCode;
+
+  /// Whether the "dresses" category shows up in the wardrobe and when
+  /// adding clothes. Turning it off doesn't apply retroactively — dresses
+  /// already in the wardrobe stay put and still work in the outfit builder.
+  bool showDresses = true;
+
+  /// Same as [showDresses], for the "skirts" category.
+  bool showSkirts = true;
+
+  /// [kCategories], minus any category turned off in settings.
+  List<ClothingCategory> get visibleCategories => kCategories.where((c) {
+    if (c.key == 'saty') return showDresses;
+    if (c.key == 'sukne') return showSkirts;
+    return true;
+  }).toList();
+
   String _toast = '';
   Timer? _toastTimer;
   String get toast => _toast;
@@ -80,6 +99,18 @@ class WardrobeStore extends ChangeNotifier {
       saved = parsedSaved;
     } catch (_) {}
 
+    try {
+      localeCode = data['localeCode'] as String?;
+    } catch (_) {}
+
+    try {
+      showDresses = data['showDresses'] as bool? ?? true;
+    } catch (_) {}
+
+    try {
+      showSkirts = data['showSkirts'] as bool? ?? true;
+    } catch (_) {}
+
     notifyListeners();
   }
 
@@ -97,6 +128,9 @@ class WardrobeStore extends ChangeNotifier {
         'saved': saved.map(
           (key, value) => MapEntry(key, value.map((e) => e.toJson()).toList()),
         ),
+        'localeCode': localeCode,
+        'showDresses': showDresses,
+        'showSkirts': showSkirts,
       };
       // Write to a temp file and rename over the real one, so a crash or
       // kill mid-write can never leave a half-written/corrupt state file.
@@ -403,6 +437,24 @@ class WardrobeStore extends ChangeNotifier {
   void toggleTagFilter(String tag) {
     tagFilter = tagFilter == tag ? null : tag;
     notifyListeners();
+  }
+
+  void setLocale(String? code) {
+    localeCode = code;
+    notifyListeners();
+    _persist();
+  }
+
+  void setShowDresses(bool value) {
+    showDresses = value;
+    notifyListeners();
+    _persist();
+  }
+
+  void setShowSkirts(bool value) {
+    showSkirts = value;
+    notifyListeners();
+    _persist();
   }
 
   @override

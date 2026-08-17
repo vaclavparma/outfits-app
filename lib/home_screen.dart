@@ -31,6 +31,18 @@ class HomeScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       GestureDetector(
+                        onTap: () => openSettingsSheet(context),
+                        child: const Padding(
+                          padding: EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.settings_outlined,
+                            size: 20,
+                            color: AppColors.mutedSoft,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      GestureDetector(
                         onTap: () => openAboutSheet(context),
                         child: const Padding(
                           padding: EdgeInsets.all(4),

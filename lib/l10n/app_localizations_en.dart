@@ -278,6 +278,29 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get sectionLanguage => 'language';
+
+  @override
+  String get languageSystemOption => 'System default';
+
+  @override
+  String get showDressesLabel => 'Show dresses in wardrobe';
+
+  @override
+  String get showDressesHint =>
+      'Hides the dresses category in the wardrobe and when adding clothes. Dresses already in your wardrobe stay put.';
+
+  @override
+  String get showSkirtsLabel => 'Show skirts in wardrobe';
+
+  @override
+  String get showSkirtsHint =>
+      'Hides the skirts category in the wardrobe and when adding clothes. Skirts already in your wardrobe stay put.';
+
+  @override
   String get tagWork => 'work';
 
   @override

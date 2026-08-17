@@ -280,6 +280,29 @@ class AppLocalizationsCs extends AppLocalizations {
   }
 
   @override
+  String get settingsTitle => 'Nastavení';
+
+  @override
+  String get sectionLanguage => 'jazyk';
+
+  @override
+  String get languageSystemOption => 'Podle systému';
+
+  @override
+  String get showDressesLabel => 'Zobrazovat šaty v šatníku';
+
+  @override
+  String get showDressesHint =>
+      'Skryje kategorii šatů v šatníku a při přidávání oblečení. Šaty, které už máš v šatníku, zůstanou beze změny.';
+
+  @override
+  String get showSkirtsLabel => 'Zobrazovat sukně v šatníku';
+
+  @override
+  String get showSkirtsHint =>
+      'Skryje kategorii sukní v šatníku a při přidávání oblečení. Sukně, které už máš v šatníku, zůstanou beze změny.';
+
+  @override
   String get tagWork => 'práce';
 
   @override

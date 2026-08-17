@@ -548,6 +548,48 @@ abstract class AppLocalizations {
   /// **'v{version} ({buildNumber}) · Václav Parma'**
   String aboutVersionLine(String version, String buildNumber);
 
+  /// No description provided for @settingsTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nastavení'**
+  String get settingsTitle;
+
+  /// No description provided for @sectionLanguage.
+  ///
+  /// In cs, this message translates to:
+  /// **'jazyk'**
+  String get sectionLanguage;
+
+  /// No description provided for @languageSystemOption.
+  ///
+  /// In cs, this message translates to:
+  /// **'Podle systému'**
+  String get languageSystemOption;
+
+  /// No description provided for @showDressesLabel.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zobrazovat šaty v šatníku'**
+  String get showDressesLabel;
+
+  /// No description provided for @showDressesHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'Skryje kategorii šatů v šatníku a při přidávání oblečení. Šaty, které už máš v šatníku, zůstanou beze změny.'**
+  String get showDressesHint;
+
+  /// No description provided for @showSkirtsLabel.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zobrazovat sukně v šatníku'**
+  String get showSkirtsLabel;
+
+  /// No description provided for @showSkirtsHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'Skryje kategorii sukní v šatníku a při přidávání oblečení. Sukně, které už máš v šatníku, zůstanou beze změny.'**
+  String get showSkirtsHint;
+
   /// No description provided for @tagWork.
   ///
   /// In cs, this message translates to:

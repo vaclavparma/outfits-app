@@ -17,13 +17,16 @@ class SatnikApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => WardrobeStore()..load(),
-      child: MaterialApp(
-        title: 'Outfits',
-        debugShowCheckedModeBanner: false,
-        theme: buildAppTheme(),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: const HomeScreen(),
+      child: Consumer<WardrobeStore>(
+        builder: (context, store, _) => MaterialApp(
+          title: 'Outfits',
+          debugShowCheckedModeBanner: false,
+          theme: buildAppTheme(),
+          locale: store.localeCode == null ? null : Locale(store.localeCode!),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const HomeScreen(),
+        ),
       ),
     );
   }
