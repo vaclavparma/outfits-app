@@ -75,27 +75,56 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                           color: AppColors.ink,
                         ),
                         color: Colors.white,
+                        elevation: 3,
+                        shadowColor: const Color(0x1F000000),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: const BorderSide(color: AppColors.rowBorder),
+                        ),
+                        padding: EdgeInsets.zero,
                         onSelected: (action) =>
                             _handleMenuAction(store, action),
                         itemBuilder: (context) => [
                           PopupMenuItem(
                             value: 'rename',
-                            child: Text(
-                              AppLocalizations.of(context)!.rename,
-                              style: AppText.sans(
-                                size: 14,
-                                color: AppColors.ink,
-                              ),
+                            height: 44,
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.edit_outlined,
+                                  size: 17,
+                                  color: AppColors.mutedSoft,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  AppLocalizations.of(context)!.rename,
+                                  style: AppText.sans(
+                                    size: 13.5,
+                                    color: AppColors.ink,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           PopupMenuItem(
                             value: 'delete',
-                            child: Text(
-                              AppLocalizations.of(context)!.delete,
-                              style: AppText.sans(
-                                size: 14,
-                                color: AppColors.accent,
-                              ),
+                            height: 44,
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.delete_outline,
+                                  size: 17,
+                                  color: AppColors.accent,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  AppLocalizations.of(context)!.delete,
+                                  style: AppText.sans(
+                                    size: 13.5,
+                                    color: AppColors.accent,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
