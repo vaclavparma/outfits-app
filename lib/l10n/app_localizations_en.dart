@@ -57,19 +57,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveOutfitButton => 'Save outfit';
 
   @override
-  String get categoryTricka => 'Tops';
+  String get categoryHorni => 'Top';
 
   @override
   String get categorySaty => 'Dresses';
 
   @override
-  String get categoryBundy => 'Jackets / layers';
-
-  @override
-  String get categoryKalhoty => 'Trousers / shorts';
-
-  @override
-  String get categorySukne => 'Skirts';
+  String get categoryDolni => 'Bottom';
 
   @override
   String get categoryBoty => 'Shoes';
@@ -285,11 +279,4 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get showDressesHint =>
       'Hides the dresses category in the wardrobe and when adding clothes. Dresses already in your wardrobe stay put.';
-
-  @override
-  String get showSkirtsLabel => 'Show skirts in wardrobe';
-
-  @override
-  String get showSkirtsHint =>
-      'Hides the skirts category in the wardrobe and when adding clothes. Skirts already in your wardrobe stay put.';
 }

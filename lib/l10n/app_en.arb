@@ -20,11 +20,9 @@
   "shuffleButton": "Shuffle",
   "saveOutfitButton": "Save outfit",
 
-  "categoryTricka": "Tops",
+  "categoryHorni": "Top",
   "categorySaty": "Dresses",
-  "categoryBundy": "Jackets / layers",
-  "categoryKalhoty": "Trousers / shorts",
-  "categorySukne": "Skirts",
+  "categoryDolni": "Bottom",
   "categoryBoty": "Shoes",
 
   "itemCount": "{count, plural, one{{count} item} other{{count} items}}",
@@ -159,7 +157,5 @@
   "sectionLanguage": "language",
   "languageSystemOption": "System default",
   "showDressesLabel": "Show dresses in wardrobe",
-  "showDressesHint": "Hides the dresses category in the wardrobe and when adding clothes. Dresses already in your wardrobe stay put.",
-  "showSkirtsLabel": "Show skirts in wardrobe",
-  "showSkirtsHint": "Hides the skirts category in the wardrobe and when adding clothes. Skirts already in your wardrobe stay put."
+  "showDressesHint": "Hides the dresses category in the wardrobe and when adding clothes. Dresses already in your wardrobe stay put."
 }

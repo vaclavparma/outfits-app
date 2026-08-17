@@ -194,11 +194,11 @@ abstract class AppLocalizations {
   /// **'Uložit outfit'**
   String get saveOutfitButton;
 
-  /// No description provided for @categoryTricka.
+  /// No description provided for @categoryHorni.
   ///
   /// In cs, this message translates to:
-  /// **'Trička / topy'**
-  String get categoryTricka;
+  /// **'Horní díl'**
+  String get categoryHorni;
 
   /// No description provided for @categorySaty.
   ///
@@ -206,23 +206,11 @@ abstract class AppLocalizations {
   /// **'Šaty'**
   String get categorySaty;
 
-  /// No description provided for @categoryBundy.
+  /// No description provided for @categoryDolni.
   ///
   /// In cs, this message translates to:
-  /// **'Bundy / vrstvy'**
-  String get categoryBundy;
-
-  /// No description provided for @categoryKalhoty.
-  ///
-  /// In cs, this message translates to:
-  /// **'Kalhoty / kraťasy'**
-  String get categoryKalhoty;
-
-  /// No description provided for @categorySukne.
-  ///
-  /// In cs, this message translates to:
-  /// **'Sukně'**
-  String get categorySukne;
+  /// **'Dolní díl'**
+  String get categoryDolni;
 
   /// No description provided for @categoryBoty.
   ///
@@ -547,18 +535,6 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Skryje kategorii šatů v šatníku a při přidávání oblečení. Šaty, které už máš v šatníku, zůstanou beze změny.'**
   String get showDressesHint;
-
-  /// No description provided for @showSkirtsLabel.
-  ///
-  /// In cs, this message translates to:
-  /// **'Zobrazovat sukně v šatníku'**
-  String get showSkirtsLabel;
-
-  /// No description provided for @showSkirtsHint.
-  ///
-  /// In cs, this message translates to:
-  /// **'Skryje kategorii sukní v šatníku a při přidávání oblečení. Sukně, které už máš v šatníku, zůstanou beze změny.'**
-  String get showSkirtsHint;
 }
 
 class _AppLocalizationsDelegate

@@ -45,15 +45,9 @@ class WardrobeStore extends ChangeNotifier {
   /// already in the wardrobe stay put and still work in the outfit builder.
   bool showDresses = true;
 
-  /// Same as [showDresses], for the "skirts" category.
-  bool showSkirts = true;
-
   /// [kCategories], minus any category turned off in settings.
-  List<ClothingCategory> get visibleCategories => kCategories.where((c) {
-    if (c.key == 'saty') return showDresses;
-    if (c.key == 'sukne') return showSkirts;
-    return true;
-  }).toList();
+  List<ClothingCategory> get visibleCategories =>
+      kCategories.where((c) => c.key != 'saty' || showDresses).toList();
 
   String _toast = '';
   Timer? _toastTimer;
@@ -129,10 +123,6 @@ class WardrobeStore extends ChangeNotifier {
       showDresses = data['showDresses'] as bool? ?? true;
     } catch (_) {}
 
-    try {
-      showSkirts = data['showSkirts'] as bool? ?? true;
-    } catch (_) {}
-
     notifyListeners();
   }
 
@@ -153,7 +143,6 @@ class WardrobeStore extends ChangeNotifier {
         'knownTags': knownTags,
         'localeCode': localeCode,
         'showDresses': showDresses,
-        'showSkirts': showSkirts,
       };
       // Write to a temp file and rename over the real one, so a crash or
       // kill mid-write can never leave a half-written/corrupt state file.
@@ -189,8 +178,8 @@ class WardrobeStore extends ChangeNotifier {
 
   List<ClothingItem> byCat(String cat) =>
       items.where((i) => i.cat == cat).toList();
-  List<ClothingItem> get topList => [...byCat('tricka'), ...byCat('saty')];
-  List<ClothingItem> get botList => [...byCat('kalhoty'), ...byCat('sukne')];
+  List<ClothingItem> get topList => [...byCat('horni'), ...byCat('saty')];
+  List<ClothingItem> get botList => byCat('dolni');
   List<ClothingItem> get shoeList => byCat('boty');
 
   List<ClothingItem> zoneList(WardrobeZone z) {
@@ -245,7 +234,7 @@ class WardrobeStore extends ChangeNotifier {
       final pinnedIds = layers
           .where((id) => itemById(id)?.pinned ?? false)
           .toSet();
-      final pool = byCat('bundy').where((it) => !pinnedIds.contains(it.id)).toList()
+      final pool = byCat('horni').where((it) => !pinnedIds.contains(it.id)).toList()
         ..shuffle(rng);
       var next = 0;
       layers = [
@@ -559,12 +548,6 @@ class WardrobeStore extends ChangeNotifier {
 
   void setShowDresses(bool value) {
     showDresses = value;
-    notifyListeners();
-    _persist();
-  }
-
-  void setShowSkirts(bool value) {
-    showSkirts = value;
     notifyListeners();
     _persist();
   }

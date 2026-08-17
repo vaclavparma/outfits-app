@@ -20,11 +20,9 @@
   "shuffleButton": "Zamíchat",
   "saveOutfitButton": "Uložit outfit",
 
-  "categoryTricka": "Trička / topy",
+  "categoryHorni": "Horní díl",
   "categorySaty": "Šaty",
-  "categoryBundy": "Bundy / vrstvy",
-  "categoryKalhoty": "Kalhoty / kraťasy",
-  "categorySukne": "Sukně",
+  "categoryDolni": "Dolní díl",
   "categoryBoty": "Boty",
 
   "itemCount": "{count, plural, one{{count} kus} few{{count} kusy} other{{count} kusů}}",
@@ -159,7 +157,5 @@
   "sectionLanguage": "jazyk",
   "languageSystemOption": "Podle systému",
   "showDressesLabel": "Zobrazovat šaty v šatníku",
-  "showDressesHint": "Skryje kategorii šatů v šatníku a při přidávání oblečení. Šaty, které už máš v šatníku, zůstanou beze změny.",
-  "showSkirtsLabel": "Zobrazovat sukně v šatníku",
-  "showSkirtsHint": "Skryje kategorii sukní v šatníku a při přidávání oblečení. Sukně, které už máš v šatníku, zůstanou beze změny."
+  "showDressesHint": "Skryje kategorii šatů v šatníku a při přidávání oblečení. Šaty, které už máš v šatníku, zůstanou beze změny."
 }

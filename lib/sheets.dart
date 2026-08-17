@@ -9,8 +9,8 @@ import 'wardrobe_store.dart';
 import 'widgets.dart';
 
 const Map<WardrobeZone, String> _zoneDefaultCategory = {
-  WardrobeZone.top: 'tricka',
-  WardrobeZone.bottom: 'kalhoty',
+  WardrobeZone.top: 'horni',
+  WardrobeZone.bottom: 'dolni',
   WardrobeZone.shoes: 'boty',
 };
 
@@ -212,7 +212,7 @@ class _LayerChoices extends StatelessWidget {
     // In replace mode, the layer being swapped stays selectable (it's not
     // "already used" from the user's point of view — it's what's on offer).
     final available = store
-        .byCat('bundy')
+        .byCat('horni')
         .where(
           (it) =>
               !store.layers.contains(it.id) ||
@@ -971,15 +971,6 @@ class _SettingsContent extends StatelessWidget {
             hint: l10n.showDressesHint,
             value: store.showDresses,
             onChanged: store.setShowDresses,
-          ),
-        ),
-        const SizedBox(height: 12),
-        _SettingsCard(
-          child: _ToggleRow(
-            label: l10n.showSkirtsLabel,
-            hint: l10n.showSkirtsHint,
-            value: store.showSkirts,
-            onChanged: store.setShowSkirts,
           ),
         ),
       ],

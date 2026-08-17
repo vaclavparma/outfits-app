@@ -13,22 +13,28 @@ class ClothingCategory {
 }
 
 const List<ClothingCategory> kCategories = [
-  ClothingCategory('tricka'),
+  ClothingCategory('horni'),
   ClothingCategory('saty'),
-  ClothingCategory('bundy'),
-  ClothingCategory('kalhoty'),
-  ClothingCategory('sukne'),
+  ClothingCategory('dolni'),
   ClothingCategory('boty'),
 ];
+
+/// Maps a category key from before the "horní/dolní díl" merge to its
+/// current equivalent, so old items and saved outfits (which stored the old
+/// keys) keep working after this migration. Anything not in the old set —
+/// including already-current keys — passes through unchanged.
+String _migrateCatKey(String key) => switch (key) {
+  'tricka' || 'bundy' => 'horni',
+  'kalhoty' || 'sukne' => 'dolni',
+  _ => key,
+};
 
 String categoryLabel(BuildContext context, String key) {
   final l10n = AppLocalizations.of(context)!;
   return switch (key) {
-    'tricka' => l10n.categoryTricka,
+    'horni' => l10n.categoryHorni,
     'saty' => l10n.categorySaty,
-    'bundy' => l10n.categoryBundy,
-    'kalhoty' => l10n.categoryKalhoty,
-    'sukne' => l10n.categorySukne,
+    'dolni' => l10n.categoryDolni,
     'boty' => l10n.categoryBoty,
     _ => key,
   };
@@ -82,7 +88,7 @@ class ClothingItem {
 
   factory ClothingItem.fromJson(Map<String, dynamic> json) => ClothingItem(
     id: json['id'] as String,
-    cat: json['cat'] as String,
+    cat: _migrateCatKey(json['cat'] as String),
     tags: (json['tags'] as List<dynamic>? ?? [])
         .map((e) => e as String)
         .toList(),
@@ -121,7 +127,7 @@ class SavedOutfit {
   factory SavedOutfit.fromJson(Map<String, dynamic> json) => SavedOutfit(
     name: json['name'] as String,
     catKeys: (json['catKeys'] as List<dynamic>?)
-            ?.map((e) => e as String)
+            ?.map((e) => _migrateCatKey(e as String))
             .toList() ??
         const [],
     itemIds: (json['itemIds'] as List<dynamic>? ?? [])
@@ -135,11 +141,12 @@ enum WardrobeTabKind { outfit, wardrobe, collections }
 
 enum WardrobeZone { top, bottom, shoes }
 
-/// Which builder zone a category occupies, or null for layer-only
-/// categories (outerwear) that go into [WardrobeStore.layers] instead.
+/// Which builder zone a category occupies. Every category maps to one —
+/// "horní díl" items also double as [WardrobeStore.layers] candidates, but
+/// that's an additional role, not a separate category.
 WardrobeZone? zoneForCategory(String cat) => switch (cat) {
-  'tricka' || 'saty' => WardrobeZone.top,
-  'kalhoty' || 'sukne' => WardrobeZone.bottom,
+  'horni' || 'saty' => WardrobeZone.top,
+  'dolni' => WardrobeZone.bottom,
   'boty' => WardrobeZone.shoes,
   _ => null,
 };

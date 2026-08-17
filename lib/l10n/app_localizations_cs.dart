@@ -57,19 +57,13 @@ class AppLocalizationsCs extends AppLocalizations {
   String get saveOutfitButton => 'Uložit outfit';
 
   @override
-  String get categoryTricka => 'Trička / topy';
+  String get categoryHorni => 'Horní díl';
 
   @override
   String get categorySaty => 'Šaty';
 
   @override
-  String get categoryBundy => 'Bundy / vrstvy';
-
-  @override
-  String get categoryKalhoty => 'Kalhoty / kraťasy';
-
-  @override
-  String get categorySukne => 'Sukně';
+  String get categoryDolni => 'Dolní díl';
 
   @override
   String get categoryBoty => 'Boty';
@@ -288,11 +282,4 @@ class AppLocalizationsCs extends AppLocalizations {
   @override
   String get showDressesHint =>
       'Skryje kategorii šatů v šatníku a při přidávání oblečení. Šaty, které už máš v šatníku, zůstanou beze změny.';
-
-  @override
-  String get showSkirtsLabel => 'Zobrazovat sukně v šatníku';
-
-  @override
-  String get showSkirtsHint =>
-      'Skryje kategorii sukní v šatníku a při přidávání oblečení. Sukně, které už máš v šatníku, zůstanou beze změny.';
 }
