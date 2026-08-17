@@ -1,40 +1,60 @@
-/// A single garment category, mirroring CATS from the mockup.
+import 'package:flutter/widgets.dart';
+
+import 'l10n/app_localizations.dart';
+
+/// A single garment category, mirroring CATS from the mockup. [key] is a
+/// stable internal identifier (used for persistence and category matching)
+/// — it never changes with locale. The display label is looked up
+/// separately via [categoryLabel], since it depends on [BuildContext].
 class ClothingCategory {
   final String key;
-  final String label;
 
-  const ClothingCategory(this.key, this.label);
+  const ClothingCategory(this.key);
 }
 
 const List<ClothingCategory> kCategories = [
-  ClothingCategory('tricka', 'Trička / topy'),
-  ClothingCategory('saty', 'Šaty'),
-  ClothingCategory('bundy', 'Bundy / vrstvy'),
-  ClothingCategory('kalhoty', 'Kalhoty'),
-  ClothingCategory('sukne', 'Sukně'),
-  ClothingCategory('boty', 'Boty'),
+  ClothingCategory('tricka'),
+  ClothingCategory('saty'),
+  ClothingCategory('bundy'),
+  ClothingCategory('kalhoty'),
+  ClothingCategory('sukne'),
+  ClothingCategory('boty'),
 ];
 
-const List<String> kQuickTags = [
-  'práce',
-  'volno',
-  'léto',
-  'večer',
-  'zima',
-  'basic',
-];
+/// Localized quick-tag suggestions offered when adding/tagging an item.
+/// These are plain suggested words, not a fixed taxonomy — tags themselves
+/// are freeform strings, so switching locale only changes which words get
+/// suggested, not any tag already stored on an item.
+List<String> kQuickTags(BuildContext context) {
+  final l10n = AppLocalizations.of(context)!;
+  return [
+    l10n.tagWork,
+    l10n.tagCasual,
+    l10n.tagSummer,
+    l10n.tagEvening,
+    l10n.tagWinter,
+    l10n.tagBasic,
+  ];
+}
 
-String categoryLabel(String key) {
-  for (final c in kCategories) {
-    if (c.key == key) return c.label;
-  }
-  return key;
+String categoryLabel(BuildContext context, String key) {
+  final l10n = AppLocalizations.of(context)!;
+  return switch (key) {
+    'tricka' => l10n.categoryTricka,
+    'saty' => l10n.categorySaty,
+    'bundy' => l10n.categoryBundy,
+    'kalhoty' => l10n.categoryKalhoty,
+    'sukne' => l10n.categorySukne,
+    'boty' => l10n.categoryBoty,
+    _ => key,
+  };
 }
 
 /// Short single-word form of [categoryLabel], used where a full item name
 /// would otherwise be shown (item names carry no real information — items
 /// are identified by their photo and tags instead).
-String shortCategoryLabel(String key) => categoryLabel(key).split(' ').first;
+String shortCategoryLabel(BuildContext context, String key) =>
+    categoryLabel(context, key).split(' ').first;
 
 /// Distinct tags used across [items], in first-seen order.
 List<String> distinctTags(Iterable<ClothingItem> items) {
@@ -80,26 +100,43 @@ class ClothingItem {
   );
 }
 
-/// A saved combination of items, filed under a collection.
+/// A saved combination of items, filed under a collection. [catKeys] mirrors
+/// the category of each item in [itemIds] at save time, so a resilient
+/// summary caption can still be shown (localized, at display time) even if
+/// an item was later deleted from the wardrobe.
 class SavedOutfit {
   final String name;
-  final String meta;
+  final List<String> catKeys;
   final List<String> itemIds;
 
-  SavedOutfit({required this.name, required this.meta, required this.itemIds});
+  /// A pre-formatted summary string from before [catKeys] existed. Only
+  /// ever set when loading old saved data that predates this field; new
+  /// outfits always carry [catKeys] instead and leave this null.
+  final String? legacyMeta;
+
+  SavedOutfit({
+    required this.name,
+    required this.catKeys,
+    required this.itemIds,
+    this.legacyMeta,
+  });
 
   Map<String, dynamic> toJson() => {
     'name': name,
-    'meta': meta,
+    'catKeys': catKeys,
     'itemIds': itemIds,
   };
 
   factory SavedOutfit.fromJson(Map<String, dynamic> json) => SavedOutfit(
     name: json['name'] as String,
-    meta: json['meta'] as String,
+    catKeys: (json['catKeys'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList() ??
+        const [],
     itemIds: (json['itemIds'] as List<dynamic>? ?? [])
         .map((e) => e as String)
         .toList(),
+    legacyMeta: json['catKeys'] == null ? json['meta'] as String? : null,
   );
 }
 

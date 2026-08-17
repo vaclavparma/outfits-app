@@ -1,0 +1,163 @@
+{
+  "@@locale": "cs",
+
+  "tabOutfit": "Outfit",
+  "tabWardrobe": "Šatník",
+  "tabCollections": "Kolekce",
+
+  "cancel": "Zrušit",
+  "save": "Uložit",
+  "delete": "Smazat",
+  "create": "Vytvořit",
+  "add": "přidat",
+  "close": "zavřít",
+  "actionCannotBeUndone": "Tuto akci nelze vrátit.",
+  "noTags": "bez tagů",
+  "rename": "Přejmenovat",
+
+  "slotTop": "top",
+  "slotDressFull": "šaty · celé tělo",
+  "slotBottom": "spodek",
+  "slotSkirt": "sukně",
+  "slotShoes": "boty",
+  "addTopPlaceholder": "Přidej top",
+  "addBottomPlaceholder": "Přidej spodek",
+  "addShoesPlaceholder": "Přidej boty",
+  "shuffleButton": "Zamíchat",
+  "saveOutfitButton": "Uložit outfit",
+
+  "categoryTricka": "Trička / topy",
+  "categorySaty": "Šaty",
+  "categoryBundy": "Bundy / vrstvy",
+  "categoryKalhoty": "Kalhoty",
+  "categorySukne": "Sukně",
+  "categoryBoty": "Boty",
+
+  "itemCount": "{count, plural, one{{count} kus} few{{count} kusy} other{{count} kusů}}",
+  "@itemCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "newCollectionTile": "nová kolekce",
+  "newCollectionDialogTitle": "Nová kolekce",
+  "newCollectionHint": "např. Práce",
+
+  "outfitCount": "{count, plural, one{{count} outfit} few{{count} outfity} other{{count} outfitů}}",
+  "@outfitCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "collectionEmptyHint": "Zatím prázdné. Ulož outfit a vyber tuto kolekci.",
+  "renameCollectionTitle": "Přejmenovat kolekci",
+  "deleteCollectionTitle": "Smazat kolekci?",
+  "deleteCollectionMessage": "Kolekce „{name}“ a vše v ní bude smazáno.",
+  "@deleteCollectionMessage": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "deleteOutfitTitle": "Smazat outfit?",
+  "deleteOutfitMessage": "„{name}“ bude smazán.",
+  "@deleteOutfitMessage": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "pickTopTitle": "Vyber top nebo šaty",
+  "pickBottomTitle": "Vyber spodek",
+  "pickShoesTitle": "Vyber boty",
+
+  "addLayerTitle": "Přidat vrstvu",
+  "layerLimitMessage": "{max, plural, one{Můžeš mít nejvýš {max} vrstvu navíc.} few{Můžeš mít nejvýš {max} vrstvy navíc.} other{Můžeš mít nejvýš {max} vrstev navíc.}}",
+  "@layerLimitMessage": {
+    "placeholders": {
+      "max": {"type": "int"}
+    }
+  },
+  "noMoreLayers": "Žádné další vrstvy k přidání.",
+
+  "addItemTitle": "Přidat oblečení",
+  "sectionCategory": "kategorie",
+  "sectionTagsOptional": "tagy (nepovinné)",
+  "takePhoto": "Vyfotit",
+  "fromGallery": "Z galerie",
+
+  "itemDetailTitle": "Detail oblečení",
+  "sectionItemTags": "tagy oblečení",
+  "customTagHint": "vlastní tag",
+  "useInOutfit": "Použít v outfitu",
+  "deleteItemTitle": "Smazat oblečení?",
+  "deleteItemMessage": "Oblečení bude smazáno.",
+
+  "sectionOutfitName": "název outfitu",
+  "outfitNameHint": "např. Pondělní porada",
+  "sectionCollection": "kolekce",
+  "needCollectionHint": "Nejdřív vytvoř kolekci v záložce Kolekce.",
+
+  "manageTagsTitle": "Spravovat tagy",
+  "noTagsYet": "Zatím žádné tagy.",
+  "renameTagTitle": "Přejmenovat tag",
+  "deleteTagTitle": "Smazat tag?",
+  "deleteTagMessage": "Tag „{tag}“ bude smazán a odebrán ze všech kusů oblečení.",
+  "@deleteTagMessage": {
+    "placeholders": {
+      "tag": {"type": "String"}
+    }
+  },
+
+  "toastSavedWithPhoto": "Uloženo do „{category}“ · fotka v souborech apky",
+  "@toastSavedWithPhoto": {
+    "placeholders": {
+      "category": {"type": "String"}
+    }
+  },
+  "toastSavedNoPhoto": "Uloženo do „{category}“",
+  "@toastSavedNoPhoto": {
+    "placeholders": {
+      "category": {"type": "String"}
+    }
+  },
+  "toastSavedPhotoFailed": "Uloženo do „{category}“ · fotku se nepodařilo uložit",
+  "@toastSavedPhotoFailed": {
+    "placeholders": {
+      "category": {"type": "String"}
+    }
+  },
+  "toastOutfitSaved": "„{name}“ uloženo do kolekce {col}",
+  "@toastOutfitSaved": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "col": {"type": "String"}
+    }
+  },
+  "toastNeedCollectionFirst": "Nejdřív přidej kolekci",
+  "defaultOutfitName": "Outfit {n}",
+  "@defaultOutfitName": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+
+  "aboutTagline": "Šatník pro plánování outfitů",
+  "aboutGithub": "Zdrojový kód na GitHubu",
+  "aboutSupport": "Podpoř vývoj — Buy Me a Coffee",
+  "aboutVersionLine": "v{version} ({buildNumber}) · Václav Parma",
+  "@aboutVersionLine": {
+    "placeholders": {
+      "version": {"type": "String"},
+      "buildNumber": {"type": "String"}
+    }
+  },
+
+  "tagWork": "práce",
+  "tagCasual": "volno",
+  "tagSummer": "léto",
+  "tagEvening": "večer",
+  "tagWinter": "zima",
+  "tagBasic": "basic"
+}

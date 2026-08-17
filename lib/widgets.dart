@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'l10n/app_localizations.dart';
 import 'models.dart';
 import 'theme.dart';
 
@@ -298,7 +299,7 @@ class AddTile extends StatelessWidget {
   final VoidCallback onTap;
   final String label;
 
-  const AddTile({super.key, required this.onTap, this.label = 'přidat'});
+  const AddTile({super.key, required this.onTap, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -376,7 +377,7 @@ Future<bool> confirmDialog(
   BuildContext context, {
   required String title,
   required String message,
-  String confirmLabel = 'Smazat',
+  required String confirmLabel,
 }) async {
   final confirmed = await showDialog<bool>(
     context: context,
@@ -391,7 +392,7 @@ Future<bool> confirmDialog(
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(false),
           child: Text(
-            'Zrušit',
+            AppLocalizations.of(dialogContext)!.cancel,
             style: AppText.sans(size: 13, color: AppColors.muted),
           ),
         ),
@@ -420,7 +421,7 @@ Future<String?> promptTextDialog(
   required String title,
   required String initialValue,
   String? hintText,
-  String confirmLabel = 'Uložit',
+  required String confirmLabel,
 }) {
   return showDialog<String>(
     context: context,
@@ -442,7 +443,7 @@ class _TextPromptDialog extends StatefulWidget {
     required this.title,
     required this.initialValue,
     this.hintText,
-    this.confirmLabel = 'Uložit',
+    required this.confirmLabel,
   });
 
   @override
@@ -486,7 +487,7 @@ class _TextPromptDialogState extends State<_TextPromptDialog> {
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: Text(
-            'Zrušit',
+            AppLocalizations.of(context)!.cancel,
             style: AppText.sans(size: 13, color: AppColors.muted),
           ),
         ),

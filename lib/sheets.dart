@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
+import 'l10n/app_localizations.dart';
 import 'models.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
@@ -47,7 +48,7 @@ Future<T?> _showSheet<T>(BuildContext context, String title, Widget content) {
                     GestureDetector(
                       onTap: () => Navigator.of(sheetContext).pop(),
                       child: Text(
-                        'zavřít',
+                        AppLocalizations.of(sheetContext)!.close,
                         style: AppText.mono(
                           size: 10,
                           letterSpacing: 1,
@@ -84,10 +85,11 @@ final TextStyle _sectionLabelStyle = AppText.mono(
 );
 
 void openPickSheet(BuildContext context, WardrobeZone zone) {
+  final l10n = AppLocalizations.of(context)!;
   final titles = {
-    WardrobeZone.top: 'Vyber top nebo šaty',
-    WardrobeZone.bottom: 'Vyber spodek',
-    WardrobeZone.shoes: 'Vyber boty',
+    WardrobeZone.top: l10n.pickTopTitle,
+    WardrobeZone.bottom: l10n.pickBottomTitle,
+    WardrobeZone.shoes: l10n.pickShoesTitle,
   };
   _showSheet(
     context,
@@ -157,13 +159,16 @@ class _PickGrid extends StatelessWidget {
           ),
           itemBuilder: (context, i) {
             if (i == filtered.length) {
-              return AddTile(onTap: () => _addNew(context));
+              return AddTile(
+                label: AppLocalizations.of(context)!.add,
+                onTap: () => _addNew(context),
+              );
             }
             final it = filtered[i];
             return GarmentCard(
               width: double.infinity,
               height: double.infinity,
-              slotLabel: shortCategoryLabel(it.cat).toLowerCase(),
+              slotLabel: shortCategoryLabel(context, it.cat).toLowerCase(),
               tags: it.tagsLabel,
               imagePath: it.imagePath,
               borderColor: current?.id == it.id
@@ -183,7 +188,7 @@ class _PickGrid extends StatelessWidget {
 }
 
 void openLayerSheet(BuildContext context) {
-  _showSheet(context, 'Přidat vrstvu', const _LayerChoices());
+  _showSheet(context, AppLocalizations.of(context)!.addLayerTitle, const _LayerChoices());
 }
 
 class _LayerChoices extends StatelessWidget {
@@ -192,9 +197,10 @@ class _LayerChoices extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
     if (store.layers.length >= WardrobeStore.kMaxLayers) {
       return Text(
-        'Můžeš mít nejvýš ${WardrobeStore.kMaxLayers} vrstvy navíc.',
+        l10n.layerLimitMessage(WardrobeStore.kMaxLayers),
         style: AppText.sans(size: 12, color: AppColors.mutedTag),
       );
     }
@@ -204,7 +210,7 @@ class _LayerChoices extends StatelessWidget {
         .toList();
     if (choices.isEmpty) {
       return Text(
-        'Žádné další vrstvy k přidání.',
+        l10n.noMoreLayers,
         style: AppText.sans(size: 12, color: AppColors.mutedTag),
       );
     }
@@ -241,7 +247,7 @@ class _LayerChoices extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      it.tagsLabel.isNotEmpty ? it.tagsLabel : 'bez tagů',
+                      it.tagsLabel.isNotEmpty ? it.tagsLabel : l10n.noTags,
                       style: AppText.mono(
                         size: 8.5,
                         letterSpacing: 0.4,
@@ -265,7 +271,7 @@ void openAddItemSheet(
 }) {
   _showSheet(
     context,
-    'Přidat oblečení',
+    AppLocalizations.of(context)!.addItemTitle,
     _AddItemForm(presetCategory: presetCategory, onAdded: onAdded),
   );
 }
@@ -301,12 +307,20 @@ class _AddItemFormState extends State<_AddItemForm> {
       );
       if (file == null) return;
       if (!mounted) return;
-      final item = await context.read<WardrobeStore>().addItem(
+      final store = context.read<WardrobeStore>();
+      final l10n = AppLocalizations.of(context)!;
+      final label = categoryLabel(context, _cat);
+      final result = await store.addItem(
         _cat,
         _tags,
         sourceImagePath: file.path,
       );
-      widget.onAdded?.call(item);
+      store.flash(
+        result.photoFailed
+            ? l10n.toastSavedPhotoFailed(label)
+            : l10n.toastSavedWithPhoto(label),
+      );
+      widget.onAdded?.call(result.item);
       if (mounted) Navigator.of(context).pop();
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -315,10 +329,11 @@ class _AddItemFormState extends State<_AddItemForm> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('kategorie', style: _sectionLabelStyle),
+        Text(l10n.sectionCategory, style: _sectionLabelStyle),
         const SizedBox(height: 8),
         Wrap(
           spacing: 7,
@@ -326,7 +341,7 @@ class _AddItemFormState extends State<_AddItemForm> {
           children: [
             for (final c in kCategories)
               SelectChip(
-                label: c.label,
+                label: categoryLabel(context, c.key),
                 active: _cat == c.key,
                 mono: false,
                 height: 34,
@@ -335,13 +350,13 @@ class _AddItemFormState extends State<_AddItemForm> {
           ],
         ),
         const SizedBox(height: 18),
-        Text('tagy (nepovinné)', style: _sectionLabelStyle),
+        Text(l10n.sectionTagsOptional, style: _sectionLabelStyle),
         const SizedBox(height: 8),
         Wrap(
           spacing: 7,
           runSpacing: 7,
           children: [
-            for (final t in kQuickTags)
+            for (final t in kQuickTags(context))
               SelectChip(
                 label: t,
                 active: _tags.contains(t),
@@ -374,7 +389,7 @@ class _AddItemFormState extends State<_AddItemForm> {
                           ),
                         )
                       : Text(
-                          'Vyfotit',
+                          l10n.takePhoto,
                           style: AppText.sans(
                             size: 13,
                             weight: FontWeight.w500,
@@ -396,7 +411,7 @@ class _AddItemFormState extends State<_AddItemForm> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    'Z galerie',
+                    l10n.fromGallery,
                     style: AppText.sans(size: 13, color: AppColors.label),
                   ),
                 ),
@@ -410,7 +425,11 @@ class _AddItemFormState extends State<_AddItemForm> {
 }
 
 void openItemSheet(BuildContext context, ClothingItem item) {
-  _showSheet(context, 'Detail oblečení', _ItemDetail(itemId: item.id));
+  _showSheet(
+    context,
+    AppLocalizations.of(context)!.itemDetailTitle,
+    _ItemDetail(itemId: item.id),
+  );
 }
 
 class _ItemDetail extends StatefulWidget {
@@ -433,10 +452,13 @@ class _ItemDetailState extends State<_ItemDetail> {
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
     final cur = store.itemById(widget.itemId);
     if (cur == null) return const SizedBox.shrink();
     final tags = cur.tags;
-    final suggest = kQuickTags.where((t) => !tags.contains(t)).toList();
+    final suggest = kQuickTags(
+      context,
+    ).where((t) => !tags.contains(t)).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -455,13 +477,13 @@ class _ItemDetailState extends State<_ItemDetail> {
             ),
             const SizedBox(width: 14),
             Text(
-              categoryLabel(cur.cat),
+              categoryLabel(context, cur.cat),
               style: AppText.sans(size: 15, color: AppColors.ink),
             ),
           ],
         ),
         const SizedBox(height: 18),
-        Text('tagy oblečení', style: _sectionLabelStyle),
+        Text(l10n.sectionItemTags, style: _sectionLabelStyle),
         const SizedBox(height: 9),
         Wrap(
           spacing: 7,
@@ -508,7 +530,7 @@ class _ItemDetailState extends State<_ItemDetail> {
               ),
             if (tags.isEmpty)
               Text(
-                'bez tagů',
+                l10n.noTags,
                 style: AppText.mono(
                   size: 11,
                   color: AppColors.mutedSoft,
@@ -551,7 +573,7 @@ class _ItemDetailState extends State<_ItemDetail> {
               child: TextField(
                 controller: _tagController,
                 decoration: InputDecoration(
-                  hintText: 'vlastní tag',
+                  hintText: l10n.customTagHint,
                   hintStyle: AppText.sans(size: 13, color: AppColors.mutedTag),
                   filled: true,
                   fillColor: AppColors.background,
@@ -602,7 +624,7 @@ class _ItemDetailState extends State<_ItemDetail> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    'Použít v outfitu',
+                    l10n.useInOutfit,
                     style: AppText.sans(
                       size: 13,
                       weight: FontWeight.w500,
@@ -624,7 +646,7 @@ class _ItemDetailState extends State<_ItemDetail> {
                 ),
                 alignment: Alignment.center,
                 child: Text(
-                  'Smazat',
+                  l10n.delete,
                   style: AppText.sans(size: 13, color: AppColors.muted),
                 ),
               ),
@@ -637,7 +659,11 @@ class _ItemDetailState extends State<_ItemDetail> {
 }
 
 void openSaveOutfitSheet(BuildContext context) {
-  _showSheet(context, 'Uložit outfit', const _SaveOutfitForm());
+  _showSheet(
+    context,
+    AppLocalizations.of(context)!.saveOutfitButton,
+    const _SaveOutfitForm(),
+  );
 }
 
 class _SaveOutfitForm extends StatefulWidget {
@@ -660,18 +686,19 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
     final hasCols = store.cols.isNotEmpty;
     _selectedCol ??= hasCols ? store.cols.first : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('název outfitu', style: _sectionLabelStyle),
+        Text(l10n.sectionOutfitName, style: _sectionLabelStyle),
         const SizedBox(height: 8),
         TextField(
           controller: _nameController,
           decoration: InputDecoration(
-            hintText: 'např. Pondělní porada',
+            hintText: l10n.outfitNameHint,
             hintStyle: AppText.sans(size: 14, color: AppColors.mutedTag),
             filled: true,
             fillColor: AppColors.background,
@@ -684,7 +711,7 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
           style: AppText.sans(size: 14, color: AppColors.ink),
         ),
         const SizedBox(height: 18),
-        Text('kolekce', style: _sectionLabelStyle),
+        Text(l10n.sectionCollection, style: _sectionLabelStyle),
         const SizedBox(height: 8),
         if (hasCols)
           Wrap(
@@ -703,7 +730,7 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
           )
         else
           Text(
-            'Nejdřív vytvoř kolekci v záložce Kolekce.',
+            l10n.needCollectionHint,
             style: AppText.sans(
               size: 12.5,
               color: AppColors.mutedTag,
@@ -715,10 +742,18 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
           onTap: !hasCols
               ? null
               : () async {
-                  await store.saveOutfit(
+                  final result = await store.saveOutfit(
                     rawName: _nameController.text,
                     targetCol: _selectedCol ?? '',
+                    defaultName: l10n.defaultOutfitName,
                   );
+                  if (result != null) {
+                    store.flash(
+                      l10n.toastOutfitSaved(result.name, result.col),
+                    );
+                  } else {
+                    store.flash(l10n.toastNeedCollectionFirst);
+                  }
                   if (context.mounted) Navigator.of(context).pop();
                 },
           child: Container(
@@ -729,7 +764,7 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
             ),
             alignment: Alignment.center,
             child: Text(
-              'Uložit',
+              l10n.save,
               style: AppText.sans(
                 size: 13,
                 weight: FontWeight.w500,
@@ -744,7 +779,11 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
 }
 
 void openManageTagsSheet(BuildContext context) {
-  _showSheet(context, 'Spravovat tagy', const _ManageTagsList());
+  _showSheet(
+    context,
+    AppLocalizations.of(context)!.manageTagsTitle,
+    const _ManageTagsList(),
+  );
 }
 
 class _ManageTagsList extends StatelessWidget {
@@ -756,7 +795,7 @@ class _ManageTagsList extends StatelessWidget {
     final allTags = distinctTags(store.items);
     if (allTags.isEmpty) {
       return Text(
-        'Zatím žádné tagy.',
+        AppLocalizations.of(context)!.noTagsYet,
         style: AppText.sans(size: 12.5, color: AppColors.mutedTag, height: 1.4),
       );
     }
@@ -809,10 +848,12 @@ Future<void> _renameTag(
   WardrobeStore store,
   String tag,
 ) async {
+  final l10n = AppLocalizations.of(context)!;
   final newTag = await promptTextDialog(
     context,
-    title: 'Přejmenovat tag',
+    title: l10n.renameTagTitle,
     initialValue: tag,
+    confirmLabel: l10n.save,
   );
   if (newTag != null) store.renameTag(tag, newTag);
 }
@@ -822,10 +863,12 @@ Future<void> _confirmDeleteItem(
   WardrobeStore store,
   ClothingItem item,
 ) async {
+  final l10n = AppLocalizations.of(context)!;
   final confirmed = await confirmDialog(
     context,
-    title: 'Smazat oblečení?',
-    message: 'Oblečení bude smazáno. Tuto akci nelze vrátit.',
+    title: l10n.deleteItemTitle,
+    message: '${l10n.deleteItemMessage} ${l10n.actionCannotBeUndone}',
+    confirmLabel: l10n.delete,
   );
   if (!confirmed) return;
   await store.deleteItem(item);
@@ -837,10 +880,12 @@ Future<void> _confirmDeleteTag(
   WardrobeStore store,
   String tag,
 ) async {
+  final l10n = AppLocalizations.of(context)!;
   final confirmed = await confirmDialog(
     context,
-    title: 'Smazat tag?',
-    message: 'Tag „$tag“ bude smazán a odebrán ze všech kusů oblečení.',
+    title: l10n.deleteTagTitle,
+    message: l10n.deleteTagMessage(tag),
+    confirmLabel: l10n.delete,
   );
   if (confirmed) store.deleteTag(tag);
 }

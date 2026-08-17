@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'home_screen.dart';
+import 'l10n/app_localizations.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
 
@@ -20,6 +21,8 @@ class SatnikApp extends StatelessWidget {
         title: 'Outfits',
         debugShowCheckedModeBanner: false,
         theme: buildAppTheme(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: const HomeScreen(),
       ),
     );

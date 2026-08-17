@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'l10n/app_localizations.dart';
 import 'models.dart';
 import 'sheets.dart';
 import 'theme.dart';
@@ -15,6 +16,7 @@ class WardrobeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
 
     final allTags = distinctTags(store.items);
 
@@ -78,8 +80,8 @@ class WardrobeTab extends StatelessWidget {
               for (final (cat, its) in sections) ...[
                 SliverToBoxAdapter(
                   child: SectionHeader(
-                    title: cat.label,
-                    trailing: '${its.length} kusů',
+                    title: categoryLabel(context, cat.key),
+                    trailing: l10n.itemCount(its.length),
                   ),
                 ),
                 SliverPadding(
@@ -96,6 +98,7 @@ class WardrobeTab extends StatelessWidget {
                       (context, i) {
                         if (i == its.length) {
                           return AddTile(
+                            label: l10n.add,
                             onTap: () => openAddItemSheet(
                               context,
                               presetCategory: cat.key,
@@ -106,7 +109,10 @@ class WardrobeTab extends StatelessWidget {
                         return GarmentCard(
                           width: double.infinity,
                           height: double.infinity,
-                          slotLabel: shortCategoryLabel(it.cat).toLowerCase(),
+                          slotLabel: shortCategoryLabel(
+                            context,
+                            it.cat,
+                          ).toLowerCase(),
                           tags: it.tagsLabel,
                           imagePath: it.imagePath,
                           onTap: () => onOpenItem(it),

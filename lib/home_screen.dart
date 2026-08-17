@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'about_sheet.dart';
 import 'collections_tab.dart';
+import 'l10n/app_localizations.dart';
 import 'models.dart';
 import 'outfit_tab.dart';
 import 'sheets.dart';
@@ -116,10 +117,11 @@ class _BottomTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const tabs = [
-      (WardrobeTabKind.outfit, 'Outfit'),
-      (WardrobeTabKind.wardrobe, 'Šatník'),
-      (WardrobeTabKind.collections, 'Kolekce'),
+    final l10n = AppLocalizations.of(context)!;
+    final tabs = [
+      (WardrobeTabKind.outfit, l10n.tabOutfit),
+      (WardrobeTabKind.wardrobe, l10n.tabWardrobe),
+      (WardrobeTabKind.collections, l10n.tabCollections),
     ];
     return Container(
       decoration: const BoxDecoration(

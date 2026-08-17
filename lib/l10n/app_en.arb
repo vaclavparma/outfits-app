@@ -1,0 +1,163 @@
+{
+  "@@locale": "en",
+
+  "tabOutfit": "Outfit",
+  "tabWardrobe": "Wardrobe",
+  "tabCollections": "Collections",
+
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "create": "Create",
+  "add": "add",
+  "close": "close",
+  "actionCannotBeUndone": "This action can't be undone.",
+  "noTags": "no tags",
+  "rename": "Rename",
+
+  "slotTop": "top",
+  "slotDressFull": "dress · full outfit",
+  "slotBottom": "bottom",
+  "slotSkirt": "skirt",
+  "slotShoes": "shoes",
+  "addTopPlaceholder": "Add a top",
+  "addBottomPlaceholder": "Add a bottom",
+  "addShoesPlaceholder": "Add shoes",
+  "shuffleButton": "Shuffle",
+  "saveOutfitButton": "Save outfit",
+
+  "categoryTricka": "Tops",
+  "categorySaty": "Dresses",
+  "categoryBundy": "Jackets / layers",
+  "categoryKalhoty": "Trousers",
+  "categorySukne": "Skirts",
+  "categoryBoty": "Shoes",
+
+  "itemCount": "{count, plural, one{{count} item} other{{count} items}}",
+  "@itemCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "newCollectionTile": "new collection",
+  "newCollectionDialogTitle": "New collection",
+  "newCollectionHint": "e.g. Work",
+
+  "outfitCount": "{count, plural, one{{count} outfit} other{{count} outfits}}",
+  "@outfitCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+
+  "collectionEmptyHint": "Nothing here yet. Save an outfit and pick this collection.",
+  "renameCollectionTitle": "Rename collection",
+  "deleteCollectionTitle": "Delete collection?",
+  "deleteCollectionMessage": "The collection “{name}” and everything in it will be deleted.",
+  "@deleteCollectionMessage": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "deleteOutfitTitle": "Delete outfit?",
+  "deleteOutfitMessage": "“{name}” will be deleted.",
+  "@deleteOutfitMessage": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+
+  "pickTopTitle": "Choose a top or dress",
+  "pickBottomTitle": "Choose a bottom",
+  "pickShoesTitle": "Choose shoes",
+
+  "addLayerTitle": "Add a layer",
+  "layerLimitMessage": "{max, plural, one{You can have at most {max} extra layer.} other{You can have at most {max} extra layers.}}",
+  "@layerLimitMessage": {
+    "placeholders": {
+      "max": {"type": "int"}
+    }
+  },
+  "noMoreLayers": "No more layers to add.",
+
+  "addItemTitle": "Add clothing",
+  "sectionCategory": "category",
+  "sectionTagsOptional": "tags (optional)",
+  "takePhoto": "Take photo",
+  "fromGallery": "From gallery",
+
+  "itemDetailTitle": "Clothing detail",
+  "sectionItemTags": "item tags",
+  "customTagHint": "custom tag",
+  "useInOutfit": "Use in outfit",
+  "deleteItemTitle": "Delete this item?",
+  "deleteItemMessage": "This item will be deleted.",
+
+  "sectionOutfitName": "outfit name",
+  "outfitNameHint": "e.g. Monday meeting",
+  "sectionCollection": "collection",
+  "needCollectionHint": "Create a collection in the Collections tab first.",
+
+  "manageTagsTitle": "Manage tags",
+  "noTagsYet": "No tags yet.",
+  "renameTagTitle": "Rename tag",
+  "deleteTagTitle": "Delete tag?",
+  "deleteTagMessage": "The tag “{tag}” will be deleted and removed from every item.",
+  "@deleteTagMessage": {
+    "placeholders": {
+      "tag": {"type": "String"}
+    }
+  },
+
+  "toastSavedWithPhoto": "Saved to “{category}” · photo stored in app files",
+  "@toastSavedWithPhoto": {
+    "placeholders": {
+      "category": {"type": "String"}
+    }
+  },
+  "toastSavedNoPhoto": "Saved to “{category}”",
+  "@toastSavedNoPhoto": {
+    "placeholders": {
+      "category": {"type": "String"}
+    }
+  },
+  "toastSavedPhotoFailed": "Saved to “{category}” · couldn't save the photo",
+  "@toastSavedPhotoFailed": {
+    "placeholders": {
+      "category": {"type": "String"}
+    }
+  },
+  "toastOutfitSaved": "“{name}” saved to the {col} collection",
+  "@toastOutfitSaved": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "col": {"type": "String"}
+    }
+  },
+  "toastNeedCollectionFirst": "Add a collection first",
+  "defaultOutfitName": "Outfit {n}",
+  "@defaultOutfitName": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+
+  "aboutTagline": "A wardrobe for planning outfits",
+  "aboutGithub": "Source code on GitHub",
+  "aboutSupport": "Support development — Buy Me a Coffee",
+  "aboutVersionLine": "v{version} ({buildNumber}) · Václav Parma",
+  "@aboutVersionLine": {
+    "placeholders": {
+      "version": {"type": "String"},
+      "buildNumber": {"type": "String"}
+    }
+  },
+
+  "tagWork": "work",
+  "tagCasual": "casual",
+  "tagSummer": "summer",
+  "tagEvening": "evening",
+  "tagWinter": "winter",
+  "tagBasic": "basic"
+}

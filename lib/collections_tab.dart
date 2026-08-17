@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'collection_detail_screen.dart';
+import 'l10n/app_localizations.dart';
 import 'models.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
@@ -16,6 +17,7 @@ class CollectionsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
 
     return GridView.builder(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
@@ -29,7 +31,7 @@ class CollectionsTab extends StatelessWidget {
       itemBuilder: (context, i) {
         if (i == store.cols.length) {
           return AddTile(
-            label: 'nová kolekce',
+            label: l10n.newCollectionTile,
             onTap: () => _createCollection(context, store),
           );
         }
@@ -100,9 +102,7 @@ class _CollectionCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    outfits.length == 1
-                        ? '1 outfit'
-                        : '${outfits.length} outfitů',
+                    AppLocalizations.of(context)!.outfitCount(outfits.length),
                     style: AppText.mono(
                       size: 9,
                       letterSpacing: 0.6,
@@ -123,12 +123,13 @@ Future<void> _createCollection(
   BuildContext context,
   WardrobeStore store,
 ) async {
+  final l10n = AppLocalizations.of(context)!;
   final name = await promptTextDialog(
     context,
-    title: 'Nová kolekce',
+    title: l10n.newCollectionDialogTitle,
     initialValue: '',
-    hintText: 'např. Práce',
-    confirmLabel: 'Vytvořit',
+    hintText: l10n.newCollectionHint,
+    confirmLabel: l10n.create,
   );
   if (name != null && name.trim().isNotEmpty) store.addCollection(name);
 }

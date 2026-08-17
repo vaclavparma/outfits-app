@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'l10n/app_localizations.dart';
 import 'theme.dart';
 
 const _githubUrl = 'https://github.com/vaclavparma/outfits-app';
@@ -45,6 +46,7 @@ class _AboutContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return FutureBuilder<PackageInfo>(
       future: PackageInfo.fromPlatform(),
       builder: (context, snapshot) {
@@ -71,7 +73,7 @@ class _AboutContent extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Šatník pro plánování outfitů',
+              l10n.aboutTagline,
               textAlign: TextAlign.center,
               style: AppText.sans(
                 size: 12.5,
@@ -83,7 +85,7 @@ class _AboutContent extends StatelessWidget {
             Text(
               info == null
                   ? ''
-                  : 'v${info.version} (${info.buildNumber}) · Václav Parma',
+                  : l10n.aboutVersionLine(info.version, info.buildNumber),
               style: AppText.mono(
                 size: 9.5,
                 letterSpacing: 0.3,
@@ -99,13 +101,13 @@ class _AboutContent extends StatelessWidget {
             const SizedBox(height: 18),
             _LinkRow(
               icon: Icons.code,
-              label: 'Zdrojový kód na GitHubu',
+              label: l10n.aboutGithub,
               onTap: () => _openUrl(_githubUrl),
             ),
             const SizedBox(height: 8),
             _LinkRow(
               icon: Icons.coffee_outlined,
-              label: 'Podpoř vývoj — Buy Me a Coffee',
+              label: l10n.aboutSupport,
               onTap: () => _openUrl(_buyMeACoffeeUrl),
             ),
           ],

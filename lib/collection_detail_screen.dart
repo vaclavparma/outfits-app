@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'l10n/app_localizations.dart';
 import 'models.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
@@ -80,7 +81,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                           PopupMenuItem(
                             value: 'rename',
                             child: Text(
-                              'Přejmenovat',
+                              AppLocalizations.of(context)!.rename,
                               style: AppText.sans(
                                 size: 14,
                                 color: AppColors.ink,
@@ -90,7 +91,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                           PopupMenuItem(
                             value: 'delete',
                             child: Text(
-                              'Smazat',
+                              AppLocalizations.of(context)!.delete,
                               style: AppText.sans(
                                 size: 14,
                                 color: AppColors.accent,
@@ -108,7 +109,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 40),
                             child: Text(
-                              'Zatím prázdné. Ulož outfit a vyber tuto kolekci.',
+                              AppLocalizations.of(context)!.collectionEmptyHint,
                               textAlign: TextAlign.center,
                               style: AppText.sans(
                                 size: 13,
@@ -144,11 +145,13 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
   }
 
   Future<void> _handleMenuAction(WardrobeStore store, String action) async {
+    final l10n = AppLocalizations.of(context)!;
     if (action == 'rename') {
       final newName = await promptTextDialog(
         context,
-        title: 'Přejmenovat kolekci',
+        title: l10n.renameCollectionTitle,
         initialValue: _name,
+        confirmLabel: l10n.save,
       );
       if (newName == null) return;
       final applied = await store.renameCollection(_name, newName);
@@ -156,9 +159,10 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
     } else if (action == 'delete') {
       final confirmed = await confirmDialog(
         context,
-        title: 'Smazat kolekci?',
+        title: l10n.deleteCollectionTitle,
         message:
-            'Kolekce „$_name“ a vše v ní bude smazáno. Tuto akci nelze vrátit.',
+            '${l10n.deleteCollectionMessage(_name)} ${l10n.actionCannotBeUndone}',
+        confirmLabel: l10n.delete,
       );
       if (confirmed) store.deleteCollection(_name);
     }
@@ -216,7 +220,11 @@ class _OutfitCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          outfit.meta,
+                          outfit.catKeys.isNotEmpty
+                              ? outfit.catKeys
+                                    .map((k) => shortCategoryLabel(context, k))
+                                    .join(' · ')
+                              : (outfit.legacyMeta ?? ''),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppText.mono(
@@ -265,10 +273,12 @@ Future<void> _confirmDeleteOutfit(
   int index,
   String outfitName,
 ) async {
+  final l10n = AppLocalizations.of(context)!;
   final confirmed = await confirmDialog(
     context,
-    title: 'Smazat outfit?',
-    message: '„$outfitName“ bude smazán. Tuto akci nelze vrátit.',
+    title: l10n.deleteOutfitTitle,
+    message: '${l10n.deleteOutfitMessage(outfitName)} ${l10n.actionCannotBeUndone}',
+    confirmLabel: l10n.delete,
   );
   if (confirmed) store.deleteOutfit(colName, index);
 }

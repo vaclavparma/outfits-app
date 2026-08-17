@@ -41,6 +41,9 @@ dependencies:
   provider: ^6.1.2
   package_info_plus: ^8.1.2
   url_launcher: ^6.3.1
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
@@ -71,6 +74,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Generates AppLocalizations from lib/l10n/*.arb (see l10n.yaml).
+  generate: true
 
   assets:
     - assets/icon/app_icon.png

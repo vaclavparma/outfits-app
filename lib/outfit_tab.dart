@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'l10n/app_localizations.dart';
 import 'models.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
@@ -25,6 +26,7 @@ class OutfitTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<WardrobeStore>(
       builder: (context, store, _) {
+        final l10n = AppLocalizations.of(context)!;
         final top = store.at(store.topList, WardrobeZone.top);
         final bot = store.at(store.botList, WardrobeZone.bottom);
         final shoe = store.at(store.shoeList, WardrobeZone.shoes);
@@ -49,8 +51,10 @@ class OutfitTab extends StatelessWidget {
                               width: isDress ? 208 : 176,
                               height: isDress ? 342 : 172,
                               rotationDeg: -1.6,
-                              slotLabel: isDress ? 'šaty · celé tělo' : 'top',
-                              name: top == null ? 'Přidej top' : null,
+                              slotLabel: isDress
+                                  ? l10n.slotDressFull
+                                  : l10n.slotTop,
+                              name: top == null ? l10n.addTopPlaceholder : null,
                               imagePath: top?.imagePath,
                               onTap: () => onPick(WardrobeZone.top),
                               onSwipe: (dir) =>
@@ -90,9 +94,9 @@ class OutfitTab extends StatelessWidget {
                             height: 208,
                             rotationDeg: 1.4,
                             slotLabel: bot != null && bot.cat == 'sukne'
-                                ? 'sukně'
-                                : 'spodek',
-                            name: bot == null ? 'Přidej spodek' : null,
+                                ? l10n.slotSkirt
+                                : l10n.slotBottom,
+                            name: bot == null ? l10n.addBottomPlaceholder : null,
                             imagePath: bot?.imagePath,
                             onTap: () => onPick(WardrobeZone.bottom),
                             onSwipe: (dir) =>
@@ -112,8 +116,8 @@ class OutfitTab extends StatelessWidget {
                           width: 158,
                           height: 110,
                           rotationDeg: -2.2,
-                          slotLabel: 'boty',
-                          name: shoe == null ? 'Přidej boty' : null,
+                          slotLabel: l10n.slotShoes,
+                          name: shoe == null ? l10n.addShoesPlaceholder : null,
                           imagePath: shoe?.imagePath,
                           onTap: () => onPick(WardrobeZone.shoes),
                           onSwipe: (dir) => store.step(WardrobeZone.shoes, dir),
@@ -146,7 +150,7 @@ class OutfitTab extends StatelessWidget {
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        'Zamíchat',
+                        l10n.shuffleButton,
                         style: AppText.sans(size: 12.5, color: AppColors.label),
                       ),
                     ),
@@ -163,7 +167,7 @@ class OutfitTab extends StatelessWidget {
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          'Uložit outfit',
+                          l10n.saveOutfitButton,
                           style: AppText.sans(
                             size: 13,
                             weight: FontWeight.w500,

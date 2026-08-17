@@ -201,7 +201,11 @@ class WardrobeStore extends ChangeNotifier {
     return dest;
   }
 
-  Future<ClothingItem> addItem(
+  /// Adds a new item. [sourceImagePath] (if given) is copied in and its
+  /// failure is reported via the returned `photoFailed` flag rather than a
+  /// message here, since composing user-facing text needs a [BuildContext]
+  /// this store doesn't have.
+  Future<({ClothingItem item, bool photoFailed})> addItem(
     String cat,
     List<String> tags, {
     String? sourceImagePath,
@@ -226,14 +230,7 @@ class WardrobeStore extends ChangeNotifier {
     items = [...items, item];
     notifyListeners();
     await _persist();
-    if (photoFailed) {
-      flash('Uloženo do „${categoryLabel(cat)}“ · fotku se nepodařilo uložit');
-    } else {
-      flash(
-        'Uloženo do „${categoryLabel(cat)}“${imagePath != null ? ' · fotka v souborech apky' : ''}',
-      );
-    }
-    return item;
+    return (item: item, photoFailed: photoFailed);
   }
 
   void setTags(String id, List<String> tags) {
@@ -340,14 +337,17 @@ class WardrobeStore extends ChangeNotifier {
     await _persist();
   }
 
-  Future<void> saveOutfit({
+  /// Saves the current outfit selection into [targetCol] (or the first
+  /// collection, if empty), returning the collection/name it landed under —
+  /// or null if there's no collection to save into. [defaultName] supplies
+  /// the auto-generated name ("Outfit N") when [rawName] is blank, since
+  /// that text needs a [BuildContext] this store doesn't have.
+  Future<({String col, String name})?> saveOutfit({
     required String rawName,
     required String targetCol,
+    required String Function(int n) defaultName,
   }) async {
-    if (cols.isEmpty) {
-      flash('Nejdřív přidej kolekci');
-      return;
-    }
+    if (cols.isEmpty) return null;
     final top = at(topList, WardrobeZone.top);
     final bot = at(botList, WardrobeZone.bottom);
     final shoe = at(shoeList, WardrobeZone.shoes);
@@ -364,12 +364,12 @@ class WardrobeStore extends ChangeNotifier {
     final total = cols.fold<int>(0, (a, k) => a + (saved[k]?.length ?? 0));
     final name = rawName.trim().isNotEmpty
         ? rawName.trim()
-        : 'Outfit ${total + 1}';
+        : defaultName(total + 1);
     final col = targetCol.isNotEmpty ? targetCol : cols.first;
 
     final entry = SavedOutfit(
       name: name,
-      meta: parts.map((i) => shortCategoryLabel(i.cat)).join(' · '),
+      catKeys: parts.map((i) => i.cat).toList(),
       itemIds: parts.map((i) => i.id).toList(),
     );
     saved = {
@@ -378,7 +378,7 @@ class WardrobeStore extends ChangeNotifier {
     };
     notifyListeners();
     await _persist();
-    flash('„$name“ uloženo do kolekce $col');
+    return (col: col, name: name);
   }
 
   void loadOutfit(SavedOutfit o) {
