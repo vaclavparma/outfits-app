@@ -1,4 +1,4 @@
-# what-to-wear
+# outfits-app
 
 A new Flutter project.
 

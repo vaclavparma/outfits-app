@@ -4,7 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'theme.dart';
 
-const _githubUrl = 'https://github.com/vaclavparma/what-to-wear';
+const _githubUrl = 'https://github.com/vaclavparma/outfits-app';
 const _buyMeACoffeeUrl = 'https://buymeacoffee.com/vaclavparma';
 
 Future<void> _openUrl(String url) async {
