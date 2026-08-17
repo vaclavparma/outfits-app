@@ -28,7 +28,7 @@
   "categoryTricka": "Tops",
   "categorySaty": "Dresses",
   "categoryBundy": "Jackets / layers",
-  "categoryKalhoty": "Trousers",
+  "categoryKalhoty": "Trousers / shorts",
   "categorySukne": "Skirts",
   "categoryBoty": "Shoes",
 
@@ -123,6 +123,13 @@
   "toastSavedPhotoFailed": "Saved to “{category}” · couldn't save the photo",
   "@toastSavedPhotoFailed": {
     "placeholders": {
+      "category": {"type": "String"}
+    }
+  },
+  "toastSavedMultiple": "{count, plural, one{Saved {count} item to “{category}”} other{Saved {count} items to “{category}”}}",
+  "@toastSavedMultiple": {
+    "placeholders": {
+      "count": {"type": "int"},
       "category": {"type": "String"}
     }
   },

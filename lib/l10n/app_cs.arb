@@ -28,7 +28,7 @@
   "categoryTricka": "Trička / topy",
   "categorySaty": "Šaty",
   "categoryBundy": "Bundy / vrstvy",
-  "categoryKalhoty": "Kalhoty",
+  "categoryKalhoty": "Kalhoty / kraťasy",
   "categorySukne": "Sukně",
   "categoryBoty": "Boty",
 
@@ -123,6 +123,13 @@
   "toastSavedPhotoFailed": "Uloženo do „{category}“ · fotku se nepodařilo uložit",
   "@toastSavedPhotoFailed": {
     "placeholders": {
+      "category": {"type": "String"}
+    }
+  },
+  "toastSavedMultiple": "{count, plural, one{Uloženo {count} kus do „{category}“} few{Uloženo {count} kusy do „{category}“} other{Uloženo {count} kusů do „{category}“}}",
+  "@toastSavedMultiple": {
+    "placeholders": {
+      "count": {"type": "int"},
       "category": {"type": "String"}
     }
   },

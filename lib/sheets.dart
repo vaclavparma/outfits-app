@@ -335,26 +335,33 @@ class _AddItemFormState extends State<_AddItemForm> {
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      final file = await ImagePicker().pickImage(
-        source: source,
-        imageQuality: 85,
-      );
-      if (file == null) return;
+      final picker = ImagePicker();
+      // The gallery lets you select several photos at once — handy for
+      // adding a handful of items of the same category/tags in one go.
+      // The camera can only ever produce one photo per capture.
+      final files = source == ImageSource.gallery
+          ? await picker.pickMultiImage(imageQuality: 85)
+          : await picker
+                .pickImage(source: source, imageQuality: 85)
+                .then((f) => f == null ? <XFile>[] : [f]);
+      if (files.isEmpty) return;
       if (!mounted) return;
       final store = context.read<WardrobeStore>();
       final l10n = AppLocalizations.of(context)!;
       final label = categoryLabel(context, _cat);
-      final result = await store.addItem(
+      final result = await store.addItems(
         _cat,
         _tags,
-        sourceImagePath: file.path,
+        sourceImagePaths: files.map((f) => f.path).toList(),
       );
       store.flash(
-        result.photoFailed
+        files.length > 1
+            ? l10n.toastSavedMultiple(files.length, label)
+            : result.photoFailures > 0
             ? l10n.toastSavedPhotoFailed(label)
             : l10n.toastSavedWithPhoto(label),
       );
-      widget.onAdded?.call(result.item);
+      widget.onAdded?.call(result.items.first);
       if (mounted) Navigator.of(context).pop();
     } finally {
       if (mounted) setState(() => _busy = false);

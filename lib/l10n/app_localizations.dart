@@ -245,7 +245,7 @@ abstract class AppLocalizations {
   /// No description provided for @categoryKalhoty.
   ///
   /// In cs, this message translates to:
-  /// **'Kalhoty'**
+  /// **'Kalhoty / kraťasy'**
   String get categoryKalhoty;
 
   /// No description provided for @categorySukne.
@@ -493,6 +493,12 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Uloženo do „{category}“ · fotku se nepodařilo uložit'**
   String toastSavedPhotoFailed(String category);
+
+  /// No description provided for @toastSavedMultiple.
+  ///
+  /// In cs, this message translates to:
+  /// **'{count, plural, one{Uloženo {count} kus do „{category}“} few{Uloženo {count} kusy do „{category}“} other{Uloženo {count} kusů do „{category}“}}'**
+  String toastSavedMultiple(int count, String category);
 
   /// No description provided for @toastOutfitSaved.
   ///

@@ -257,36 +257,42 @@ class WardrobeStore extends ChangeNotifier {
     return dest;
   }
 
-  /// Adds a new item. [sourceImagePath] (if given) is copied in and its
-  /// failure is reported via the returned `photoFailed` flag rather than a
-  /// message here, since composing user-facing text needs a [BuildContext]
-  /// this store doesn't have.
-  Future<({ClothingItem item, bool photoFailed})> addItem(
+  /// Adds one new item per path in [sourceImagePaths] (all sharing [cat] and
+  /// [tags]) — e.g. picking several photos at once to add a handful of
+  /// t-shirts in one go instead of repeating the whole form per item. A
+  /// photo that fails to copy just leaves that one item photo-less rather
+  /// than failing the whole batch; the count of such failures is reported
+  /// back rather than flashed here, since composing user-facing text needs
+  /// a [BuildContext] this store doesn't have.
+  Future<({List<ClothingItem> items, int photoFailures})> addItems(
     String cat,
     List<String> tags, {
-    String? sourceImagePath,
+    required List<String> sourceImagePaths,
   }) async {
-    String? imagePath;
-    var photoFailed = false;
-    if (sourceImagePath != null) {
+    final newItems = <ClothingItem>[];
+    var photoFailures = 0;
+    for (final sourcePath in sourceImagePaths) {
+      String? imagePath;
       try {
-        imagePath = await _newImageCopy(sourceImagePath);
+        imagePath = await _newImageCopy(sourcePath);
       } catch (_) {
         // Keep the item usable (category + tags) even if the photo couldn't
         // be saved — losing the whole item over a storage hiccup is worse.
-        photoFailed = true;
+        photoFailures++;
       }
+      newItems.add(
+        ClothingItem(
+          id: '$cat-new-${DateTime.now().microsecondsSinceEpoch}-${newItems.length}',
+          cat: cat,
+          tags: [...tags],
+          imagePath: imagePath,
+        ),
+      );
     }
-    final item = ClothingItem(
-      id: '$cat-new-${DateTime.now().microsecondsSinceEpoch}',
-      cat: cat,
-      tags: [...tags],
-      imagePath: imagePath,
-    );
-    items = [...items, item];
+    items = [...items, ...newItems];
     notifyListeners();
     await _persist();
-    return (item: item, photoFailed: photoFailed);
+    return (items: newItems, photoFailures: photoFailures);
   }
 
   void setTags(String id, List<String> tags) {

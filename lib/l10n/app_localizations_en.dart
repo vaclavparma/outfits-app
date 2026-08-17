@@ -81,7 +81,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get categoryBundy => 'Jackets / layers';
 
   @override
-  String get categoryKalhoty => 'Trousers';
+  String get categoryKalhoty => 'Trousers / shorts';
 
   @override
   String get categorySukne => 'Skirts';
@@ -242,6 +242,17 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String toastSavedPhotoFailed(String category) {
     return 'Saved to “$category” · couldn\'t save the photo';
+  }
+
+  @override
+  String toastSavedMultiple(int count, String category) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Saved $count items to “$category”',
+      one: 'Saved $count item to “$category”',
+    );
+    return '$_temp0';
   }
 
   @override

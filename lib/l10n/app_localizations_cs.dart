@@ -81,7 +81,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get categoryBundy => 'Bundy / vrstvy';
 
   @override
-  String get categoryKalhoty => 'Kalhoty';
+  String get categoryKalhoty => 'Kalhoty / kraťasy';
 
   @override
   String get categorySukne => 'Sukně';
@@ -244,6 +244,18 @@ class AppLocalizationsCs extends AppLocalizations {
   @override
   String toastSavedPhotoFailed(String category) {
     return 'Uloženo do „$category“ · fotku se nepodařilo uložit';
+  }
+
+  @override
+  String toastSavedMultiple(int count, String category) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Uloženo $count kusů do „$category“',
+      few: 'Uloženo $count kusy do „$category“',
+      one: 'Uloženo $count kus do „$category“',
+    );
+    return '$_temp0';
   }
 
   @override
