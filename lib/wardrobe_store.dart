@@ -323,10 +323,15 @@ class WardrobeStore extends ChangeNotifier {
     flash('Kolekce „$name“ přidána');
   }
 
-  Future<void> renameCollection(String oldName, String rawNewName) async {
+  /// Renames a collection, returning the name that ended up in effect (the
+  /// new name on success, or the unchanged [oldName] if the rename was
+  /// rejected — empty, unchanged, a duplicate, or the collection is gone).
+  Future<String> renameCollection(String oldName, String rawNewName) async {
     final newName = rawNewName.trim();
-    if (newName.isEmpty || newName == oldName || cols.contains(newName)) return;
-    if (!cols.contains(oldName)) return;
+    if (newName.isEmpty || newName == oldName || cols.contains(newName)) {
+      return oldName;
+    }
+    if (!cols.contains(oldName)) return oldName;
     cols = [for (final c in cols) c == oldName ? newName : c];
     final list = saved[oldName] ?? [];
     final newSaved = {...saved}..remove(oldName);
@@ -335,6 +340,7 @@ class WardrobeStore extends ChangeNotifier {
     notifyListeners();
     await _persist();
     flash('Kolekce přejmenována na „$newName“');
+    return newName;
   }
 
   Future<void> deleteCollection(String name) async {

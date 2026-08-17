@@ -151,38 +151,7 @@ class _PickGrid extends StatelessWidget {
           ),
           itemBuilder: (context, i) {
             if (i == filtered.length) {
-              return GestureDetector(
-                onTap: () => _addNew(context),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.dashedBorder),
-                  ),
-                  alignment: Alignment.center,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '+',
-                        style: AppText.sans(
-                          size: 22,
-                          weight: FontWeight.w300,
-                          color: AppColors.mutedSoft,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'přidat',
-                        style: AppText.mono(
-                          size: 9,
-                          letterSpacing: 0.6,
-                          color: AppColors.mutedSoft,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
+              return AddTile(onTap: () => _addNew(context));
             }
             final it = filtered[i];
             return GarmentCard(
@@ -292,7 +261,7 @@ void openAddItemSheet(
 }) {
   _showSheet(
     context,
-    'Přidat kus',
+    'Přidat oblečení',
     _AddItemForm(presetCategory: presetCategory, onAdded: onAdded),
   );
 }
@@ -451,7 +420,7 @@ class _AddItemFormState extends State<_AddItemForm> {
 }
 
 void openItemSheet(BuildContext context, ClothingItem item) {
-  _showSheet(context, 'Detail kusu', _ItemDetail(itemId: item.id));
+  _showSheet(context, 'Detail oblečení', _ItemDetail(itemId: item.id));
 }
 
 class _ItemDetail extends StatefulWidget {
@@ -503,7 +472,7 @@ class _ItemDetailState extends State<_ItemDetail> {
         ),
         const SizedBox(height: 18),
         Text(
-          'tagy kusu',
+          'tagy oblečení',
           style: AppText.mono(
             size: 9.5,
             letterSpacing: 1.3,
@@ -818,7 +787,7 @@ class _ManageTagsList extends StatelessWidget {
     final allTags = distinctTags(store.items);
     if (allTags.isEmpty) {
       return Text(
-        'Zatím žádné tagy. Vytvoříš je při přidávání nebo úpravě kusu.',
+        'Zatím žádné tagy.',
         style: AppText.sans(size: 12.5, color: AppColors.mutedTag, height: 1.4),
       );
     }
@@ -886,7 +855,7 @@ Future<void> _confirmDeleteItem(
 ) async {
   final confirmed = await confirmDialog(
     context,
-    title: 'Smazat kus?',
+    title: 'Smazat oblečení?',
     message: 'Oblečení bude smazáno. Tuto akci nelze vrátit.',
   );
   if (!confirmed) return;

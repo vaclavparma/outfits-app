@@ -269,6 +269,51 @@ class RoundIconButton extends StatelessWidget {
   }
 }
 
+/// Dashed-border "+" tile used as the trailing cell in a grid (or list) to
+/// add a new item — a garment, a layer, a collection...
+class AddTile extends StatelessWidget {
+  final VoidCallback onTap;
+  final String label;
+
+  const AddTile({super.key, required this.onTap, this.label = 'přidat'});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.dashedBorder),
+        ),
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '+',
+              style: AppText.sans(
+                size: 22,
+                weight: FontWeight.w300,
+                color: AppColors.mutedSoft,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: AppText.mono(
+                size: 9,
+                letterSpacing: 0.6,
+                color: AppColors.mutedSoft,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Section header used above wardrobe grids and collection lists.
 class SectionHeader extends StatelessWidget {
   final String title;
@@ -344,24 +389,38 @@ Future<bool> confirmDialog(
   return confirmed == true;
 }
 
-/// Shared "rename" dialog — a titled text field pre-filled with
-/// [initialValue], returning the edited text or null if cancelled.
+/// Shared text-entry dialog (used for both renaming and creating) — a
+/// titled text field pre-filled with [initialValue], returning the edited
+/// text or null if cancelled.
 Future<String?> promptTextDialog(
   BuildContext context, {
   required String title,
   required String initialValue,
+  String? hintText,
+  String confirmLabel = 'Uložit',
 }) {
   return showDialog<String>(
     context: context,
-    builder: (dialogContext) =>
-        _TextPromptDialog(title: title, initialValue: initialValue),
+    builder: (dialogContext) => _TextPromptDialog(
+      title: title,
+      initialValue: initialValue,
+      hintText: hintText,
+      confirmLabel: confirmLabel,
+    ),
   );
 }
 
 class _TextPromptDialog extends StatefulWidget {
   final String title;
   final String initialValue;
-  const _TextPromptDialog({required this.title, required this.initialValue});
+  final String? hintText;
+  final String confirmLabel;
+  const _TextPromptDialog({
+    required this.title,
+    required this.initialValue,
+    this.hintText,
+    this.confirmLabel = 'Uložit',
+  });
 
   @override
   State<_TextPromptDialog> createState() => _TextPromptDialogState();
@@ -391,6 +450,8 @@ class _TextPromptDialogState extends State<_TextPromptDialog> {
         autofocus: true,
         style: AppText.sans(size: 14, color: AppColors.ink),
         decoration: InputDecoration(
+          hintText: widget.hintText,
+          hintStyle: AppText.sans(size: 14, color: AppColors.mutedTag),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 12,
@@ -409,7 +470,7 @@ class _TextPromptDialogState extends State<_TextPromptDialog> {
         TextButton(
           onPressed: () => Navigator.of(context).pop(_controller.text),
           child: Text(
-            'Uložit',
+            widget.confirmLabel,
             style: AppText.sans(
               size: 13,
               weight: FontWeight.w500,

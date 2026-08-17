@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'about_sheet.dart';
 import 'collections_tab.dart';
 import 'models.dart';
 import 'outfit_tab.dart';
@@ -23,50 +24,54 @@ class HomeScreen extends StatelessWidget {
           children: [
             Column(
               children: [
-                const SizedBox(height: 8),
-                Expanded(
-                  child: Stack(
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 220),
-                        switchInCurve: Curves.easeOut,
-                        switchOutCurve: Curves.easeIn,
-                        transitionBuilder: (child, animation) => FadeTransition(
-                          opacity: animation,
-                          child: SlideTransition(
-                            position: Tween<Offset>(
-                              begin: const Offset(0, 0.02),
-                              end: Offset.zero,
-                            ).animate(animation),
-                            child: child,
+                      GestureDetector(
+                        onTap: () => openAboutSheet(context),
+                        child: const Padding(
+                          padding: EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.info_outline,
+                            size: 20,
+                            color: AppColors.mutedSoft,
                           ),
-                        ),
-                        child: KeyedSubtree(
-                          key: ValueKey(store.screen),
-                          child: switch (store.screen) {
-                            WardrobeTabKind.outfit => OutfitTab(
-                              onPick: (zone) => openPickSheet(context, zone),
-                              onOpenLayers: () => openLayerSheet(context),
-                              onOpenSave: () => openSaveOutfitSheet(context),
-                            ),
-                            WardrobeTabKind.wardrobe => WardrobeTab(
-                              onOpenItem: (item) =>
-                                  openItemSheet(context, item),
-                            ),
-                            WardrobeTabKind.collections =>
-                              const CollectionsTab(),
-                          },
                         ),
                       ),
-                      if (store.screen == WardrobeTabKind.wardrobe)
-                        Positioned(
-                          right: 20,
-                          bottom: 16,
-                          child: RoundIconButtonAdd(
-                            onTap: () => openAddItemSheet(context),
-                          ),
-                        ),
                     ],
+                  ),
+                ),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 220),
+                    switchInCurve: Curves.easeOut,
+                    switchOutCurve: Curves.easeIn,
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.02),
+                          end: Offset.zero,
+                        ).animate(animation),
+                        child: child,
+                      ),
+                    ),
+                    child: KeyedSubtree(
+                      key: ValueKey(store.screen),
+                      child: switch (store.screen) {
+                        WardrobeTabKind.outfit => OutfitTab(
+                          onPick: (zone) => openPickSheet(context, zone),
+                          onOpenLayers: () => openLayerSheet(context),
+                          onOpenSave: () => openSaveOutfitSheet(context),
+                        ),
+                        WardrobeTabKind.wardrobe => WardrobeTab(
+                          onOpenItem: (item) => openItemSheet(context, item),
+                        ),
+                        WardrobeTabKind.collections => const CollectionsTab(),
+                      },
+                    ),
                   ),
                 ),
                 _BottomTabs(current: store.screen, onSelect: store.setScreen),
@@ -79,40 +84,6 @@ class HomeScreen extends StatelessWidget {
                 bottom: 84,
                 child: _Toast(message: store.toast),
               ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class RoundIconButtonAdd extends StatelessWidget {
-  final VoidCallback onTap;
-  const RoundIconButtonAdd({super.key, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 48,
-        height: 48,
-        decoration: const BoxDecoration(
-          color: AppColors.ink,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Color(0x33000000),
-              blurRadius: 10,
-              offset: Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Container(width: 15, height: 1.5, color: Colors.white),
-            Container(width: 1.5, height: 15, color: Colors.white),
           ],
         ),
       ),

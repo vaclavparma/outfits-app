@@ -21,63 +21,51 @@ class WardrobeTab extends StatelessWidget {
     bool visible(ClothingItem it) =>
         store.tagFilter == null || it.tags.contains(store.tagFilter);
 
+    // Every category is always shown (even empty ones) so there's always a
+    // + tile to add the first item of that kind — no separate empty state
+    // or floating add button needed.
     final sections = kCategories
         .map((c) => (c, store.byCat(c.key).where(visible).toList()))
-        .where((entry) => entry.$2.isNotEmpty)
         .toList();
-
-    if (store.items.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: Text(
-            'Šatník je prázdný.\nPřidej první kus tlačítkem + vpravo nahoře.',
-            textAlign: TextAlign.center,
-            style: AppText.sans(
-              size: 13,
-              color: AppColors.mutedTag,
-              height: 1.5,
-            ),
-          ),
-        ),
-      );
-    }
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 12),
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Wrap(
-                spacing: 7,
-                runSpacing: 7,
-                children: [
-                  for (final t in allTags)
-                    SelectChip(
-                      label: t,
-                      active: store.tagFilter == t,
-                      onTap: () => store.toggleTagFilter(t),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: () => openManageTagsSheet(context),
-              child: const Padding(
-                padding: EdgeInsets.all(4),
-                child: Icon(
-                  Icons.edit_outlined,
-                  size: 18,
-                  color: AppColors.mutedSoft,
+        if (allTags.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Wrap(
+                    spacing: 7,
+                    runSpacing: 7,
+                    children: [
+                      for (final t in allTags)
+                        SelectChip(
+                          label: t,
+                          active: store.tagFilter == t,
+                          onTap: () => store.toggleTagFilter(t),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => openManageTagsSheet(context),
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.edit_outlined,
+                      size: 18,
+                      color: AppColors.mutedSoft,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        const SizedBox(height: 16),
+          ),
         for (final (cat, its) in sections)
           Padding(
             padding: const EdgeInsets.only(bottom: 22),
@@ -88,7 +76,7 @@ class WardrobeTab extends StatelessWidget {
                 GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: its.length,
+                  itemCount: its.length + 1,
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
                     mainAxisSpacing: 9,
@@ -96,6 +84,12 @@ class WardrobeTab extends StatelessWidget {
                     childAspectRatio: 100 / 124,
                   ),
                   itemBuilder: (context, i) {
+                    if (i == its.length) {
+                      return AddTile(
+                        onTap: () =>
+                            openAddItemSheet(context, presetCategory: cat.key),
+                      );
+                    }
                     final it = its[i];
                     return GarmentCard(
                       width: double.infinity,
