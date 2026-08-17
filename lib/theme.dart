@@ -24,8 +24,8 @@ class AppColors {
 
   /// oklch(0.55 0.09 25) converted to sRGB — the warm clay accent used for
   /// primary actions and links throughout the mockup.
-  static const accent = Color(0xFFA0585B);
-  static const accentDark = Color(0xFF8A4B4E);
+  static const accent = Color(0xFF006D77);
+  static const accentDark = Color(0xFF004852);
 }
 
 class AppText {
@@ -71,10 +71,7 @@ ThemeData buildAppTheme() {
     useMaterial3: true,
     scaffoldBackgroundColor: AppColors.background,
     fontFamily: 'Libre Franklin',
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: AppColors.accent,
-      surface: AppColors.background,
-    ),
+    colorScheme: ColorScheme.fromSeed(seedColor: AppColors.accent, surface: AppColors.background),
     splashFactory: NoSplash.splashFactory,
   );
 }
