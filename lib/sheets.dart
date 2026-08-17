@@ -185,30 +185,39 @@ class _PickGrid extends StatelessWidget {
   }
 }
 
-void openLayerSheet(BuildContext context) {
+void openLayerSheet(BuildContext context, {int? replaceIndex}) {
   _showSheet(
     context,
-    (ctx) => AppLocalizations.of(ctx)!.addLayerTitle,
-    const _LayerChoices(),
+    (ctx) => replaceIndex == null
+        ? AppLocalizations.of(ctx)!.addLayerTitle
+        : AppLocalizations.of(ctx)!.changeLayerTitle,
+    _LayerChoices(replaceIndex: replaceIndex),
   );
 }
 
 class _LayerChoices extends StatelessWidget {
-  const _LayerChoices();
+  final int? replaceIndex;
+  const _LayerChoices({this.replaceIndex});
 
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
     final l10n = AppLocalizations.of(context)!;
-    if (store.layers.length >= WardrobeStore.kMaxLayers) {
+    if (replaceIndex == null && store.layers.length >= WardrobeStore.kMaxLayers) {
       return Text(
         l10n.layerLimitMessage(WardrobeStore.kMaxLayers),
         style: AppText.sans(size: 12, color: AppColors.mutedTag),
       );
     }
+    // In replace mode, the layer being swapped stays selectable (it's not
+    // "already used" from the user's point of view — it's what's on offer).
     final available = store
         .byCat('bundy')
-        .where((it) => !store.layers.contains(it.id))
+        .where(
+          (it) =>
+              !store.layers.contains(it.id) ||
+              (replaceIndex != null && store.layers[replaceIndex!] == it.id),
+        )
         .toList();
     if (available.isEmpty) {
       return Text(
@@ -250,7 +259,11 @@ class _LayerChoices extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 7),
             child: GestureDetector(
               onTap: () {
-                store.addLayer(it.id);
+                if (replaceIndex != null) {
+                  store.setLayer(replaceIndex!, it.id);
+                } else {
+                  store.addLayer(it.id);
+                }
                 Navigator.of(context).pop();
               },
               child: Container(
@@ -513,18 +526,6 @@ class _ItemDetail extends StatelessWidget {
                 style: AppText.sans(size: 15, color: AppColors.ink),
               ),
             ),
-            const SizedBox(width: 8),
-            RoundIconButton(
-              size: 36,
-              background: Colors.white,
-              borderColor: AppColors.cardBorder,
-              onTap: () => store.togglePinned(cur.id),
-              child: Icon(
-                cur.pinned ? Icons.push_pin : Icons.push_pin_outlined,
-                size: 16,
-                color: cur.pinned ? AppColors.accent : AppColors.muted,
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 18),
@@ -697,7 +698,7 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
           child: Container(
             height: 48,
             decoration: BoxDecoration(
-              color: hasCols ? AppColors.ink : AppColors.cardBorder,
+              color: hasCols ? AppColors.accent : AppColors.cardBorder,
               borderRadius: BorderRadius.circular(24),
             ),
             alignment: Alignment.center,

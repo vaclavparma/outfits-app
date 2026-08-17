@@ -229,8 +229,8 @@ class SelectChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = active ? AppColors.ink : Colors.white;
-    final border = active ? AppColors.ink : AppColors.chipBorderIdle;
+    final bg = active ? AppColors.accentDark : Colors.white;
+    final border = active ? AppColors.accentDark : AppColors.chipBorderIdle;
     final color = active ? Colors.white : AppColors.chipTextIdle;
     return GestureDetector(
       onTap: onTap,

@@ -69,7 +69,8 @@ class HomeScreen extends StatelessWidget {
                       child: switch (store.screen) {
                         WardrobeTabKind.outfit => OutfitTab(
                           onPick: (zone) => openPickSheet(context, zone),
-                          onOpenLayers: () => openLayerSheet(context),
+                          onOpenLayers: ({replaceIndex}) =>
+                              openLayerSheet(context, replaceIndex: replaceIndex),
                           onOpenSave: () => openSaveOutfitSheet(context),
                         ),
                         WardrobeTabKind.wardrobe => WardrobeTab(onOpenItem: (item) => openItemSheet(context, item)),

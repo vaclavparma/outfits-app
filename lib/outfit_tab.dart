@@ -14,7 +14,7 @@ import 'widgets.dart';
 /// state that lives above the tabs.
 class OutfitTab extends StatelessWidget {
   final void Function(WardrobeZone zone) onPick;
-  final VoidCallback onOpenLayers;
+  final void Function({int? replaceIndex}) onOpenLayers;
   final VoidCallback onOpenSave;
 
   const OutfitTab({
@@ -33,8 +33,11 @@ class OutfitTab extends StatelessWidget {
         final bot = store.at(store.botList, WardrobeZone.bottom);
         final shoe = store.at(store.shoeList, WardrobeZone.shoes);
         final isDress = top != null && top.cat == 'saty';
-        final topCardWidth = isDress ? 190.0 : 176.0;
-        final topCardHeight = isDress ? 310.0 : 172.0;
+        // With one or more layers next to it, the top card gives up a bit of
+        // its own size so the layer cards beside it have room to breathe.
+        final topScale = store.layers.isEmpty ? 1.0 : 0.86;
+        final topCardWidth = (isDress ? 190.0 : 176.0) * topScale;
+        final topCardHeight = (isDress ? 310.0 : 172.0) * topScale;
         final topCard = _withPinToggle(
           top,
           store,
@@ -63,7 +66,7 @@ class OutfitTab extends StatelessWidget {
                 front: topCard,
                 backWidth: 74,
                 backHeight: 136,
-                back: _AddLayerTile(onTap: onOpenLayers),
+                back: _AddLayerTile(onTap: () => onOpenLayers()),
               )
             : Row(
                 mainAxisSize: MainAxisSize.min,
@@ -104,8 +107,8 @@ class OutfitTab extends StatelessWidget {
                             bot,
                             store,
                             GarmentCard(
-                              width: 190,
-                              height: 208,
+                              width: store.layers.isEmpty ? 190 : 178,
+                              height: store.layers.isEmpty ? 208 : 196,
                               rotationDeg: 1.4,
                               slotLabel: bot != null && bot.cat == 'sukne'
                                   ? l10n.slotSkirt
@@ -215,14 +218,14 @@ class OutfitTab extends StatelessWidget {
 /// to each other, and each card's remove button stays clear of its neighbor.
 class _LayersCluster extends StatelessWidget {
   final List<String> layers;
-  final VoidCallback onOpenLayers;
+  final void Function({int? replaceIndex}) onOpenLayers;
 
   const _LayersCluster({required this.layers, required this.onOpenLayers});
 
   @override
   Widget build(BuildContext context) {
     if (layers.isEmpty) {
-      return _AddLayerTile(onTap: onOpenLayers);
+      return _AddLayerTile(onTap: () => onOpenLayers());
     }
     if (layers.length == 1) {
       // The "+" for a possible 2nd layer is, again, just an affordance —
@@ -241,7 +244,7 @@ class _LayersCluster extends StatelessWidget {
         ),
         backWidth: 74,
         backHeight: 136,
-        back: _AddLayerTile(onTap: onOpenLayers),
+        back: _AddLayerTile(onTap: () => onOpenLayers()),
       );
     }
     // Two layers: fan them so both cards — and both remove buttons — stay
@@ -249,10 +252,11 @@ class _LayersCluster extends StatelessWidget {
     // first-added layer always stays in the same slot/rotation it had when
     // it was the only one — otherwise adding a second layer makes it look
     // like the two swapped places. But the second (most recently added)
-    // layer renders on top, like an outer garment worn over the first.
+    // layer renders on top, like an outer garment worn over the first — kept
+    // to a modest overlap so the first layer stays clearly visible too.
     return SizedBox(
-      width: 162,
-      height: 158,
+      width: 178,
+      height: 150,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -267,8 +271,8 @@ class _LayersCluster extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: 52,
-            top: 22,
+            left: 68,
+            top: 14,
             child: _LayerCard(
               itemId: layers[1],
               index: 1,
@@ -317,7 +321,7 @@ class _AddLayerTile extends StatelessWidget {
 class _LayerCard extends StatelessWidget {
   final String itemId;
   final int index;
-  final VoidCallback onOpenLayers;
+  final void Function({int? replaceIndex}) onOpenLayers;
   final double rotationDeg;
 
   const _LayerCard({
@@ -339,7 +343,7 @@ class _LayerCard extends StatelessWidget {
           height: 136,
           rotationDeg: rotationDeg,
           imagePath: it?.imagePath,
-          onTap: onOpenLayers,
+          onTap: () => onOpenLayers(replaceIndex: index),
         ),
         Positioned(
           top: -8,

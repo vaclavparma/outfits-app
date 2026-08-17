@@ -75,11 +75,16 @@ class WardrobeStore extends ChangeNotifier {
     // is parsed independently too, so a single corrupt item/outfit can't
     // wipe out the rest of the wardrobe.
     try {
+      final docsPath = (await getApplicationDocumentsDirectory()).path;
       final rawItems = data['items'] as List<dynamic>? ?? [];
       final parsedItems = <ClothingItem>[];
       for (final e in rawItems) {
         try {
-          parsedItems.add(ClothingItem.fromJson(e as Map<String, dynamic>));
+          final item = ClothingItem.fromJson(e as Map<String, dynamic>);
+          if (item.imagePath != null) {
+            item.imagePath = _resolveImagePath(item.imagePath!, docsPath);
+          }
+          parsedItems.add(item);
         } catch (_) {}
       }
       items = parsedItems;
@@ -263,12 +268,36 @@ class WardrobeStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Swaps the item at an existing layer slot for a different one, without
+  /// touching the number of layers — used when tapping an already-added
+  /// layer to change it, as opposed to [addLayer] appending a new one.
+  void setLayer(int index, String itemId) {
+    if (index < 0 || index >= layers.length) return;
+    layers = [
+      for (var j = 0; j < layers.length; j++) if (j == index) itemId else layers[j],
+    ];
+    notifyListeners();
+  }
+
   void removeLayer(int index) {
     layers = [
       for (var j = 0; j < layers.length; j++)
         if (j != index) layers[j],
     ];
     notifyListeners();
+  }
+
+  /// iOS reassigns the app's sandbox container (and thus the documents
+  /// directory's absolute path) on every update, so a path saved on a
+  /// previous install can point nowhere after the app updates — showing up
+  /// as every photo turning into the missing-image placeholder. Re-anchor
+  /// whatever was stored to the *current* documents dir by keeping only the
+  /// part from `satnik_images/` onward.
+  String _resolveImagePath(String stored, String docsPath) {
+    const marker = 'satnik_images';
+    final i = stored.indexOf(marker);
+    if (i == -1) return stored;
+    return p.join(docsPath, stored.substring(i));
   }
 
   Future<String> _newImageCopy(String sourcePath) async {

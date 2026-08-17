@@ -158,6 +158,9 @@ class AppLocalizationsCs extends AppLocalizations {
   String get addLayerTitle => 'Přidat vrstvu';
 
   @override
+  String get changeLayerTitle => 'Vyměnit vrstvu';
+
+  @override
   String layerLimitMessage(int max) {
     String _temp0 = intl.Intl.pluralLogic(
       max,

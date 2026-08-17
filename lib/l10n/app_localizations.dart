@@ -350,6 +350,12 @@ abstract class AppLocalizations {
   /// **'Přidat vrstvu'**
   String get addLayerTitle;
 
+  /// No description provided for @changeLayerTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Vyměnit vrstvu'**
+  String get changeLayerTitle;
+
   /// No description provided for @layerLimitMessage.
   ///
   /// In cs, this message translates to:

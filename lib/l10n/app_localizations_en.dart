@@ -156,6 +156,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get addLayerTitle => 'Add a layer';
 
   @override
+  String get changeLayerTitle => 'Change layer';
+
+  @override
   String layerLimitMessage(int max) {
     String _temp0 = intl.Intl.pluralLogic(
       max,
