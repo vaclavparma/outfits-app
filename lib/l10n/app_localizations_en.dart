@@ -36,7 +36,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionCannotBeUndone => 'This action can\'t be undone.';
 
   @override
-  String get noTags => 'no tags';
+  String get noFolder => 'no folder';
 
   @override
   String get rename => 'Rename';
@@ -158,7 +158,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sectionCategory => 'category';
 
   @override
-  String get sectionTagsOptional => 'tags (optional)';
+  String get sectionFolder => 'folder';
+
+  @override
+  String get needFolderHint => 'Create a folder in the wardrobe first.';
 
   @override
   String get takePhoto => 'Take photo';
@@ -192,23 +195,23 @@ class AppLocalizationsEn extends AppLocalizations {
       'Create a collection in the Collections tab first.';
 
   @override
-  String get manageTagsTitle => 'Manage tags';
+  String get newFolderTile => 'new folder';
 
   @override
-  String get newTagHint => 'new tag';
+  String get newFolderDialogTitle => 'New folder';
 
   @override
-  String get noTagsYet => 'No tags yet.';
+  String get newFolderHint => 'e.g. Shirts';
 
   @override
-  String get renameTagTitle => 'Rename tag';
+  String get renameFolderTitle => 'Rename folder';
 
   @override
-  String get deleteTagTitle => 'Delete tag?';
+  String get deleteFolderTitle => 'Delete folder?';
 
   @override
-  String deleteTagMessage(String tag) {
-    return 'The tag “$tag” will be deleted and removed from every item.';
+  String deleteFolderMessage(String folder) {
+    return 'The folder “$folder” will be deleted. Items in it will move to “Nezařazené”.';
   }
 
   @override

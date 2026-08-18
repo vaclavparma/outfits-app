@@ -152,11 +152,11 @@ abstract class AppLocalizations {
   /// **'Tuto akci nelze vrátit.'**
   String get actionCannotBeUndone;
 
-  /// No description provided for @noTags.
+  /// No description provided for @noFolder.
   ///
   /// In cs, this message translates to:
-  /// **'bez tagů'**
-  String get noTags;
+  /// **'bez složky'**
+  String get noFolder;
 
   /// No description provided for @rename.
   ///
@@ -338,11 +338,17 @@ abstract class AppLocalizations {
   /// **'kategorie'**
   String get sectionCategory;
 
-  /// No description provided for @sectionTagsOptional.
+  /// No description provided for @sectionFolder.
   ///
   /// In cs, this message translates to:
-  /// **'tagy (nepovinné)'**
-  String get sectionTagsOptional;
+  /// **'složka'**
+  String get sectionFolder;
+
+  /// No description provided for @needFolderHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nejdřív vytvoř složku v šatníku.'**
+  String get needFolderHint;
 
   /// No description provided for @takePhoto.
   ///
@@ -404,41 +410,41 @@ abstract class AppLocalizations {
   /// **'Nejdřív vytvoř kolekci v záložce Kolekce.'**
   String get needCollectionHint;
 
-  /// No description provided for @manageTagsTitle.
+  /// No description provided for @newFolderTile.
   ///
   /// In cs, this message translates to:
-  /// **'Spravovat tagy'**
-  String get manageTagsTitle;
+  /// **'nová složka'**
+  String get newFolderTile;
 
-  /// No description provided for @newTagHint.
+  /// No description provided for @newFolderDialogTitle.
   ///
   /// In cs, this message translates to:
-  /// **'nový tag'**
-  String get newTagHint;
+  /// **'Nová složka'**
+  String get newFolderDialogTitle;
 
-  /// No description provided for @noTagsYet.
+  /// No description provided for @newFolderHint.
   ///
   /// In cs, this message translates to:
-  /// **'Zatím žádné tagy.'**
-  String get noTagsYet;
+  /// **'např. Košile'**
+  String get newFolderHint;
 
-  /// No description provided for @renameTagTitle.
+  /// No description provided for @renameFolderTitle.
   ///
   /// In cs, this message translates to:
-  /// **'Přejmenovat tag'**
-  String get renameTagTitle;
+  /// **'Přejmenovat složku'**
+  String get renameFolderTitle;
 
-  /// No description provided for @deleteTagTitle.
+  /// No description provided for @deleteFolderTitle.
   ///
   /// In cs, this message translates to:
-  /// **'Smazat tag?'**
-  String get deleteTagTitle;
+  /// **'Smazat složku?'**
+  String get deleteFolderTitle;
 
-  /// No description provided for @deleteTagMessage.
+  /// No description provided for @deleteFolderMessage.
   ///
   /// In cs, this message translates to:
-  /// **'Tag „{tag}“ bude smazán a odebrán ze všech kusů oblečení.'**
-  String deleteTagMessage(String tag);
+  /// **'Složka „{folder}“ bude smazána. Oblečení v ní se přesune do složky „Nezařazené“.'**
+  String deleteFolderMessage(String folder);
 
   /// No description provided for @toastSavedWithPhoto.
   ///

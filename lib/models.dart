@@ -42,26 +42,19 @@ String categoryLabel(BuildContext context, String key) {
 
 /// Short single-word form of [categoryLabel], used where a full item name
 /// would otherwise be shown (item names carry no real information — items
-/// are identified by their photo and tags instead).
+/// are identified by their photo and folder instead).
 String shortCategoryLabel(BuildContext context, String key) =>
     categoryLabel(context, key).split(' ').first;
-
-/// Distinct tags used across [items], in first-seen order.
-List<String> distinctTags(Iterable<ClothingItem> items) {
-  final tags = <String>[];
-  for (final i in items) {
-    for (final t in i.tags) {
-      if (!tags.contains(t)) tags.add(t);
-    }
-  }
-  return tags;
-}
 
 /// One piece of clothing in the wardrobe.
 class ClothingItem {
   final String id;
   final String cat;
-  List<String> tags;
+
+  /// The folder this item is filed under, within its own category (e.g.
+  /// `'košile'` under `'horni'`) — or `null` if it hasn't been filed yet.
+  String? folder;
+
   String? imagePath;
 
   /// When true and this item is the one currently showing in its outfit
@@ -71,17 +64,15 @@ class ClothingItem {
   ClothingItem({
     required this.id,
     required this.cat,
-    List<String>? tags,
+    this.folder,
     this.imagePath,
     this.pinned = false,
-  }) : tags = tags ?? [];
-
-  String get tagsLabel => tags.isEmpty ? '' : tags.join(' · ');
+  });
 
   Map<String, dynamic> toJson() => {
     'id': id,
     'cat': cat,
-    'tags': tags,
+    'folder': folder,
     'imagePath': imagePath,
     'pinned': pinned,
   };
@@ -89,9 +80,10 @@ class ClothingItem {
   factory ClothingItem.fromJson(Map<String, dynamic> json) => ClothingItem(
     id: json['id'] as String,
     cat: _migrateCatKey(json['cat'] as String),
-    tags: (json['tags'] as List<dynamic>? ?? [])
-        .map((e) => e as String)
-        .toList(),
+    // Tags (this item's old, freeform, multi-select organization) were
+    // dropped in favor of a single folder per item — deliberately not
+    // migrated, so `folder` starts unset even for pre-existing items.
+    folder: json['folder'] as String?,
     imagePath: json['imagePath'] as String?,
     pinned: json['pinned'] as bool? ?? false,
   );

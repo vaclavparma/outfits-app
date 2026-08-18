@@ -17,6 +17,12 @@ class WardrobeStore extends ChangeNotifier {
   static const _fileName = 'satnik_v1.json';
   static const kMaxLayers = 2;
 
+  /// Every item belongs to a folder, mirroring how every saved outfit
+  /// belongs to a collection. This is the catch-all a category's items land
+  /// in if they don't have one yet (fresh migration, or a folder that got
+  /// deleted out from under them) — never left as `null`.
+  static const fallbackFolder = 'Nezařazené';
+
   WardrobeTabKind screen = WardrobeTabKind.outfit;
   List<ClothingItem> items = [];
   Map<WardrobeZone, int> idx = {
@@ -27,14 +33,16 @@ class WardrobeStore extends ChangeNotifier {
   List<String> layers = [];
   List<String> cols = [];
   Map<String, List<SavedOutfit>> saved = {};
-  String? tagFilter;
+  String? folderFilter;
 
-  /// All tags known to the app, managed explicitly via the "manage tags"
-  /// sheet — independent of which items currently carry them, so a tag
-  /// stays filterable/assignable even if no item happens to have it right
-  /// now (and doesn't vanish just because the last item wearing it was
-  /// deleted).
-  List<String> knownTags = [];
+  /// Folders known to the app, one list per category key — e.g. `'horni'`:
+  /// `['košile', 'trička', 'mikiny']`. Managed explicitly via the "manage
+  /// folders" sheet, independent of which items currently sit in them, so a
+  /// folder stays assignable even if no item happens to be in it right now
+  /// (and doesn't vanish just because the last item in it was deleted).
+  Map<String, List<String>> knownFolders = {};
+
+  List<String> foldersFor(String catKey) => knownFolders[catKey] ?? const [];
 
   /// `null` follows the system/device locale; otherwise an explicit locale
   /// code like `'cs'` or `'en'` picked in settings.
@@ -106,13 +114,15 @@ class WardrobeStore extends ChangeNotifier {
     } catch (_) {}
 
     try {
-      final rawKnownTags = data['knownTags'] as List<dynamic>?;
-      knownTags = rawKnownTags == null
-          // Migrating from before `knownTags` existed: seed it from
-          // whatever tags are already in use, so they stay manageable
-          // instead of quietly disappearing from the tag list.
-          ? distinctTags(items)
-          : rawKnownTags.map((e) => e as String).toList();
+      final rawKnownFolders = data['knownFolders'] as Map<String, dynamic>?;
+      knownFolders = rawKnownFolders == null
+          ? {}
+          : rawKnownFolders.map(
+              (key, value) => MapEntry(
+                key,
+                (value as List<dynamic>).map((e) => e as String).toList(),
+              ),
+            );
     } catch (_) {}
 
     try {
@@ -123,7 +133,30 @@ class WardrobeStore extends ChangeNotifier {
       showDresses = data['showDresses'] as bool? ?? true;
     } catch (_) {}
 
+    _bucketOrphanedItems();
     notifyListeners();
+  }
+
+  /// Every item must have a folder. Files anything that doesn't (freshly
+  /// migrated items, or items whose folder was since deleted) into
+  /// [fallbackFolder] for its category, creating that folder if needed.
+  void _bucketOrphanedItems() {
+    final orphanCats = items
+        .where((i) => i.folder == null)
+        .map((i) => i.cat)
+        .toSet();
+    if (orphanCats.isEmpty) return;
+    items = items
+        .map((i) => i.folder == null ? (i..folder = fallbackFolder) : i)
+        .toList();
+    final updated = {...knownFolders};
+    for (final cat in orphanCats) {
+      final current = updated[cat] ?? const [];
+      if (!current.contains(fallbackFolder)) {
+        updated[cat] = [...current, fallbackFolder];
+      }
+    }
+    knownFolders = updated;
   }
 
   Future<File> _localFile() async {
@@ -140,7 +173,7 @@ class WardrobeStore extends ChangeNotifier {
         'saved': saved.map(
           (key, value) => MapEntry(key, value.map((e) => e.toJson()).toList()),
         ),
-        'knownTags': knownTags,
+        'knownFolders': knownFolders,
         'localeCode': localeCode,
         'showDresses': showDresses,
       };
@@ -303,7 +336,7 @@ class WardrobeStore extends ChangeNotifier {
   }
 
   /// Adds one new item per path in [sourceImagePaths] (all sharing [cat] and
-  /// [tags]) — e.g. picking several photos at once to add a handful of
+  /// [folder]) — e.g. picking several photos at once to add a handful of
   /// t-shirts in one go instead of repeating the whole form per item. A
   /// photo that fails to copy just leaves that one item photo-less rather
   /// than failing the whole batch; the count of such failures is reported
@@ -311,7 +344,7 @@ class WardrobeStore extends ChangeNotifier {
   /// a [BuildContext] this store doesn't have.
   Future<({List<ClothingItem> items, int photoFailures})> addItems(
     String cat,
-    List<String> tags, {
+    String folder, {
     required List<String> sourceImagePaths,
   }) async {
     final newItems = <ClothingItem>[];
@@ -321,15 +354,16 @@ class WardrobeStore extends ChangeNotifier {
       try {
         imagePath = await _newImageCopy(sourcePath);
       } catch (_) {
-        // Keep the item usable (category + tags) even if the photo couldn't
-        // be saved — losing the whole item over a storage hiccup is worse.
+        // Keep the item usable (category + folder) even if the photo
+        // couldn't be saved — losing the whole item over a storage hiccup
+        // is worse.
         photoFailures++;
       }
       newItems.add(
         ClothingItem(
           id: '$cat-new-${DateTime.now().microsecondsSinceEpoch}-${newItems.length}',
           cat: cat,
-          tags: [...tags],
+          folder: folder,
           imagePath: imagePath,
         ),
       );
@@ -340,8 +374,10 @@ class WardrobeStore extends ChangeNotifier {
     return (items: newItems, photoFailures: photoFailures);
   }
 
-  void setTags(String id, List<String> tags) {
-    items = items.map((i) => i.id == id ? (i..tags = tags) : i).toList();
+  /// Moves an item to a different (already-existing) folder within its own
+  /// category.
+  void setFolder(String id, String folder) {
+    items = items.map((i) => i.id == id ? (i..folder = folder) : i).toList();
     notifyListeners();
     _persist();
   }
@@ -354,45 +390,83 @@ class WardrobeStore extends ChangeNotifier {
     _persist();
   }
 
-  /// Adds a brand-new known tag (a no-op if it already exists) — the only
-  /// place new tags get created; assigning a tag to an item can only pick
-  /// from this list, never coin a new one on the fly.
-  Future<void> addKnownTag(String rawTag) async {
-    final tag = rawTag.trim().toLowerCase();
-    if (tag.isEmpty || knownTags.contains(tag)) return;
-    knownTags = [...knownTags, tag];
+  /// Adds a brand-new folder under [catKey] (a no-op if it already exists
+  /// there) — mirrors [addCollection].
+  Future<void> addFolder(String catKey, String rawName) async {
+    final name = rawName.trim();
+    final current = knownFolders[catKey] ?? const [];
+    if (name.isEmpty || current.contains(name)) return;
+    knownFolders = {
+      ...knownFolders,
+      catKey: [...current, name],
+    };
     notifyListeners();
     await _persist();
   }
 
-  Future<void> renameTag(String oldTag, String rawNewTag) async {
-    final newTag = rawNewTag.trim().toLowerCase();
-    if (newTag.isEmpty || newTag == oldTag) return;
-    items = items.map((i) {
-      if (!i.tags.contains(oldTag)) return i;
-      final tags = i.tags.where((t) => t != oldTag).toList();
-      if (!tags.contains(newTag)) tags.add(newTag);
-      return i..tags = tags;
-    }).toList();
-    // Merge into `newTag` if it's already a known tag, rather than ending
-    // up with two list entries for what's now the same word.
-    final mergedTags = <String>[];
-    for (final t in knownTags) {
-      final mapped = t == oldTag ? newTag : t;
-      if (!mergedTags.contains(mapped)) mergedTags.add(mapped);
+  /// Renames a folder, returning the name that ended up in effect (the new
+  /// name on success, or the unchanged [oldName] if the rename was rejected
+  /// — empty, unchanged, a duplicate, or the folder is gone). Mirrors
+  /// [renameCollection].
+  Future<String> renameFolder(
+    String catKey,
+    String oldName,
+    String rawNewName,
+  ) async {
+    final newName = rawNewName.trim();
+    final current = knownFolders[catKey] ?? const [];
+    if (newName.isEmpty || newName == oldName || current.contains(newName)) {
+      return oldName;
     }
-    knownTags = mergedTags;
-    if (tagFilter == oldTag) tagFilter = newTag;
+    if (!current.contains(oldName)) return oldName;
+    knownFolders = {
+      ...knownFolders,
+      catKey: [for (final f in current) f == oldName ? newName : f],
+    };
+    items = items
+        .map(
+          (i) => i.cat == catKey && i.folder == oldName
+              ? (i..folder = newName)
+              : i,
+        )
+        .toList();
+    if (folderFilter == oldName) folderFilter = newName;
     notifyListeners();
-    await _persist();
+    // Deliberately not awaited: the folder detail screen awaits this whole
+    // call and then updates its own local "current name" state right after.
+    // If persisting were awaited here too, that real disk-write gap would
+    // give a Consumer rebuild a chance to run first — with a still-stale
+    // local name — and misread the rename as the folder having been
+    // deleted. Persistence is already best-effort (see [_persist]); nothing
+    // upstream needs to wait for it.
+    unawaited(_persist());
+    return newName;
   }
 
-  Future<void> deleteTag(String tag) async {
-    items = items
-        .map((i) => i..tags = i.tags.where((t) => t != tag).toList())
+  /// Deletes a folder. Unlike [deleteCollection] (which deletes its outfits
+  /// too), the items in it are kept — photos are harder to lose than an
+  /// outfit combination — and moved to [fallbackFolder] instead.
+  Future<void> deleteFolder(String catKey, String name) async {
+    final hasOrphans = items.any((i) => i.cat == catKey && i.folder == name);
+    if (hasOrphans && name != fallbackFolder) {
+      items = items
+          .map(
+            (i) => i.cat == catKey && i.folder == name
+                ? (i..folder = fallbackFolder)
+                : i,
+          )
+          .toList();
+    }
+    var catFolders = (knownFolders[catKey] ?? const [])
+        .where((f) => f != name)
         .toList();
-    knownTags = knownTags.where((t) => t != tag).toList();
-    if (tagFilter == tag) tagFilter = null;
+    // If items ended up (or stayed) in the fallback folder, keep it listed —
+    // deleting it while it's still in use would just orphan them again.
+    if (hasOrphans && !catFolders.contains(fallbackFolder)) {
+      catFolders = [...catFolders, fallbackFolder];
+    }
+    knownFolders = {...knownFolders, catKey: catFolders};
+    if (folderFilter == name) folderFilter = null;
     notifyListeners();
     await _persist();
   }
@@ -448,7 +522,8 @@ class WardrobeStore extends ChangeNotifier {
     newSaved[newName] = list;
     saved = newSaved;
     notifyListeners();
-    await _persist();
+    // Deliberately not awaited — see the matching note in [renameFolder].
+    unawaited(_persist());
     return newName;
   }
 
@@ -535,8 +610,8 @@ class WardrobeStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleTagFilter(String tag) {
-    tagFilter = tagFilter == tag ? null : tag;
+  void toggleFolderFilter(String folder) {
+    folderFilter = folderFilter == folder ? null : folder;
     notifyListeners();
   }
 

@@ -11,7 +11,7 @@
   "create": "Vytvořit",
   "add": "přidat",
   "actionCannotBeUndone": "Tuto akci nelze vrátit.",
-  "noTags": "bez tagů",
+  "noFolder": "bez složky",
   "rename": "Přejmenovat",
 
   "addTopPlaceholder": "Přidej top",
@@ -76,7 +76,8 @@
 
   "addItemTitle": "Přidat oblečení",
   "sectionCategory": "kategorie",
-  "sectionTagsOptional": "tagy (nepovinné)",
+  "sectionFolder": "složka",
+  "needFolderHint": "Nejdřív vytvoř složku v šatníku.",
   "takePhoto": "Vyfotit",
   "fromGallery": "Z galerie",
 
@@ -90,15 +91,15 @@
   "sectionCollection": "kolekce",
   "needCollectionHint": "Nejdřív vytvoř kolekci v záložce Kolekce.",
 
-  "manageTagsTitle": "Spravovat tagy",
-  "newTagHint": "nový tag",
-  "noTagsYet": "Zatím žádné tagy.",
-  "renameTagTitle": "Přejmenovat tag",
-  "deleteTagTitle": "Smazat tag?",
-  "deleteTagMessage": "Tag „{tag}“ bude smazán a odebrán ze všech kusů oblečení.",
-  "@deleteTagMessage": {
+  "newFolderTile": "nová složka",
+  "newFolderDialogTitle": "Nová složka",
+  "newFolderHint": "např. Košile",
+  "renameFolderTitle": "Přejmenovat složku",
+  "deleteFolderTitle": "Smazat složku?",
+  "deleteFolderMessage": "Složka „{folder}“ bude smazána. Oblečení v ní se přesune do složky „Nezařazené“.",
+  "@deleteFolderMessage": {
     "placeholders": {
-      "tag": {"type": "String"}
+      "folder": {"type": "String"}
     }
   },
 

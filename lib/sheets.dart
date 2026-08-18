@@ -120,27 +120,35 @@ class _PickGrid extends StatelessWidget {
     final fullList = store.zoneList(zone);
     final current = store.at(fullList, zone);
 
-    final allTags = store.knownTags;
-    final filtered = store.tagFilter == null
+    // The top zone spans two categories (horní díl + šaty), each with its
+    // own folders — offer the union of both rather than picking one.
+    final catsInZone = fullList.map((it) => it.cat).toSet();
+    final allFolders = <String>[];
+    for (final c in catsInZone) {
+      for (final f in store.foldersFor(c)) {
+        if (!allFolders.contains(f)) allFolders.add(f);
+      }
+    }
+    final filtered = store.folderFilter == null
         ? fullList
-        : fullList.where((it) => it.tags.contains(store.tagFilter)).toList();
+        : fullList.where((it) => it.folder == store.folderFilter).toList();
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (allTags.isNotEmpty)
+        if (allFolders.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 14),
             child: Wrap(
               spacing: 7,
               runSpacing: 7,
               children: [
-                for (final t in allTags)
+                for (final f in allFolders)
                   SelectChip(
-                    label: t,
-                    active: store.tagFilter == t,
-                    onTap: () => store.toggleTagFilter(t),
+                    label: f,
+                    active: store.folderFilter == f,
+                    onTap: () => store.toggleFolderFilter(f),
                   ),
               ],
             ),
@@ -167,7 +175,7 @@ class _PickGrid extends StatelessWidget {
               width: double.infinity,
               height: double.infinity,
               slotLabel: shortCategoryLabel(context, it.cat).toLowerCase(),
-              tags: it.tagsLabel,
+              caption: it.folder ?? '',
               imagePath: it.imagePath,
               borderColor: current?.id == it.id
                   ? AppColors.ink
@@ -225,26 +233,26 @@ class _LayerChoices extends StatelessWidget {
         style: AppText.sans(size: 12, color: AppColors.mutedTag),
       );
     }
-    final availableTags = store.knownTags;
-    final choices = store.tagFilter == null
+    final availableFolders = store.foldersFor('horni');
+    final choices = store.folderFilter == null
         ? available
-        : available.where((it) => it.tags.contains(store.tagFilter)).toList();
+        : available.where((it) => it.folder == store.folderFilter).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (availableTags.isNotEmpty)
+        if (availableFolders.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Wrap(
               spacing: 7,
               runSpacing: 7,
               children: [
-                for (final t in availableTags)
+                for (final f in availableFolders)
                   SelectChip(
-                    label: t,
-                    active: store.tagFilter == t,
-                    onTap: () => store.toggleTagFilter(t),
+                    label: f,
+                    active: store.folderFilter == f,
+                    onTap: () => store.toggleFolderFilter(f),
                   ),
               ],
             ),
@@ -289,7 +297,7 @@ class _LayerChoices extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      it.tagsLabel.isNotEmpty ? it.tagsLabel : l10n.noTags,
+                      it.folder ?? l10n.noFolder,
                       style: AppText.mono(
                         size: 8.5,
                         letterSpacing: 0.4,
@@ -309,20 +317,26 @@ class _LayerChoices extends StatelessWidget {
 void openAddItemSheet(
   BuildContext context, {
   String? presetCategory,
+  String? presetFolder,
   void Function(ClothingItem item)? onAdded,
 }) {
   _showSheet(
     context,
     (ctx) => AppLocalizations.of(ctx)!.addItemTitle,
-    _AddItemForm(presetCategory: presetCategory, onAdded: onAdded),
+    _AddItemForm(
+      presetCategory: presetCategory,
+      presetFolder: presetFolder,
+      onAdded: onAdded,
+    ),
   );
 }
 
 class _AddItemForm extends StatefulWidget {
   final String? presetCategory;
+  final String? presetFolder;
   final void Function(ClothingItem item)? onAdded;
 
-  const _AddItemForm({this.presetCategory, this.onAdded});
+  const _AddItemForm({this.presetCategory, this.presetFolder, this.onAdded});
 
   @override
   State<_AddItemForm> createState() => _AddItemFormState();
@@ -330,27 +344,37 @@ class _AddItemForm extends StatefulWidget {
 
 class _AddItemFormState extends State<_AddItemForm> {
   late String _cat;
-  late final List<String> _tags;
+  String? _folder;
   bool _busy = false;
+
+  /// Whether the category/folder are fixed by the caller (opened from
+  /// inside a specific folder) rather than chosen in this form.
+  bool get _fixedFolder => widget.presetFolder != null;
 
   @override
   void initState() {
     super.initState();
     _cat = widget.presetCategory ?? 'boty';
-    // Start with whatever tag filter is active in the wardrobe grid already
-    // checked, so adding an item while filtered to e.g. "zima" doesn't
-    // require re-picking that same tag by hand.
-    final activeFilter = context.read<WardrobeStore>().tagFilter;
-    _tags = [if (activeFilter != null) activeFilter];
+    _folder = widget.presetFolder ?? _defaultFolderFor(_cat);
+  }
+
+  /// Every item needs a folder, so default to whatever folder filter is
+  /// active in the wardrobe grid (if it belongs to this category), else the
+  /// first folder that exists for it, else none yet (category has none).
+  String? _defaultFolderFor(String cat) {
+    final store = context.read<WardrobeStore>();
+    final folders = store.foldersFor(cat);
+    if (folders.contains(store.folderFilter)) return store.folderFilter;
+    return folders.isNotEmpty ? folders.first : null;
   }
 
   Future<void> _pick(ImageSource source) async {
-    if (_busy) return;
+    if (_busy || _folder == null) return;
     setState(() => _busy = true);
     try {
       final picker = ImagePicker();
       // The gallery lets you select several photos at once — handy for
-      // adding a handful of items of the same category/tags in one go.
+      // adding a handful of items of the same category/folder in one go.
       // The camera can only ever produce one photo per capture.
       final files = source == ImageSource.gallery
           ? await picker.pickMultiImage(imageQuality: 85)
@@ -364,7 +388,7 @@ class _AddItemFormState extends State<_AddItemForm> {
       final label = categoryLabel(context, _cat);
       final result = await store.addItems(
         _cat,
-        _tags,
+        _folder!,
         sourceImagePaths: files.map((f) => f.path).toList(),
       );
       store.flash(
@@ -386,54 +410,71 @@ class _AddItemFormState extends State<_AddItemForm> {
     final l10n = AppLocalizations.of(context)!;
     final store = context.watch<WardrobeStore>();
     final categories = store.visibleCategories;
+    final folders = store.foldersFor(_cat);
+    final canAdd = _folder != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(l10n.sectionCategory, style: _sectionLabelStyle),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 7,
-          runSpacing: 7,
-          children: [
-            for (final c in categories)
-              SelectChip(
-                label: categoryLabel(context, c.key),
-                active: _cat == c.key,
-                mono: false,
-                height: 34,
-                onTap: () => setState(() => _cat = c.key),
-              ),
-          ],
-        ),
-        if (store.knownTags.isNotEmpty) ...[
-          const SizedBox(height: 18),
-          Text(l10n.sectionTagsOptional, style: _sectionLabelStyle),
+        if (!_fixedFolder) ...[
+          Text(l10n.sectionCategory, style: _sectionLabelStyle),
           const SizedBox(height: 8),
           Wrap(
             spacing: 7,
             runSpacing: 7,
             children: [
-              for (final t in store.knownTags)
+              for (final c in categories)
                 SelectChip(
-                  label: t,
-                  active: _tags.contains(t),
-                  onTap: () => setState(
-                    () => _tags.contains(t) ? _tags.remove(t) : _tags.add(t),
-                  ),
+                  label: categoryLabel(context, c.key),
+                  active: _cat == c.key,
+                  mono: false,
+                  height: 34,
+                  // A folder belongs to one category, so switching category
+                  // picks a fresh default folder for the new one.
+                  onTap: () => setState(() {
+                    _cat = c.key;
+                    _folder = _defaultFolderFor(_cat);
+                  }),
                 ),
             ],
           ),
+          const SizedBox(height: 18),
+          Text(l10n.sectionFolder, style: _sectionLabelStyle),
+          const SizedBox(height: 8),
+          if (folders.isEmpty)
+            Text(
+              l10n.needFolderHint,
+              style: AppText.sans(
+                size: 12.5,
+                color: AppColors.mutedTag,
+                height: 1.4,
+              ),
+            )
+          else
+            Wrap(
+              spacing: 7,
+              runSpacing: 7,
+              children: [
+                for (final f in folders)
+                  SelectChip(
+                    label: f,
+                    active: _folder == f,
+                    onTap: () => setState(() => _folder = f),
+                  ),
+              ],
+            ),
+          const SizedBox(height: 18),
         ],
-        const SizedBox(height: 18),
         Row(
           children: [
             Expanded(
               child: GestureDetector(
-                onTap: _busy ? null : () => _pick(ImageSource.camera),
+                onTap: _busy || !canAdd
+                    ? null
+                    : () => _pick(ImageSource.camera),
                 child: Container(
                   height: 48,
                   decoration: BoxDecoration(
-                    color: AppColors.accent,
+                    color: canAdd ? AppColors.accent : AppColors.cardBorder,
                     borderRadius: BorderRadius.circular(24),
                   ),
                   alignment: Alignment.center,
@@ -451,7 +492,9 @@ class _AddItemFormState extends State<_AddItemForm> {
                           style: AppText.sans(
                             size: 13,
                             weight: FontWeight.w500,
-                            color: Colors.white,
+                            color: canAdd
+                                ? Colors.white
+                                : AppColors.mutedSoft,
                           ),
                         ),
                 ),
@@ -460,7 +503,9 @@ class _AddItemFormState extends State<_AddItemForm> {
             const SizedBox(width: 9),
             Expanded(
               child: GestureDetector(
-                onTap: _busy ? null : () => _pick(ImageSource.gallery),
+                onTap: _busy || !canAdd
+                    ? null
+                    : () => _pick(ImageSource.gallery),
                 child: Container(
                   height: 48,
                   decoration: BoxDecoration(
@@ -470,7 +515,10 @@ class _AddItemFormState extends State<_AddItemForm> {
                   alignment: Alignment.center,
                   child: Text(
                     l10n.fromGallery,
-                    style: AppText.sans(size: 13, color: AppColors.label),
+                    style: AppText.sans(
+                      size: 13,
+                      color: canAdd ? AppColors.label : AppColors.mutedSoft,
+                    ),
                   ),
                 ),
               ),
@@ -500,7 +548,7 @@ class _ItemDetail extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final cur = store.itemById(itemId);
     if (cur == null) return const SizedBox.shrink();
-    final tags = cur.tags;
+    final folders = store.foldersFor(cur.cat);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -533,16 +581,11 @@ class _ItemDetail extends StatelessWidget {
           spacing: 7,
           runSpacing: 7,
           children: [
-            for (final t in store.knownTags)
+            for (final f in folders)
               SelectChip(
-                label: t,
-                active: tags.contains(t),
-                onTap: () => store.setTags(
-                  cur.id,
-                  tags.contains(t)
-                      ? tags.where((x) => x != t).toList()
-                      : [...tags, t],
-                ),
+                label: f,
+                active: cur.folder == f,
+                onTap: () => store.setFolder(cur.id, f),
               ),
           ],
         ),
@@ -717,168 +760,6 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
   }
 }
 
-void openManageTagsSheet(BuildContext context) {
-  _showSheet(
-    context,
-    (ctx) => AppLocalizations.of(ctx)!.manageTagsTitle,
-    const _ManageTagsList(),
-  );
-}
-
-class _ManageTagsList extends StatefulWidget {
-  const _ManageTagsList();
-
-  @override
-  State<_ManageTagsList> createState() => _ManageTagsListState();
-}
-
-class _ManageTagsListState extends State<_ManageTagsList> {
-  final _newTagController = TextEditingController();
-
-  @override
-  void dispose() {
-    _newTagController.dispose();
-    super.dispose();
-  }
-
-  void _addTag(WardrobeStore store) {
-    final tag = _newTagController.text.trim().toLowerCase();
-    if (tag.isEmpty) return;
-    store.addKnownTag(tag);
-    _newTagController.clear();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final store = context.watch<WardrobeStore>();
-    final l10n = AppLocalizations.of(context)!;
-    final allTags = store.knownTags;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // This is the only place a brand-new tag gets created — assigning
-        // tags to an item can only pick from what's already here.
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _newTagController,
-                decoration: InputDecoration(
-                  hintText: l10n.newTagHint,
-                  hintStyle: AppText.sans(size: 13, color: AppColors.mutedTag),
-                  filled: true,
-                  fillColor: AppColors.background,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(14),
-                    borderSide: const BorderSide(color: AppColors.cardBorder),
-                  ),
-                ),
-                style: AppText.sans(size: 13, color: AppColors.ink),
-                onSubmitted: (_) => _addTag(store),
-              ),
-            ),
-            const SizedBox(width: 8),
-            RoundIconButton(
-              size: 42,
-              onTap: () => _addTag(store),
-              child: const Text(
-                '+',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w300,
-                  color: Colors.white,
-                  height: 1,
-                ),
-              ),
-            ),
-          ],
-        ),
-        if (allTags.isEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 14),
-            child: Text(
-              l10n.noTagsYet,
-              style: AppText.sans(
-                size: 12.5,
-                color: AppColors.mutedTag,
-                height: 1.4,
-              ),
-            ),
-          )
-        else
-          Padding(
-            padding: const EdgeInsets.only(top: 14),
-            child: Column(
-              children: [
-                for (final tag in allTags)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.rowBorder),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              tag,
-                              style: AppText.sans(
-                                size: 13,
-                                color: AppColors.ink,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.edit_outlined,
-                              size: 17,
-                              color: AppColors.mutedSoft,
-                            ),
-                            onPressed: () => _renameTag(context, store, tag),
-                          ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.delete_outline,
-                              size: 18,
-                              color: AppColors.mutedSoft,
-                            ),
-                            onPressed: () =>
-                                _confirmDeleteTag(context, store, tag),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-Future<void> _renameTag(
-  BuildContext context,
-  WardrobeStore store,
-  String tag,
-) async {
-  final l10n = AppLocalizations.of(context)!;
-  final newTag = await promptTextDialog(
-    context,
-    title: l10n.renameTagTitle,
-    initialValue: tag,
-    confirmLabel: l10n.save,
-  );
-  if (newTag != null) store.renameTag(tag, newTag);
-}
-
 Future<void> _confirmDeleteItem(
   BuildContext context,
   WardrobeStore store,
@@ -894,21 +775,6 @@ Future<void> _confirmDeleteItem(
   if (!confirmed) return;
   await store.deleteItem(item);
   if (context.mounted) Navigator.of(context).pop();
-}
-
-Future<void> _confirmDeleteTag(
-  BuildContext context,
-  WardrobeStore store,
-  String tag,
-) async {
-  final l10n = AppLocalizations.of(context)!;
-  final confirmed = await confirmDialog(
-    context,
-    title: l10n.deleteTagTitle,
-    message: l10n.deleteTagMessage(tag),
-    confirmLabel: l10n.delete,
-  );
-  if (confirmed) store.deleteTag(tag);
 }
 
 void openSettingsSheet(BuildContext context) {

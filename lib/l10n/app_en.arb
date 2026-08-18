@@ -11,7 +11,7 @@
   "create": "Create",
   "add": "add",
   "actionCannotBeUndone": "This action can't be undone.",
-  "noTags": "no tags",
+  "noFolder": "no folder",
   "rename": "Rename",
 
   "addTopPlaceholder": "Add a top",
@@ -76,7 +76,8 @@
 
   "addItemTitle": "Add clothing",
   "sectionCategory": "category",
-  "sectionTagsOptional": "tags (optional)",
+  "sectionFolder": "folder",
+  "needFolderHint": "Create a folder in the wardrobe first.",
   "takePhoto": "Take photo",
   "fromGallery": "From gallery",
 
@@ -90,15 +91,15 @@
   "sectionCollection": "collection",
   "needCollectionHint": "Create a collection in the Collections tab first.",
 
-  "manageTagsTitle": "Manage tags",
-  "newTagHint": "new tag",
-  "noTagsYet": "No tags yet.",
-  "renameTagTitle": "Rename tag",
-  "deleteTagTitle": "Delete tag?",
-  "deleteTagMessage": "The tag “{tag}” will be deleted and removed from every item.",
-  "@deleteTagMessage": {
+  "newFolderTile": "new folder",
+  "newFolderDialogTitle": "New folder",
+  "newFolderHint": "e.g. Shirts",
+  "renameFolderTitle": "Rename folder",
+  "deleteFolderTitle": "Delete folder?",
+  "deleteFolderMessage": "The folder “{folder}” will be deleted. Items in it will move to “Nezařazené”.",
+  "@deleteFolderMessage": {
     "placeholders": {
-      "tag": {"type": "String"}
+      "folder": {"type": "String"}
     }
   },
 

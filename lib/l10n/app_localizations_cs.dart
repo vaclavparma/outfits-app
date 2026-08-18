@@ -36,7 +36,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get actionCannotBeUndone => 'Tuto akci nelze vrátit.';
 
   @override
-  String get noTags => 'bez tagů';
+  String get noFolder => 'bez složky';
 
   @override
   String get rename => 'Přejmenovat';
@@ -161,7 +161,10 @@ class AppLocalizationsCs extends AppLocalizations {
   String get sectionCategory => 'kategorie';
 
   @override
-  String get sectionTagsOptional => 'tagy (nepovinné)';
+  String get sectionFolder => 'složka';
+
+  @override
+  String get needFolderHint => 'Nejdřív vytvoř složku v šatníku.';
 
   @override
   String get takePhoto => 'Vyfotit';
@@ -194,23 +197,23 @@ class AppLocalizationsCs extends AppLocalizations {
   String get needCollectionHint => 'Nejdřív vytvoř kolekci v záložce Kolekce.';
 
   @override
-  String get manageTagsTitle => 'Spravovat tagy';
+  String get newFolderTile => 'nová složka';
 
   @override
-  String get newTagHint => 'nový tag';
+  String get newFolderDialogTitle => 'Nová složka';
 
   @override
-  String get noTagsYet => 'Zatím žádné tagy.';
+  String get newFolderHint => 'např. Košile';
 
   @override
-  String get renameTagTitle => 'Přejmenovat tag';
+  String get renameFolderTitle => 'Přejmenovat složku';
 
   @override
-  String get deleteTagTitle => 'Smazat tag?';
+  String get deleteFolderTitle => 'Smazat složku?';
 
   @override
-  String deleteTagMessage(String tag) {
-    return 'Tag „$tag“ bude smazán a odebrán ze všech kusů oblečení.';
+  String deleteFolderMessage(String folder) {
+    return 'Složka „$folder“ bude smazána. Oblečení v ní se přesune do složky „Nezařazené“.';
   }
 
   @override

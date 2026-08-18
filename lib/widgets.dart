@@ -66,7 +66,7 @@ class GarmentImage extends StatelessWidget {
 }
 
 /// A garment "card": rounded, textured or photo-filled tile with a small
-/// uppercase mono slot label and a name/tags caption, as used across the
+/// uppercase mono slot label and a name/folder caption, as used across the
 /// outfit builder, wardrobe grid and pick sheets.
 class GarmentCard extends StatelessWidget {
   final double width;
@@ -74,7 +74,7 @@ class GarmentCard extends StatelessWidget {
   final double rotationDeg;
   final String? slotLabel;
   final String? name;
-  final String tags;
+  final String caption;
   final String? imagePath;
   final VoidCallback? onTap;
   final void Function(int direction)? onSwipe;
@@ -89,7 +89,7 @@ class GarmentCard extends StatelessWidget {
     this.rotationDeg = 0,
     this.slotLabel,
     this.name,
-    this.tags = '',
+    this.caption = '',
     this.imagePath,
     this.onTap,
     this.onSwipe,
@@ -148,7 +148,7 @@ class GarmentCard extends StatelessWidget {
                 ),
               ),
             ),
-          if ((name != null && name!.isNotEmpty) || tags.isNotEmpty)
+          if ((name != null && name!.isNotEmpty) || caption.isNotEmpty)
             Positioned(
               left: 12,
               right: 12,
@@ -167,13 +167,13 @@ class GarmentCard extends StatelessWidget {
                         color: hasImage ? Colors.white : AppColors.inkSoft,
                       ),
                     ),
-                  if (tags.isNotEmpty)
+                  if (caption.isNotEmpty)
                     Padding(
                       padding: EdgeInsets.only(
                         top: name != null && name!.isNotEmpty ? 3 : 0,
                       ),
                       child: Text(
-                        tags,
+                        caption,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppText.mono(
