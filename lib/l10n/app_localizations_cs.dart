@@ -285,4 +285,14 @@ class AppLocalizationsCs extends AppLocalizations {
   @override
   String get showDressesHint =>
       'Skryje kategorii šatů v šatníku a při přidávání oblečení. Šaty, které už máš v šatníku, zůstanou beze změny.';
+
+  @override
+  String get onboardingTitle => 'Vítej v Šatníku';
+
+  @override
+  String get onboardingSubtitle =>
+      'Pár věcí na začátek — obojí pak najdeš i v nastavení.';
+
+  @override
+  String get onboardingContinue => 'Pokračovat';
 }

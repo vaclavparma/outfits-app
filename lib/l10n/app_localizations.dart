@@ -541,6 +541,24 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Skryje kategorii šatů v šatníku a při přidávání oblečení. Šaty, které už máš v šatníku, zůstanou beze změny.'**
   String get showDressesHint;
+
+  /// No description provided for @onboardingTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Vítej v Šatníku'**
+  String get onboardingTitle;
+
+  /// No description provided for @onboardingSubtitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Pár věcí na začátek — obojí pak najdeš i v nastavení.'**
+  String get onboardingSubtitle;
+
+  /// No description provided for @onboardingContinue.
+  ///
+  /// In cs, this message translates to:
+  /// **'Pokračovat'**
+  String get onboardingContinue;
 }
 
 class _AppLocalizationsDelegate

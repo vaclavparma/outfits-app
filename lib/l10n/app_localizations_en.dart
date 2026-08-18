@@ -282,4 +282,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get showDressesHint =>
       'Hides the dresses category in the wardrobe and when adding clothes. Dresses already in your wardrobe stay put.';
+
+  @override
+  String get onboardingTitle => 'Welcome to Outfits';
+
+  @override
+  String get onboardingSubtitle =>
+      'A couple of things to start — you\'ll find both again in settings.';
+
+  @override
+  String get onboardingContinue => 'Continue';
 }

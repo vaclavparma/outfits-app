@@ -158,5 +158,9 @@
   "sectionLanguage": "jazyk",
   "languageSystemOption": "Podle systému",
   "showDressesLabel": "Zobrazovat šaty v šatníku",
-  "showDressesHint": "Skryje kategorii šatů v šatníku a při přidávání oblečení. Šaty, které už máš v šatníku, zůstanou beze změny."
+  "showDressesHint": "Skryje kategorii šatů v šatníku a při přidávání oblečení. Šaty, které už máš v šatníku, zůstanou beze změny.",
+
+  "onboardingTitle": "Vítej v Šatníku",
+  "onboardingSubtitle": "Pár věcí na začátek — obojí pak najdeš i v nastavení.",
+  "onboardingContinue": "Pokračovat"
 }

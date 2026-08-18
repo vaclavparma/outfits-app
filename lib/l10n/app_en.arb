@@ -158,5 +158,9 @@
   "sectionLanguage": "language",
   "languageSystemOption": "System default",
   "showDressesLabel": "Show dresses in wardrobe",
-  "showDressesHint": "Hides the dresses category in the wardrobe and when adding clothes. Dresses already in your wardrobe stay put."
+  "showDressesHint": "Hides the dresses category in the wardrobe and when adding clothes. Dresses already in your wardrobe stay put.",
+
+  "onboardingTitle": "Welcome to Outfits",
+  "onboardingSubtitle": "A couple of things to start — you'll find both again in settings.",
+  "onboardingContinue": "Continue"
 }

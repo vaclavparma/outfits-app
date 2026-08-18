@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'home_screen.dart';
 import 'l10n/app_localizations.dart';
+import 'onboarding_screen.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
 
@@ -25,7 +26,13 @@ class SatnikApp extends StatelessWidget {
           locale: store.localeCode == null ? null : Locale(store.localeCode!),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: const HomeScreen(),
+          // Before `load()` resolves, stay on a bare background rather than
+          // flashing onboarding (or the home screen) with pre-load defaults.
+          home: !store.loaded
+              ? const Scaffold(backgroundColor: AppColors.background)
+              : store.onboardingDone
+              ? const HomeScreen()
+              : const OnboardingScreen(),
         ),
       ),
     );

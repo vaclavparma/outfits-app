@@ -53,6 +53,16 @@ class WardrobeStore extends ChangeNotifier {
   /// already in the wardrobe stay put and still work in the outfit builder.
   bool showDresses = true;
 
+  /// Whether the one-time onboarding screen (language + dresses) has been
+  /// completed. Checked by [main.dart] to decide what to show first.
+  bool onboardingDone = false;
+
+  /// Whether [load] has finished at least once. Distinct from
+  /// [onboardingDone] — this just guards against briefly showing onboarding
+  /// (or the home screen) with pre-load default values before the real,
+  /// persisted ones are in.
+  bool loaded = false;
+
   /// [kCategories], minus any category turned off in settings.
   List<ClothingCategory> get visibleCategories =>
       kCategories.where((c) => c.key != 'saty' || showDresses).toList();
@@ -65,11 +75,17 @@ class WardrobeStore extends ChangeNotifier {
     Map<String, dynamic> data;
     try {
       final file = await _localFile();
-      if (!await file.exists()) return;
+      if (!await file.exists()) {
+        loaded = true;
+        notifyListeners();
+        return;
+      }
       final raw = await file.readAsString();
       data = jsonDecode(raw) as Map<String, dynamic>;
     } catch (_) {
       // Missing or unreadable state file — start from the empty defaults.
+      loaded = true;
+      notifyListeners();
       return;
     }
 
@@ -133,7 +149,12 @@ class WardrobeStore extends ChangeNotifier {
       showDresses = data['showDresses'] as bool? ?? true;
     } catch (_) {}
 
+    try {
+      onboardingDone = data['onboardingDone'] as bool? ?? false;
+    } catch (_) {}
+
     _bucketOrphanedItems();
+    loaded = true;
     notifyListeners();
   }
 
@@ -176,6 +197,7 @@ class WardrobeStore extends ChangeNotifier {
         'knownFolders': knownFolders,
         'localeCode': localeCode,
         'showDresses': showDresses,
+        'onboardingDone': onboardingDone,
       };
       // Write to a temp file and rename over the real one, so a crash or
       // kill mid-write can never leave a half-written/corrupt state file.
@@ -623,6 +645,12 @@ class WardrobeStore extends ChangeNotifier {
 
   void setShowDresses(bool value) {
     showDresses = value;
+    notifyListeners();
+    _persist();
+  }
+
+  void completeOnboarding() {
+    onboardingDone = true;
     notifyListeners();
     _persist();
   }

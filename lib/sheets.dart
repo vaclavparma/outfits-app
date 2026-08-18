@@ -781,12 +781,12 @@ void openSettingsSheet(BuildContext context) {
   _showSheet(
     context,
     (ctx) => AppLocalizations.of(ctx)!.settingsTitle,
-    const _SettingsContent(),
+    const SettingsContent(),
   );
 }
 
-class _SettingsContent extends StatelessWidget {
-  const _SettingsContent();
+class SettingsContent extends StatelessWidget {
+  const SettingsContent({super.key});
 
   @override
   Widget build(BuildContext context) {
