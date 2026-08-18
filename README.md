@@ -41,6 +41,18 @@ dart run flutter_launcher_icons
 dart run flutter_native_splash:create
 ```
 
+### App store connect
+```
+flutter clean
+flutter pub get
+flutter build ipa --release
+```
+
+```
+open build/ios/archive/Runner.xcarchive
+```
+Distribute App > App Store Connect > Upload
+
 ## Project structure
 
 ```

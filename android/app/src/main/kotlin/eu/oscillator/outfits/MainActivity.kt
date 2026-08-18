@@ -1,4 +1,4 @@
-package com.example.outfits
+package eu.oscillator.outfits
 
 import io.flutter.embedding.android.FlutterActivity
 
