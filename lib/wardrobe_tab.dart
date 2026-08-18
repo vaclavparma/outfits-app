@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 
 import 'folder_detail_screen.dart';
 import 'l10n/app_localizations.dart';
@@ -40,27 +41,36 @@ class WardrobeTab extends StatelessWidget {
                     trailing: l10n.itemCount(store.byCat(cat.key).length),
                   ),
                 ),
-                SliverPadding(
-                  padding: const EdgeInsets.only(bottom: 22),
-                  sliver: SliverGrid(
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
-                          childAspectRatio: 0.82,
+                SliverToBoxAdapter(
+                  // A plain box-based ReorderableGridView, not the sliver
+                  // variant — the package's drag-proxy positioning math goes
+                  // wrong once it's nested inside sliver ancestors that add
+                  // their own offset (e.g. this screen's outer SliverPadding),
+                  // showing up as a ghosted second copy of the dragged card.
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 22),
+                    child: ReorderableGridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 0.82,
+                      dragStartDelay: gridDragStartDelay,
+                      onDragStart: onGridDragStart,
+                      dragWidgetBuilderV2: roundedDragFeedback(16),
+                      onReorder: (oldIndex, newIndex) =>
+                          store.reorderFolders(cat.key, oldIndex, newIndex),
+                      footer: [
+                        AddTile(
+                          label: l10n.newFolderTile,
+                          onTap: () => _createFolder(context, store, cat.key),
                         ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, i) {
-                        if (i == folders.length) {
-                          return AddTile(
-                            label: l10n.newFolderTile,
-                            onTap: () => _createFolder(context, store, cat.key),
-                          );
-                        }
-                        return _FolderCard(catKey: cat.key, name: folders[i]);
-                      },
-                      childCount: folders.length + 1,
+                      ],
+                      children: [
+                        for (final f in folders)
+                          _FolderCard(key: ValueKey(f), catKey: cat.key, name: f),
+                      ],
                     ),
                   ),
                 ),
@@ -76,7 +86,7 @@ class WardrobeTab extends StatelessWidget {
 class _FolderCard extends StatelessWidget {
   final String catKey;
   final String name;
-  const _FolderCard({required this.catKey, required this.name});
+  const _FolderCard({super.key, required this.catKey, required this.name});
 
   @override
   Widget build(BuildContext context) {

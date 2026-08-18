@@ -2,10 +2,57 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 
 import 'l10n/app_localizations.dart';
 import 'models.dart';
 import 'theme.dart';
+
+/// How long a press has to hold before a reorderable grid tile picks up —
+/// shorter than the package's ~500ms default (`kLongPressTimeout`) so
+/// reordering feels responsive rather than sluggish.
+const gridDragStartDelay = Duration(milliseconds: 250);
+
+/// Fires the instant a drag actually starts, giving the pickup a tactile
+/// cue (to go with the visual pop in [roundedDragFeedback]) so it's obvious
+/// the tile is now free to move.
+void onGridDragStart(int _) => HapticFeedback.mediumImpact();
+
+/// Drag feedback for a [ReorderableGridView]/[ReorderableSliverGridView] cell
+/// that itself has rounded corners. The package's own default just wraps the
+/// dragged widget in an opaque, square-cornered [Material] — which pokes
+/// sharp white corners out from behind a rounded card the moment it lifts.
+/// This drops that fill (only the card's own already-rounded content shows)
+/// and deepens the shadow for a "lifted" feel.
+///
+/// Takes a screenshot of the tile instead of re-mounting the live widget in
+/// the drag overlay: our cards (e.g. `_FolderCard`) rebuild off
+/// `context.watch`, and the package's own docs/examples call out re-mounting
+/// such a widget fresh in the overlay as unreliable — it showed up here as a
+/// second, half-rendered "ghost" copy layered behind the real drag proxy.
+/// A screenshot is just a static bitmap, so there's nothing left to rebuild.
+/// Trade-off: the package captures + PNG-encodes that bitmap *before*
+/// hiding the original tile and showing this overlay, so there's an
+/// unavoidable one-frame-ish flicker right at pickup — not something this
+/// builder controls, since it only renders what's already inside the
+/// overlay once the package decides to show it.
+DragWidgetBuilderV2 roundedDragFeedback(double radius) => DragWidgetBuilderV2(
+  isScreenshotDragWidget: true,
+  builder: (index, child, screenshot) => Transform.scale(
+    scale: 1.025,
+    child: Material(
+      color: Colors.transparent,
+      elevation: 6,
+      shadowColor: Colors.black.withValues(alpha: 0.35),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
+      clipBehavior: Clip.antiAlias,
+      child: screenshot == null
+          ? child
+          : Image(image: screenshot, fit: BoxFit.cover),
+    ),
+  ),
+);
 
 /// Diagonal hatch pattern used as a placeholder for garments without a photo,
 /// matching the `repeating-linear-gradient(135deg, ...)` texture in the

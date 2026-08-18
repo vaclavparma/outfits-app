@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 
 import 'l10n/app_localizations.dart';
 import 'models.dart';
@@ -148,21 +149,29 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                             ),
                           ),
                         )
-                      : GridView.builder(
+                      : ReorderableGridView.count(
                           padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                mainAxisSpacing: 14,
-                                crossAxisSpacing: 14,
-                                childAspectRatio: 0.8,
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 14,
+                          crossAxisSpacing: 14,
+                          childAspectRatio: 0.8,
+                          dragStartDelay: gridDragStartDelay,
+                          onDragStart: onGridDragStart,
+                          dragWidgetBuilderV2: roundedDragFeedback(16),
+                          onReorder: (oldIndex, newIndex) =>
+                              store.reorderOutfits(_name, oldIndex, newIndex),
+                          children: [
+                            for (var i = 0; i < outfits.length; i++)
+                              _OutfitCard(
+                                // Not index-based — the whole point of a
+                                // reorder key is to track identity across
+                                // index changes.
+                                key: ValueKey('$_name-${outfits[i].name}'),
+                                colName: _name,
+                                index: i,
+                                outfit: outfits[i],
                               ),
-                          itemCount: outfits.length,
-                          itemBuilder: (context, i) => _OutfitCard(
-                            colName: _name,
-                            index: i,
-                            outfit: outfits[i],
-                          ),
+                          ],
                         ),
                 ),
               ],
@@ -204,6 +213,7 @@ class _OutfitCard extends StatelessWidget {
   final SavedOutfit outfit;
 
   const _OutfitCard({
+    super.key,
     required this.colName,
     required this.index,
     required this.outfit,

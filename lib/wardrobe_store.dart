@@ -493,6 +493,43 @@ class WardrobeStore extends ChangeNotifier {
     await _persist();
   }
 
+  /// Moves the folder at [oldIndex] to [newIndex] within [catKey]'s own
+  /// folder order — manual reordering in the wardrobe grid.
+  void reorderFolders(String catKey, int oldIndex, int newIndex) {
+    final current = <String>[...knownFolders[catKey] ?? const []];
+    if (oldIndex < 0 || oldIndex >= current.length) return;
+    current.insert(newIndex, current.removeAt(oldIndex));
+    knownFolders = {...knownFolders, catKey: current};
+    notifyListeners();
+    _persist();
+  }
+
+  /// Moves the item at [oldIndex] to [newIndex] among [folder]'s own items,
+  /// without disturbing the relative order of items outside that folder —
+  /// [items] is one shared list across every category and folder, so the
+  /// reorder is applied to just the matching slots within it.
+  void reorderFolderItems(
+    String catKey,
+    String folder,
+    int oldIndex,
+    int newIndex,
+  ) {
+    final slots = [
+      for (var i = 0; i < items.length; i++)
+        if (items[i].cat == catKey && items[i].folder == folder) i,
+    ];
+    if (oldIndex < 0 || oldIndex >= slots.length) return;
+    final subset = [for (final i in slots) items[i]];
+    subset.insert(newIndex, subset.removeAt(oldIndex));
+    final reordered = [...items];
+    for (var k = 0; k < slots.length; k++) {
+      reordered[slots[k]] = subset[k];
+    }
+    items = reordered;
+    notifyListeners();
+    _persist();
+  }
+
   void useItem(ClothingItem it) {
     final zone = zoneForCategory(it.cat);
     if (zone != null) {
@@ -556,6 +593,16 @@ class WardrobeStore extends ChangeNotifier {
     await _persist();
   }
 
+  /// Manual reordering of the collections grid.
+  void reorderCollections(int oldIndex, int newIndex) {
+    if (oldIndex < 0 || oldIndex >= cols.length) return;
+    final reordered = [...cols];
+    reordered.insert(newIndex, reordered.removeAt(oldIndex));
+    cols = reordered;
+    notifyListeners();
+    _persist();
+  }
+
   Future<void> deleteOutfit(String colName, int index) async {
     final list = saved[colName] ?? [];
     saved = {
@@ -567,6 +614,17 @@ class WardrobeStore extends ChangeNotifier {
     };
     notifyListeners();
     await _persist();
+  }
+
+  /// Manual reordering of outfits within one collection.
+  void reorderOutfits(String colName, int oldIndex, int newIndex) {
+    final list = saved[colName] ?? const [];
+    if (oldIndex < 0 || oldIndex >= list.length) return;
+    final reordered = [...list];
+    reordered.insert(newIndex, reordered.removeAt(oldIndex));
+    saved = {...saved, colName: reordered};
+    notifyListeners();
+    _persist();
   }
 
   /// Saves the current outfit selection into [targetCol] (or the first

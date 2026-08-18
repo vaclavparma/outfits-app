@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 
 import 'collection_detail_screen.dart';
 import 'l10n/app_localizations.dart';
@@ -19,32 +20,33 @@ class CollectionsTab extends StatelessWidget {
     final store = context.watch<WardrobeStore>();
     final l10n = AppLocalizations.of(context)!;
 
-    return GridView.builder(
+    return ReorderableGridView.count(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 0.82,
-      ),
-      itemCount: store.cols.length + 1,
-      itemBuilder: (context, i) {
-        if (i == store.cols.length) {
-          return AddTile(
-            label: l10n.newCollectionTile,
-            onTap: () => _createCollection(context, store),
-          );
-        }
-        final name = store.cols[i];
-        return _CollectionCard(name: name);
-      },
+      crossAxisCount: 2,
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 12,
+      childAspectRatio: 0.82,
+      dragStartDelay: gridDragStartDelay,
+      onDragStart: onGridDragStart,
+      dragWidgetBuilderV2: roundedDragFeedback(16),
+      onReorder: store.reorderCollections,
+      footer: [
+        AddTile(
+          label: l10n.newCollectionTile,
+          onTap: () => _createCollection(context, store),
+        ),
+      ],
+      children: [
+        for (final name in store.cols)
+          _CollectionCard(key: ValueKey(name), name: name),
+      ],
     );
   }
 }
 
 class _CollectionCard extends StatelessWidget {
   final String name;
-  const _CollectionCard({required this.name});
+  const _CollectionCard({super.key, required this.name});
 
   @override
   Widget build(BuildContext context) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 
 import 'l10n/app_localizations.dart';
 import 'sheets.dart';
@@ -142,35 +143,41 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                   ),
                 ),
                 Expanded(
-                  child: GridView.builder(
+                  child: ReorderableGridView.count(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          mainAxisSpacing: 9,
-                          crossAxisSpacing: 9,
-                          childAspectRatio: 100 / 124,
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 9,
+                    crossAxisSpacing: 9,
+                    childAspectRatio: 100 / 124,
+                    dragStartDelay: gridDragStartDelay,
+                    onDragStart: onGridDragStart,
+                    dragWidgetBuilderV2: roundedDragFeedback(17),
+                    onReorder: (oldIndex, newIndex) => store.reorderFolderItems(
+                      widget.catKey,
+                      _name,
+                      oldIndex,
+                      newIndex,
+                    ),
+                    footer: [
+                      AddTile(
+                        label: l10n.add,
+                        onTap: () => openAddItemSheet(
+                          context,
+                          presetCategory: widget.catKey,
+                          presetFolder: _name,
                         ),
-                    itemCount: items.length + 1,
-                    itemBuilder: (context, i) {
-                      if (i == items.length) {
-                        return AddTile(
-                          label: l10n.add,
-                          onTap: () => openAddItemSheet(
-                            context,
-                            presetCategory: widget.catKey,
-                            presetFolder: _name,
-                          ),
-                        );
-                      }
-                      final it = items[i];
-                      return GarmentCard(
-                        width: double.infinity,
-                        height: double.infinity,
-                        imagePath: it.imagePath,
-                        onTap: () => openItemSheet(context, it),
-                      );
-                    },
+                      ),
+                    ],
+                    children: [
+                      for (final it in items)
+                        GarmentCard(
+                          key: ValueKey(it.id),
+                          width: double.infinity,
+                          height: double.infinity,
+                          imagePath: it.imagePath,
+                          onTap: () => openItemSheet(context, it),
+                        ),
+                    ],
                   ),
                 ),
               ],
