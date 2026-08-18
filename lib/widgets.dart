@@ -40,16 +40,14 @@ void onGridDragStart(int _) => HapticFeedback.mediumImpact();
 DragWidgetBuilderV2 roundedDragFeedback(double radius) => DragWidgetBuilderV2(
   isScreenshotDragWidget: true,
   builder: (index, child, screenshot) => Transform.scale(
-    scale: 1.025,
+    scale: 1.05,
     child: Material(
       color: Colors.transparent,
       elevation: 6,
       shadowColor: Colors.black.withValues(alpha: 0.35),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
       clipBehavior: Clip.antiAlias,
-      child: screenshot == null
-          ? child
-          : Image(image: screenshot, fit: BoxFit.cover),
+      child: screenshot == null ? child : Image(image: screenshot, fit: BoxFit.cover),
     ),
   ),
 );
@@ -76,11 +74,7 @@ class _StripePainter extends CustomPainter {
     const spacing = 11.0;
     final diag = size.width + size.height;
     for (double x = -diag; x < diag; x += spacing) {
-      canvas.drawLine(
-        Offset(x, 0),
-        Offset(x + size.height, size.height),
-        paint,
-      );
+      canvas.drawLine(Offset(x, 0), Offset(x + size.height, size.height), paint);
     }
   }
 
@@ -100,13 +94,16 @@ class GarmentImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final dpr = MediaQuery.devicePixelRatioOf(context);
     return LayoutBuilder(
-      builder: (context, constraints) => Image.file(
-        File(path),
-        fit: BoxFit.cover,
-        cacheWidth: constraints.maxWidth.isFinite
-            ? (constraints.maxWidth * dpr).round()
-            : null,
-        errorBuilder: (context, error, stackTrace) => const DiagonalStripes(),
+      builder: (context, constraints) => ColoredBox(
+        // Letterbox fill for an oddly-shaped photo (very tall/wide) that
+        // BoxFit.contain leaves bars around, rather than cropping it.
+        color: Colors.white,
+        child: Image.file(
+          File(path),
+          fit: BoxFit.contain,
+          cacheWidth: constraints.maxWidth.isFinite ? (constraints.maxWidth * dpr).round() : null,
+          errorBuilder: (context, error, stackTrace) => const DiagonalStripes(),
+        ),
       ),
     );
   }
@@ -160,21 +157,19 @@ class GarmentCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          if (hasImage)
-            Positioned.fill(child: GarmentImage(imagePath!))
-          else
-            const DiagonalStripes(),
-          if (hasImage)
+          if (hasImage) Positioned.fill(child: GarmentImage(imagePath!)) else const DiagonalStripes(),
+          // Only darken the bottom of the photo when there's actually a
+          // caption sitting on top of it — otherwise this was just dimming
+          // the photo itself for no reason (e.g. every card on the outfit
+          // screen, which never shows a caption over its photo).
+          if (hasImage && ((name != null && name!.isNotEmpty) || caption.isNotEmpty))
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.45),
-                    ],
+                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.45)],
                     stops: const [0.55, 1],
                   ),
                 ),
@@ -189,9 +184,7 @@ class GarmentCard extends StatelessWidget {
                 style: AppText.mono(
                   size: 8,
                   letterSpacing: 1.1,
-                  color: hasImage
-                      ? Colors.white.withValues(alpha: 0.85)
-                      : AppColors.mutedLabel,
+                  color: hasImage ? Colors.white.withValues(alpha: 0.85) : AppColors.mutedLabel,
                 ),
               ),
             ),
@@ -209,16 +202,11 @@ class GarmentCard extends StatelessWidget {
                       name!,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppText.sans(
-                        size: 13,
-                        color: hasImage ? Colors.white : AppColors.inkSoft,
-                      ),
+                      style: AppText.sans(size: 13, color: hasImage ? Colors.white : AppColors.inkSoft),
                     ),
                   if (caption.isNotEmpty)
                     Padding(
-                      padding: EdgeInsets.only(
-                        top: name != null && name!.isNotEmpty ? 3 : 0,
-                      ),
+                      padding: EdgeInsets.only(top: name != null && name!.isNotEmpty ? 3 : 0),
                       child: Text(
                         caption,
                         maxLines: 1,
@@ -226,9 +214,7 @@ class GarmentCard extends StatelessWidget {
                         style: AppText.mono(
                           size: 8.5,
                           letterSpacing: 0.6,
-                          color: hasImage
-                              ? Colors.white.withValues(alpha: 0.75)
-                              : AppColors.mutedTag,
+                          color: hasImage ? Colors.white.withValues(alpha: 0.75) : AppColors.mutedTag,
                         ),
                       ),
                     ),
@@ -363,21 +349,10 @@ class AddTile extends StatelessWidget {
           children: [
             Text(
               '+',
-              style: AppText.sans(
-                size: 22,
-                weight: FontWeight.w300,
-                color: AppColors.mutedSoft,
-              ),
+              style: AppText.sans(size: 22, weight: FontWeight.w300, color: AppColors.mutedSoft),
             ),
             const SizedBox(height: 2),
-            Text(
-              label,
-              style: AppText.mono(
-                size: 9,
-                letterSpacing: 0.6,
-                color: AppColors.mutedSoft,
-              ),
-            ),
+            Text(label, style: AppText.mono(size: 9, letterSpacing: 0.6, color: AppColors.mutedSoft)),
           ],
         ),
       ),
@@ -403,14 +378,7 @@ class SectionHeader extends StatelessWidget {
         children: [
           Text(title, style: AppText.sans(size: 13, color: AppColors.ink)),
           if (trailing != null)
-            Text(
-              trailing!,
-              style: AppText.mono(
-                size: 9,
-                letterSpacing: 1,
-                color: AppColors.mutedSoft,
-              ),
-            ),
+            Text(trailing!, style: AppText.mono(size: 9, letterSpacing: 1, color: AppColors.mutedSoft)),
         ],
       ),
     );
@@ -431,10 +399,7 @@ Future<bool> confirmDialog(
     builder: (dialogContext) => AlertDialog(
       backgroundColor: Colors.white,
       title: Text(title, style: AppText.sans(size: 16, color: AppColors.ink)),
-      content: Text(
-        message,
-        style: AppText.sans(size: 13, color: AppColors.label, height: 1.4),
-      ),
+      content: Text(message, style: AppText.sans(size: 13, color: AppColors.label, height: 1.4)),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -447,11 +412,7 @@ Future<bool> confirmDialog(
           onPressed: () => Navigator.of(dialogContext).pop(true),
           child: Text(
             confirmLabel,
-            style: AppText.sans(
-              size: 13,
-              weight: FontWeight.w500,
-              color: AppColors.accent,
-            ),
+            style: AppText.sans(size: 13, weight: FontWeight.w500, color: AppColors.accent),
           ),
         ),
       ],
@@ -472,12 +433,8 @@ Future<String?> promptTextDialog(
 }) {
   return showDialog<String>(
     context: context,
-    builder: (dialogContext) => _TextPromptDialog(
-      title: title,
-      initialValue: initialValue,
-      hintText: hintText,
-      confirmLabel: confirmLabel,
-    ),
+    builder: (dialogContext) =>
+        _TextPromptDialog(title: title, initialValue: initialValue, hintText: hintText, confirmLabel: confirmLabel),
   );
 }
 
@@ -486,21 +443,14 @@ class _TextPromptDialog extends StatefulWidget {
   final String initialValue;
   final String? hintText;
   final String confirmLabel;
-  const _TextPromptDialog({
-    required this.title,
-    required this.initialValue,
-    this.hintText,
-    required this.confirmLabel,
-  });
+  const _TextPromptDialog({required this.title, required this.initialValue, this.hintText, required this.confirmLabel});
 
   @override
   State<_TextPromptDialog> createState() => _TextPromptDialogState();
 }
 
 class _TextPromptDialogState extends State<_TextPromptDialog> {
-  late final TextEditingController _controller = TextEditingController(
-    text: widget.initialValue,
-  );
+  late final TextEditingController _controller = TextEditingController(text: widget.initialValue);
 
   @override
   void dispose() {
@@ -512,10 +462,7 @@ class _TextPromptDialogState extends State<_TextPromptDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: Colors.white,
-      title: Text(
-        widget.title,
-        style: AppText.sans(size: 16, color: AppColors.ink),
-      ),
+      title: Text(widget.title, style: AppText.sans(size: 16, color: AppColors.ink)),
       content: TextField(
         controller: _controller,
         autofocus: true,
@@ -524,29 +471,19 @@ class _TextPromptDialogState extends State<_TextPromptDialog> {
           hintText: widget.hintText,
           hintStyle: AppText.sans(size: 14, color: AppColors.mutedTag),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 10,
-          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text(
-            AppLocalizations.of(context)!.cancel,
-            style: AppText.sans(size: 13, color: AppColors.muted),
-          ),
+          child: Text(AppLocalizations.of(context)!.cancel, style: AppText.sans(size: 13, color: AppColors.muted)),
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(_controller.text),
           child: Text(
             widget.confirmLabel,
-            style: AppText.sans(
-              size: 13,
-              weight: FontWeight.w500,
-              color: AppColors.accent,
-            ),
+            style: AppText.sans(size: 13, weight: FontWeight.w500, color: AppColors.accent),
           ),
         ),
       ],
@@ -586,10 +523,7 @@ class OutfitCollage extends StatelessWidget {
       children: [
         Expanded(
           flex: 3,
-          child: Padding(
-            padding: const EdgeInsets.only(right: 2),
-            child: _tile(shown[0]),
-          ),
+          child: Padding(padding: const EdgeInsets.only(right: 2), child: _tile(shown[0])),
         ),
         Expanded(
           flex: 2,
@@ -598,10 +532,7 @@ class OutfitCollage extends StatelessWidget {
               for (var i = 1; i < shown.length; i++)
                 Expanded(
                   child: Padding(
-                    padding: EdgeInsets.only(
-                      top: i > 1 ? 1 : 0,
-                      bottom: i < shown.length - 1 ? 1 : 0,
-                    ),
+                    padding: EdgeInsets.only(top: i > 1 ? 1 : 0, bottom: i < shown.length - 1 ? 1 : 0),
                     child: _tile(shown[i]),
                   ),
                 ),
@@ -614,9 +545,6 @@ class OutfitCollage extends StatelessWidget {
 
   Widget _tile(ClothingItem it) {
     final path = it.imagePath;
-    return Container(
-      color: AppColors.cardFill,
-      child: path == null ? const DiagonalStripes() : GarmentImage(path),
-    );
+    return Container(color: AppColors.cardFill, child: path == null ? const DiagonalStripes() : GarmentImage(path));
   }
 }

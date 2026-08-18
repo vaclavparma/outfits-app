@@ -674,14 +674,23 @@ class WardrobeStore extends ChangeNotifier {
   void loadOutfit(SavedOutfit o) {
     final newIdx = {...idx};
     final newLayers = <String>[];
+    // 'horni' covers both the primary top and every layer worn over it, so
+    // category alone can't tell them apart any more. [saveOutfit] always
+    // writes the primary top first, then layers, then bottom/shoes — so the
+    // first top-zone item found is the top; any top-zone item after that is
+    // a layer.
+    var topAssigned = false;
     for (final id in o.itemIds) {
       final it = itemById(id);
       if (it == null) continue;
       final zone = zoneForCategory(it.cat);
+      if (zone == WardrobeZone.top && topAssigned) {
+        newLayers.add(id);
+        continue;
+      }
       if (zone != null) {
         newIdx[zone] = zoneList(zone).indexWhere((x) => x.id == id);
-      } else {
-        newLayers.add(id);
+        if (zone == WardrobeZone.top) topAssigned = true;
       }
     }
     idx = newIdx;
