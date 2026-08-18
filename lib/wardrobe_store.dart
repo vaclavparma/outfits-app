@@ -254,14 +254,40 @@ class WardrobeStore extends ChangeNotifier {
     return list[i];
   }
 
+  /// If [oldItem] was pinned, moves the pin onto [newItem] instead of
+  /// leaving it stuck on an item that's no longer shown there. Manually
+  /// swapping what's in a pinned slot should keep the slot "locked" to
+  /// whatever you just picked — not drop the lock, and not leave the old
+  /// item pinned somewhere it might resurface later (e.g. shuffled back
+  /// into some other zone) and unexpectedly resist shuffling again.
+  /// Returns whether anything actually changed (so callers know whether
+  /// they need to persist).
+  bool _transferPin(ClothingItem? oldItem, ClothingItem? newItem) {
+    if (oldItem == null || !oldItem.pinned || oldItem.id == newItem?.id) {
+      return false;
+    }
+    items = items.map((i) {
+      if (i.id == oldItem.id) return i..pinned = false;
+      if (newItem != null && i.id == newItem.id) return i..pinned = true;
+      return i;
+    }).toList();
+    return true;
+  }
+
   void step(WardrobeZone zone, int dir) {
+    final oldItem = at(zoneList(zone), zone);
     idx = {...idx, zone: idx[zone]! + dir};
+    final pinMoved = _transferPin(oldItem, at(zoneList(zone), zone));
     notifyListeners();
+    if (pinMoved) _persist();
   }
 
   void selectIndex(WardrobeZone zone, int i) {
+    final oldItem = at(zoneList(zone), zone);
     idx = {...idx, zone: i};
+    final pinMoved = _transferPin(oldItem, at(zoneList(zone), zone));
     notifyListeners();
+    if (pinMoved) _persist();
   }
 
   /// Randomizes each zone and every layer — except any slot whose current
@@ -317,10 +343,13 @@ class WardrobeStore extends ChangeNotifier {
   /// layer to change it, as opposed to [addLayer] appending a new one.
   void setLayer(int index, String itemId) {
     if (index < 0 || index >= layers.length) return;
+    final oldItem = itemById(layers[index]);
     layers = [
       for (var j = 0; j < layers.length; j++) if (j == index) itemId else layers[j],
     ];
+    final pinMoved = _transferPin(oldItem, itemById(itemId));
     notifyListeners();
+    if (pinMoved) _persist();
   }
 
   void removeLayer(int index) {
@@ -532,14 +561,20 @@ class WardrobeStore extends ChangeNotifier {
 
   void useItem(ClothingItem it) {
     final zone = zoneForCategory(it.cat);
+    var pinMoved = false;
     if (zone != null) {
       final i = zoneList(zone).indexWhere((x) => x.id == it.id);
-      if (i >= 0) idx = {...idx, zone: i};
+      if (i >= 0) {
+        final oldItem = at(zoneList(zone), zone);
+        idx = {...idx, zone: i};
+        pinMoved = _transferPin(oldItem, it);
+      }
     } else if (!layers.contains(it.id) && layers.length < kMaxLayers) {
       layers = [...layers, it.id];
     }
     screen = WardrobeTabKind.outfit;
     notifyListeners();
+    if (pinMoved) _persist();
   }
 
   Future<void> deleteItem(ClothingItem it) async {
