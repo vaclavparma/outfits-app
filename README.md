@@ -49,6 +49,14 @@ flutter build ipa --release
 ```
 
 ```
+xcodebuild -exportArchive \
+  -archivePath build/ios/archive/Runner.xcarchive \
+  -exportOptionsPlist ios/ExportOptions.plist \
+  -exportPath build/ios/ipa \
+  -allowProvisioningUpdates
+```
+
+```
 open build/ios/archive/Runner.xcarchive
 ```
 Distribute App > App Store Connect > Upload
