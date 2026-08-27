@@ -219,12 +219,17 @@ class _LayerChoices extends StatelessWidget {
     }
     // In replace mode, the layer being swapped stays selectable (it's not
     // "already used" from the user's point of view — it's what's on offer).
+    // The item currently worn as the main top is excluded outright — it
+    // can't also be layered over itself (most visible with a sparse
+    // wardrobe, where it'd otherwise be the only "layer" on offer).
+    final currentTopId = store.at(store.topList, WardrobeZone.top)?.id;
     final available = store
         .byCat('horni')
         .where(
           (it) =>
-              !store.layers.contains(it.id) ||
-              (replaceIndex != null && store.layers[replaceIndex!] == it.id),
+              it.id != currentTopId &&
+              (!store.layers.contains(it.id) ||
+                  (replaceIndex != null && store.layers[replaceIndex!] == it.id)),
         )
         .toList();
     if (available.isEmpty) {
@@ -360,12 +365,14 @@ class _AddItemFormState extends State<_AddItemForm> {
 
   /// Every item needs a folder, so default to whatever folder filter is
   /// active in the wardrobe grid (if it belongs to this category), else the
-  /// first folder that exists for it, else none yet (category has none).
-  String? _defaultFolderFor(String cat) {
+  /// first folder that exists for it, else [WardrobeStore.fallbackFolder] —
+  /// a category with no folders yet must still be addable to (otherwise a
+  /// brand-new wardrobe can never add its first item).
+  String _defaultFolderFor(String cat) {
     final store = context.read<WardrobeStore>();
     final folders = store.foldersFor(cat);
-    if (folders.contains(store.folderFilter)) return store.folderFilter;
-    return folders.isNotEmpty ? folders.first : null;
+    if (folders.contains(store.folderFilter)) return store.folderFilter!;
+    return folders.isNotEmpty ? folders.first : store.fallbackFolder;
   }
 
   Future<void> _pick(ImageSource source) async {
@@ -440,28 +447,18 @@ class _AddItemFormState extends State<_AddItemForm> {
           const SizedBox(height: 18),
           Text(l10n.sectionFolder, style: _sectionLabelStyle),
           const SizedBox(height: 8),
-          if (folders.isEmpty)
-            Text(
-              l10n.needFolderHint,
-              style: AppText.sans(
-                size: 12.5,
-                color: AppColors.mutedTag,
-                height: 1.4,
-              ),
-            )
-          else
-            Wrap(
-              spacing: 7,
-              runSpacing: 7,
-              children: [
-                for (final f in folders)
-                  SelectChip(
-                    label: f,
-                    active: _folder == f,
-                    onTap: () => setState(() => _folder = f),
-                  ),
-              ],
-            ),
+          Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: [
+              for (final f in folders)
+                SelectChip(
+                  label: f,
+                  active: _folder == f,
+                  onTap: () => setState(() => _folder = f),
+                ),
+            ],
+          ),
           const SizedBox(height: 18),
         ],
         Row(
@@ -695,53 +692,35 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
         const SizedBox(height: 18),
         Text(l10n.sectionCollection, style: _sectionLabelStyle),
         const SizedBox(height: 8),
-        if (hasCols)
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: [
-              for (final c in store.cols)
-                SelectChip(
-                  label: c,
-                  active: _selectedCol == c,
-                  mono: false,
-                  height: 34,
-                  onTap: () => setState(() => _selectedCol = c),
-                ),
-            ],
-          )
-        else
-          Text(
-            l10n.needCollectionHint,
-            style: AppText.sans(
-              size: 12.5,
-              color: AppColors.mutedTag,
-              height: 1.4,
-            ),
-          ),
+        Wrap(
+          spacing: 7,
+          runSpacing: 7,
+          children: [
+            for (final c in store.cols)
+              SelectChip(
+                label: c,
+                active: _selectedCol == c,
+                mono: false,
+                height: 34,
+                onTap: () => setState(() => _selectedCol = c),
+              ),
+          ],
+        ),
         const SizedBox(height: 18),
         GestureDetector(
-          onTap: !hasCols
-              ? null
-              : () async {
-                  final result = await store.saveOutfit(
-                    rawName: _nameController.text,
-                    targetCol: _selectedCol ?? '',
-                    defaultName: l10n.defaultOutfitName,
-                  );
-                  if (result != null) {
-                    store.flash(
-                      l10n.toastOutfitSaved(result.name, result.col),
-                    );
-                  } else {
-                    store.flash(l10n.toastNeedCollectionFirst);
-                  }
-                  if (context.mounted) Navigator.of(context).pop();
-                },
+          onTap: () async {
+            final result = await store.saveOutfit(
+              rawName: _nameController.text,
+              targetCol: _selectedCol ?? '',
+              defaultName: l10n.defaultOutfitName,
+            );
+            store.flash(l10n.toastOutfitSaved(result.name, result.col));
+            if (context.mounted) Navigator.of(context).pop();
+          },
           child: Container(
             height: 48,
             decoration: BoxDecoration(
-              color: hasCols ? AppColors.accent : AppColors.cardBorder,
+              color: AppColors.accent,
               borderRadius: BorderRadius.circular(24),
             ),
             alignment: Alignment.center,
@@ -750,7 +729,7 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
               style: AppText.sans(
                 size: 13,
                 weight: FontWeight.w500,
-                color: hasCols ? Colors.white : AppColors.mutedSoft,
+                color: Colors.white,
               ),
             ),
           ),

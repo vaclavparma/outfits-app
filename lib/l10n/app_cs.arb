@@ -13,6 +13,7 @@
   "actionCannotBeUndone": "Tuto akci nelze vrátit.",
   "noFolder": "bez složky",
   "rename": "Přejmenovat",
+  "unsortedName": "Nezařazené",
 
   "addTopPlaceholder": "Přidej top",
   "addBottomPlaceholder": "Přidej spodek",
@@ -77,7 +78,6 @@
   "addItemTitle": "Přidat oblečení",
   "sectionCategory": "kategorie",
   "sectionFolder": "složka",
-  "needFolderHint": "Nejdřív vytvoř složku v šatníku.",
   "takePhoto": "Vyfotit",
   "fromGallery": "Z galerie",
 
@@ -89,7 +89,6 @@
   "sectionOutfitName": "název outfitu",
   "outfitNameHint": "např. Pondělní porada",
   "sectionCollection": "kolekce",
-  "needCollectionHint": "Nejdřív vytvoř kolekci v záložce Kolekce.",
 
   "newFolderTile": "nová složka",
   "newFolderDialogTitle": "Nová složka",
@@ -135,7 +134,6 @@
       "col": {"type": "String"}
     }
   },
-  "toastNeedCollectionFirst": "Nejdřív přidej kolekci",
   "defaultOutfitName": "Outfit {n}",
   "@defaultOutfitName": {
     "placeholders": {

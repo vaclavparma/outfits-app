@@ -164,6 +164,12 @@ abstract class AppLocalizations {
   /// **'Přejmenovat'**
   String get rename;
 
+  /// No description provided for @unsortedName.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nezařazené'**
+  String get unsortedName;
+
   /// No description provided for @addTopPlaceholder.
   ///
   /// In cs, this message translates to:
@@ -344,12 +350,6 @@ abstract class AppLocalizations {
   /// **'složka'**
   String get sectionFolder;
 
-  /// No description provided for @needFolderHint.
-  ///
-  /// In cs, this message translates to:
-  /// **'Nejdřív vytvoř složku v šatníku.'**
-  String get needFolderHint;
-
   /// No description provided for @takePhoto.
   ///
   /// In cs, this message translates to:
@@ -403,12 +403,6 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'kolekce'**
   String get sectionCollection;
-
-  /// No description provided for @needCollectionHint.
-  ///
-  /// In cs, this message translates to:
-  /// **'Nejdřív vytvoř kolekci v záložce Kolekce.'**
-  String get needCollectionHint;
 
   /// No description provided for @newFolderTile.
   ///
@@ -475,12 +469,6 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'„{name}“ uloženo do kolekce {col}'**
   String toastOutfitSaved(String name, String col);
-
-  /// No description provided for @toastNeedCollectionFirst.
-  ///
-  /// In cs, this message translates to:
-  /// **'Nejdřív přidej kolekci'**
-  String get toastNeedCollectionFirst;
 
   /// No description provided for @defaultOutfitName.
   ///

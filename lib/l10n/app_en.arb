@@ -13,6 +13,7 @@
   "actionCannotBeUndone": "This action can't be undone.",
   "noFolder": "no folder",
   "rename": "Rename",
+  "unsortedName": "Unsorted",
 
   "addTopPlaceholder": "Add a top",
   "addBottomPlaceholder": "Add a bottom",
@@ -77,7 +78,6 @@
   "addItemTitle": "Add clothing",
   "sectionCategory": "category",
   "sectionFolder": "folder",
-  "needFolderHint": "Create a folder in the wardrobe first.",
   "takePhoto": "Take photo",
   "fromGallery": "From gallery",
 
@@ -89,7 +89,6 @@
   "sectionOutfitName": "outfit name",
   "outfitNameHint": "e.g. Monday meeting",
   "sectionCollection": "collection",
-  "needCollectionHint": "Create a collection in the Collections tab first.",
 
   "newFolderTile": "new folder",
   "newFolderDialogTitle": "New folder",
@@ -135,7 +134,6 @@
       "col": {"type": "String"}
     }
   },
-  "toastNeedCollectionFirst": "Add a collection first",
   "defaultOutfitName": "Outfit {n}",
   "@defaultOutfitName": {
     "placeholders": {

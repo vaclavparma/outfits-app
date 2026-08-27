@@ -42,6 +42,9 @@ class AppLocalizationsCs extends AppLocalizations {
   String get rename => 'Přejmenovat';
 
   @override
+  String get unsortedName => 'Nezařazené';
+
+  @override
   String get addTopPlaceholder => 'Přidej top';
 
   @override
@@ -164,9 +167,6 @@ class AppLocalizationsCs extends AppLocalizations {
   String get sectionFolder => 'složka';
 
   @override
-  String get needFolderHint => 'Nejdřív vytvoř složku v šatníku.';
-
-  @override
   String get takePhoto => 'Vyfotit';
 
   @override
@@ -192,9 +192,6 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get sectionCollection => 'kolekce';
-
-  @override
-  String get needCollectionHint => 'Nejdřív vytvoř kolekci v záložce Kolekce.';
 
   @override
   String get newFolderTile => 'nová složka';
@@ -247,9 +244,6 @@ class AppLocalizationsCs extends AppLocalizations {
   String toastOutfitSaved(String name, String col) {
     return '„$name“ uloženo do kolekce $col';
   }
-
-  @override
-  String get toastNeedCollectionFirst => 'Nejdřív přidej kolekci';
 
   @override
   String defaultOutfitName(int n) {

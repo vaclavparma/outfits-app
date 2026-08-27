@@ -2,11 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'dart:ui' show Locale, PlatformDispatcher;
 
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'l10n/app_localizations.dart';
 import 'models.dart';
 
 /// Holds the entire wardrobe/outfit state and mirrors the `Component` logic
@@ -20,8 +22,22 @@ class WardrobeStore extends ChangeNotifier {
   /// Every item belongs to a folder, mirroring how every saved outfit
   /// belongs to a collection. This is the catch-all a category's items land
   /// in if they don't have one yet (fresh migration, or a folder that got
-  /// deleted out from under them) — never left as `null`.
-  static const fallbackFolder = 'Nezařazené';
+  /// deleted out from under them) — never left as `null`. Localized at the
+  /// moment it's created (matching [localeCode], or the device locale when
+  /// that's unset) since it's stored as a plain folder name from then on,
+  /// just like any user-created one — it doesn't retroactively re-translate
+  /// if the app language changes later.
+  String get fallbackFolder => _localizedFallbackName;
+
+  /// Mirrors [fallbackFolder] for collections — the catch-all a saved outfit
+  /// lands in when the user hasn't created a collection yet, so saving an
+  /// outfit never dead-ends behind "go create a collection first".
+  String get fallbackCollection => _localizedFallbackName;
+
+  String get _localizedFallbackName {
+    final code = localeCode ?? PlatformDispatcher.instance.locale.languageCode;
+    return lookupAppLocalizations(Locale(code == 'en' ? 'en' : 'cs')).unsortedName;
+  }
 
   WardrobeTabKind screen = WardrobeTabKind.outfit;
   List<ClothingItem> items = [];
@@ -77,6 +93,7 @@ class WardrobeStore extends ChangeNotifier {
       final file = await _localFile();
       if (!await file.exists()) {
         loaded = true;
+        _applyFirstLaunchScreen();
         notifyListeners();
         return;
       }
@@ -85,6 +102,7 @@ class WardrobeStore extends ChangeNotifier {
     } catch (_) {
       // Missing or unreadable state file — start from the empty defaults.
       loaded = true;
+      _applyFirstLaunchScreen();
       notifyListeners();
       return;
     }
@@ -155,7 +173,18 @@ class WardrobeStore extends ChangeNotifier {
 
     _bucketOrphanedItems();
     loaded = true;
+    _applyFirstLaunchScreen();
     notifyListeners();
+  }
+
+  /// A brand-new wardrobe opens on the Wardrobe tab — there's nothing to
+  /// build an outfit from yet, so the Outfit tab's three empty "add"
+  /// placeholders are a worse landing spot than the wardrobe itself. Once
+  /// there's at least one item, later launches land on the Outfit tab as
+  /// usual (this only ever raises the tab a fresh install starts on, so it
+  /// runs after every load path, not just the fresh-install one).
+  void _applyFirstLaunchScreen() {
+    if (items.isEmpty) screen = WardrobeTabKind.wardrobe;
   }
 
   /// Every item must have a folder. Files anything that doesn't (freshly
@@ -420,6 +449,13 @@ class WardrobeStore extends ChangeNotifier {
       );
     }
     items = [...items, ...newItems];
+    final current = knownFolders[cat] ?? const [];
+    if (!current.contains(folder)) {
+      knownFolders = {
+        ...knownFolders,
+        cat: [...current, folder],
+      };
+    }
     notifyListeners();
     await _persist();
     return (items: newItems, photoFailures: photoFailures);
@@ -663,16 +699,20 @@ class WardrobeStore extends ChangeNotifier {
   }
 
   /// Saves the current outfit selection into [targetCol] (or the first
-  /// collection, if empty), returning the collection/name it landed under —
-  /// or null if there's no collection to save into. [defaultName] supplies
-  /// the auto-generated name ("Outfit N") when [rawName] is blank, since
-  /// that text needs a [BuildContext] this store doesn't have.
-  Future<({String col, String name})?> saveOutfit({
+  /// collection, if empty — falling back to [fallbackCollection], creating
+  /// it if this is the very first save), returning the collection/name it
+  /// landed under. [defaultName] supplies the auto-generated name ("Outfit
+  /// N") when [rawName] is blank, since that text needs a [BuildContext]
+  /// this store doesn't have.
+  Future<({String col, String name})> saveOutfit({
     required String rawName,
     required String targetCol,
     required String Function(int n) defaultName,
   }) async {
-    if (cols.isEmpty) return null;
+    if (cols.isEmpty) {
+      cols = [fallbackCollection];
+      saved = {...saved, fallbackCollection: []};
+    }
     final top = at(topList, WardrobeZone.top);
     final bot = at(botList, WardrobeZone.bottom);
     final shoe = at(shoeList, WardrobeZone.shoes);

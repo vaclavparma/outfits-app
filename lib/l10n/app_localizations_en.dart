@@ -42,6 +42,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rename => 'Rename';
 
   @override
+  String get unsortedName => 'Unsorted';
+
+  @override
   String get addTopPlaceholder => 'Add a top';
 
   @override
@@ -161,9 +164,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sectionFolder => 'folder';
 
   @override
-  String get needFolderHint => 'Create a folder in the wardrobe first.';
-
-  @override
   String get takePhoto => 'Take photo';
 
   @override
@@ -189,10 +189,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sectionCollection => 'collection';
-
-  @override
-  String get needCollectionHint =>
-      'Create a collection in the Collections tab first.';
 
   @override
   String get newFolderTile => 'new folder';
@@ -244,9 +240,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String toastOutfitSaved(String name, String col) {
     return '“$name” saved to the $col collection';
   }
-
-  @override
-  String get toastNeedCollectionFirst => 'Add a collection first';
 
   @override
   String defaultOutfitName(int n) {
