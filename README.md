@@ -2,6 +2,8 @@
 
 A local-first wardrobe app for planning outfits: photograph what you own, mix tops, bottoms, shoes and layers into an outfit, and save the combinations you like into collections for later. Everything lives on your device — there's no account, no backend and no network access.
 
+[Google Play](https://play.google.com/store/apps/details?id=eu.oscillator.outfits&pcampaignid=web_share) · [App Store](#) <!-- TODO: add App Store link once live -->
+
 ## Features
 
 - **Outfit builder** — swipe through your tops, bottoms and shoes (or pick one from a grid), stack up to two extra layers (e.g. jackets), and shuffle for a random combination.
@@ -30,38 +32,7 @@ flutter pub get
 flutter run
 ```
 
-### Regenerating the app icon / splash screen
-
-The launcher icon and splash screen are generated from
-`assets/icon/app_icon.png` via [`flutter_launcher_icons`](https://pub.dev/packages/flutter_launcher_icons) and [`flutter_native_splash`](https://pub.dev/packages/flutter_native_splash).
-
-After replacing that file, regenerate both:
-```bash
-dart run flutter_launcher_icons
-dart run flutter_native_splash:create
-```
-
-### App store connect
-```
-flutter clean
-flutter pub get
-flutter build ipa --release
-```
-
-```
-xcodebuild -exportArchive \
-  -archivePath build/ios/archive/Runner.xcarchive \
-  -exportOptionsPlist ios/ExportOptions.plist \
-  -exportPath build/ios/ipa \
-  -allowProvisioningUpdates
-```
-
-```
-open build/ios/archive/Runner.xcarchive
-```
-Distribute App > App Store Connect > Upload
-
-## Project structure
+### Project structure
 
 ```
 lib/
@@ -77,6 +48,23 @@ lib/
   widgets.dart                 # Shared UI pieces (cards, chips, dialogs)
   theme.dart                   # Colors and text styles
 ```
+
+### Regenerating the app icon / splash screen
+
+The launcher icon and splash screen are generated from
+`assets/icon/app_icon.png` via [`flutter_launcher_icons`](https://pub.dev/packages/flutter_launcher_icons) and [`flutter_native_splash`](https://pub.dev/packages/flutter_native_splash).
+
+After replacing that file, regenerate both:
+```bash
+dart run flutter_launcher_icons
+dart run flutter_native_splash:create
+```
+
+### Build and distribution
+```bash
+./build-and-upload.sh
+```
+
 
 ## License
 
