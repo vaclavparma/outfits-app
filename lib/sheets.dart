@@ -22,8 +22,9 @@ const Map<WardrobeZone, String> _zoneDefaultCategory = {
 Future<T?> _showSheet<T>(
   BuildContext context,
   String Function(BuildContext) title,
-  Widget content,
-) {
+  Widget content, {
+  double maxHeightFactor = 0.85,
+}) {
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
@@ -39,7 +40,7 @@ Future<T?> _showSheet<T>(
         ),
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(sheetContext).size.height * 0.85,
+            maxHeight: MediaQuery.of(sheetContext).size.height * maxHeightFactor,
           ),
           child: Container(
             decoration: const BoxDecoration(
@@ -532,57 +533,145 @@ void openItemSheet(BuildContext context, ClothingItem item) {
     context,
     (ctx) => AppLocalizations.of(ctx)!.itemDetailTitle,
     _ItemDetail(itemId: item.id),
+    // Photo + five detail fields + actions: needs more room than most sheets.
+    maxHeightFactor: 0.92,
   );
 }
 
-class _ItemDetail extends StatelessWidget {
+class _ItemDetail extends StatefulWidget {
   final String itemId;
   const _ItemDetail({required this.itemId});
+
+  @override
+  State<_ItemDetail> createState() => _ItemDetailState();
+}
+
+class _ItemDetailState extends State<_ItemDetail> {
+  late final TextEditingController _name;
+  late final TextEditingController _seller;
+  late final TextEditingController _size;
+  late final TextEditingController _price;
+  late final TextEditingController _note;
+
+  @override
+  void initState() {
+    super.initState();
+    final it = context.read<WardrobeStore>().itemById(widget.itemId);
+    _name = TextEditingController(text: it?.name);
+    _seller = TextEditingController(text: it?.seller);
+    _size = TextEditingController(text: it?.size);
+    _price = TextEditingController(text: it?.price);
+    _note = TextEditingController(text: it?.note);
+  }
+
+  @override
+  void dispose() {
+    for (final c in [_name, _seller, _size, _price, _note]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
     final l10n = AppLocalizations.of(context)!;
+    final itemId = widget.itemId;
     final cur = store.itemById(itemId);
     if (cur == null) return const SizedBox.shrink();
-    final folders = store.foldersFor(cur.cat);
+    // The sheet is opened from inside the item's own folder, so only the
+    // *other* folders are offered — as move targets.
+    final otherFolders = store.foldersFor(cur.cat).where((f) => f != cur.folder).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GarmentCard(
           width: double.infinity,
-          height: 260,
+          height: 220,
           imagePath: cur.imagePath,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Text(
           categoryLabel(context, cur.cat),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: AppText.sans(size: 15, color: AppColors.ink),
         ),
-        const SizedBox(height: 18),
-        Wrap(
-          spacing: 7,
-          runSpacing: 7,
+        const SizedBox(height: 14),
+        if (otherFolders.isNotEmpty) ...[
+          Text(l10n.moveToFolder, style: _sectionLabelStyle),
+          const SizedBox(height: 5),
+          Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: [
+              for (final f in otherFolders)
+                SelectChip(
+                  label: f,
+                  active: false,
+                  onTap: () {
+                    store.setFolder(cur.id, f);
+                    // It just left the folder being viewed behind the sheet.
+                    Navigator.of(context).pop();
+                  },
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+        ],
+        _InfoField(
+          label: l10n.sectionItemName,
+          hint: l10n.itemNameHint,
+          controller: _name,
+          onChanged: (v) => store.setItemInfo(itemId, name: v),
+        ),
+        _InfoField(
+          label: l10n.sectionSeller,
+          hint: l10n.sellerHint,
+          controller: _seller,
+          onChanged: (v) => store.setItemInfo(itemId, seller: v),
+        ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            for (final f in folders)
-              SelectChip(
-                label: f,
-                active: cur.folder == f,
-                onTap: () => store.setFolder(cur.id, f),
+            Expanded(
+              child: _InfoField(
+                label: l10n.sectionSize,
+                hint: l10n.sizeHint,
+                controller: _size,
+                onChanged: (v) => store.setItemInfo(itemId, size: v),
               ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _InfoField(
+                label: l10n.sectionPrice,
+                hint: l10n.priceHint,
+                controller: _price,
+                onChanged: (v) => store.setItemInfo(itemId, price: v),
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 18),
+        _InfoField(
+          label: l10n.sectionNote,
+          hint: l10n.noteHint,
+          controller: _note,
+          multiline: true,
+          onChanged: (v) => store.setItemInfo(itemId, note: v),
+        ),
+        const SizedBox(height: 4),
         Row(
           children: [
             Expanded(
               child: GestureDetector(
                 onTap: () {
                   store.useItem(cur);
-                  Navigator.of(context).pop();
+                  // Back to the home screen (on the outfit tab), not just
+                  // out of the sheet — it's usually opened from a folder
+                  // screen pushed on top.
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 },
                 child: Container(
                   height: 46,
@@ -724,6 +813,61 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// One optional, labelled free-text detail of a clothing item — same look
+/// as the outfit-name field in the save sheet.
+class _InfoField extends StatelessWidget {
+  final String label;
+  final String hint;
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final bool multiline;
+
+  const _InfoField({
+    required this.label,
+    required this.hint,
+    required this.controller,
+    required this.onChanged,
+    this.multiline = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: AppColors.cardBorder),
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: _sectionLabelStyle),
+          const SizedBox(height: 5),
+          TextField(
+            controller: controller,
+            onChanged: onChanged,
+            textCapitalization: TextCapitalization.sentences,
+            minLines: multiline ? 2 : 1,
+            maxLines: multiline ? 5 : 1,
+            keyboardType: multiline ? TextInputType.multiline : TextInputType.text,
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: AppText.sans(size: 14, color: AppColors.mutedTag),
+              filled: true,
+              fillColor: AppColors.background,
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              border: border,
+              enabledBorder: border,
+            ),
+            style: AppText.sans(size: 14, color: AppColors.ink),
+          ),
+        ],
+      ),
     );
   }
 }

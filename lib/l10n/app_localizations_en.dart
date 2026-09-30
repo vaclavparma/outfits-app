@@ -182,6 +182,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteItemMessage => 'This item will be deleted.';
 
   @override
+  String get moveToFolder => 'move to folder';
+
+  @override
+  String get sectionItemName => 'name';
+
+  @override
+  String get itemNameHint => 'e.g. Green linen shirt';
+
+  @override
+  String get sectionSeller => 'seller';
+
+  @override
+  String get sellerHint => 'e.g. Zara';
+
+  @override
+  String get sectionSize => 'size';
+
+  @override
+  String get sizeHint => 'e.g. M';
+
+  @override
+  String get sectionPrice => 'price';
+
+  @override
+  String get priceHint => 'e.g. \$35';
+
+  @override
+  String get sectionNote => 'note';
+
+  @override
+  String get noteHint => 'e.g. wash at 30 °C';
+
+  @override
   String get sectionOutfitName => 'outfit name';
 
   @override

@@ -185,6 +185,39 @@ class AppLocalizationsCs extends AppLocalizations {
   String get deleteItemMessage => 'Oblečení bude smazáno.';
 
   @override
+  String get moveToFolder => 'přesunout do složky';
+
+  @override
+  String get sectionItemName => 'název';
+
+  @override
+  String get itemNameHint => 'např. Zelená lněná košile';
+
+  @override
+  String get sectionSeller => 'prodejce';
+
+  @override
+  String get sellerHint => 'např. Zara';
+
+  @override
+  String get sectionSize => 'velikost';
+
+  @override
+  String get sizeHint => 'např. M';
+
+  @override
+  String get sectionPrice => 'cena';
+
+  @override
+  String get priceHint => 'např. 890 Kč';
+
+  @override
+  String get sectionNote => 'poznámka';
+
+  @override
+  String get noteHint => 'např. prát na 30 °C';
+
+  @override
   String get sectionOutfitName => 'název outfitu';
 
   @override

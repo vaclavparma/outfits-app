@@ -531,6 +531,31 @@ class WardrobeStore extends ChangeNotifier {
     _persist();
   }
 
+  /// Sets whichever of an item's optional details are passed (a blank value
+  /// clears it). Called on every keystroke, so saving to disk is debounced.
+  void setItemInfo(
+    String id, {
+    String? name,
+    String? seller,
+    String? size,
+    String? price,
+    String? note,
+  }) {
+    final it = itemById(id);
+    if (it == null) return;
+    String? clean(String v) => v.trim().isEmpty ? null : v.trim();
+    if (name != null) it.name = clean(name);
+    if (seller != null) it.seller = clean(seller);
+    if (size != null) it.size = clean(size);
+    if (price != null) it.price = clean(price);
+    if (note != null) it.note = clean(note);
+    notifyListeners();
+    _persistTimer?.cancel();
+    _persistTimer = Timer(const Duration(milliseconds: 600), _persist);
+  }
+
+  Timer? _persistTimer;
+
   void togglePinned(String id) {
     items = items
         .map((i) => i.id == id ? (i..pinned = !i.pinned) : i)
@@ -925,6 +950,7 @@ class WardrobeStore extends ChangeNotifier {
   @override
   void dispose() {
     _toastTimer?.cancel();
+    _persistTimer?.cancel();
     super.dispose();
   }
 }

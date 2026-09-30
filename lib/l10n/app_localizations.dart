@@ -386,6 +386,72 @@ abstract class AppLocalizations {
   /// **'Oblečení bude smazáno.'**
   String get deleteItemMessage;
 
+  /// No description provided for @moveToFolder.
+  ///
+  /// In cs, this message translates to:
+  /// **'přesunout do složky'**
+  String get moveToFolder;
+
+  /// No description provided for @sectionItemName.
+  ///
+  /// In cs, this message translates to:
+  /// **'název'**
+  String get sectionItemName;
+
+  /// No description provided for @itemNameHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'např. Zelená lněná košile'**
+  String get itemNameHint;
+
+  /// No description provided for @sectionSeller.
+  ///
+  /// In cs, this message translates to:
+  /// **'prodejce'**
+  String get sectionSeller;
+
+  /// No description provided for @sellerHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'např. Zara'**
+  String get sellerHint;
+
+  /// No description provided for @sectionSize.
+  ///
+  /// In cs, this message translates to:
+  /// **'velikost'**
+  String get sectionSize;
+
+  /// No description provided for @sizeHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'např. M'**
+  String get sizeHint;
+
+  /// No description provided for @sectionPrice.
+  ///
+  /// In cs, this message translates to:
+  /// **'cena'**
+  String get sectionPrice;
+
+  /// No description provided for @priceHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'např. 890 Kč'**
+  String get priceHint;
+
+  /// No description provided for @sectionNote.
+  ///
+  /// In cs, this message translates to:
+  /// **'poznámka'**
+  String get sectionNote;
+
+  /// No description provided for @noteHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'např. prát na 30 °C'**
+  String get noteHint;
+
   /// No description provided for @sectionOutfitName.
   ///
   /// In cs, this message translates to:

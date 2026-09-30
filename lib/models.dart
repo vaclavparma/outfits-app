@@ -61,12 +61,26 @@ class ClothingItem {
   /// zone (or as a layer), [WardrobeStore.shuffle] leaves that slot alone.
   bool pinned;
 
+  /// Optional free-text details, each `null` when not filled in. Price is
+  /// free text too (e.g. "890 Kč") rather than a number, so any currency or
+  /// format works.
+  String? name;
+  String? seller;
+  String? size;
+  String? price;
+  String? note;
+
   ClothingItem({
     required this.id,
     required this.cat,
     this.folder,
     this.imagePath,
     this.pinned = false,
+    this.name,
+    this.seller,
+    this.size,
+    this.price,
+    this.note,
   });
 
   Map<String, dynamic> toJson() => {
@@ -75,6 +89,11 @@ class ClothingItem {
     'folder': folder,
     'imagePath': imagePath,
     'pinned': pinned,
+    'name': name,
+    'seller': seller,
+    'size': size,
+    'price': price,
+    'note': note,
   };
 
   factory ClothingItem.fromJson(Map<String, dynamic> json) => ClothingItem(
@@ -86,6 +105,11 @@ class ClothingItem {
     folder: json['folder'] as String?,
     imagePath: json['imagePath'] as String?,
     pinned: json['pinned'] as bool? ?? false,
+    name: json['name'] as String?,
+    seller: json['seller'] as String?,
+    size: json['size'] as String?,
+    price: json['price'] as String?,
+    note: json['note'] as String?,
   );
 }
 
