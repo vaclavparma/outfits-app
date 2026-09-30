@@ -356,9 +356,20 @@ class WardrobeStore extends ChangeNotifier {
   }
 
   void step(WardrobeZone zone, int dir) {
-    final oldItem = at(zoneList(zone), zone);
-    idx = {...idx, zone: idx[zone]! + dir};
-    final pinMoved = _transferPin(oldItem, at(zoneList(zone), zone));
+    final list = zoneList(zone);
+    final oldItem = at(list, zone);
+    var next = idx[zone]! + dir;
+    // Swiping the top skips garments already worn as a layer.
+    bool isLayer(int i) =>
+        list.isNotEmpty && layers.contains(list[((i % list.length) + list.length) % list.length].id);
+    if (zone == WardrobeZone.top) {
+      for (var n = 0; n < list.length && isLayer(next); n++) {
+        next += dir;
+      }
+    }
+    idx = {...idx, zone: next};
+    _dropTopFromLayers();
+    final pinMoved = _transferPin(oldItem, at(list, zone));
     notifyListeners();
     if (pinMoved) _persist();
   }
@@ -366,9 +377,19 @@ class WardrobeStore extends ChangeNotifier {
   void selectIndex(WardrobeZone zone, int i) {
     final oldItem = at(zoneList(zone), zone);
     idx = {...idx, zone: i};
+    _dropTopFromLayers();
     final pinMoved = _transferPin(oldItem, at(zoneList(zone), zone));
     notifyListeners();
     if (pinMoved) _persist();
+  }
+
+  /// A garment can't be worn as the top and as a layer at once — explicitly
+  /// choosing one of the layers as the top moves it there.
+  void _dropTopFromLayers() {
+    final topId = at(topList, WardrobeZone.top)?.id;
+    if (topId != null && layers.contains(topId)) {
+      layers = layers.where((id) => id != topId).toList();
+    }
   }
 
   /// Randomizes each zone and every layer — except any slot whose current
@@ -690,6 +711,7 @@ class WardrobeStore extends ChangeNotifier {
       if (i >= 0) {
         final oldItem = at(zoneList(zone), zone);
         idx = {...idx, zone: i};
+        _dropTopFromLayers();
         pinMoved = _transferPin(oldItem, it);
       }
     } else if (!layers.contains(it.id) && layers.length < kMaxLayers) {
