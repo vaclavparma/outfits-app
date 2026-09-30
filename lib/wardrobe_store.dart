@@ -323,19 +323,31 @@ class WardrobeStore extends ChangeNotifier {
   /// item is [ClothingItem.pinned], which is left exactly as it is. If the
   /// bottom is pinned, the top is also kept off dresses — a dress replaces
   /// the bottom slot entirely, which would silently bench the pinned item.
+  /// The top and every layer are also kept mutually exclusive throughout —
+  /// the same garment can't end up worn as the top and layered over itself,
+  /// or as two layers at once.
   void shuffle() {
     final rng = Random();
     final newIdx = {...idx};
     final botPinned = at(botList, WardrobeZone.bottom)?.pinned ?? false;
-    for (final zone in WardrobeZone.values) {
-      if (at(zoneList(zone), zone)?.pinned ?? false) continue;
-      if (zone == WardrobeZone.top && botPinned) {
-        final noDress = topList.where((it) => it.cat != 'saty').toList();
-        if (noDress.isNotEmpty) {
-          newIdx[zone] = topList.indexOf(noDress[rng.nextInt(noDress.length)]);
-        }
-        continue;
+    final topPinned = at(topList, WardrobeZone.top)?.pinned ?? false;
+
+    // Decided before the layer reshuffle below, so that step can steer
+    // clear of whatever the top ends up being.
+    var topId = at(topList, WardrobeZone.top)?.id;
+    if (!topPinned) {
+      var candidates = topList.where((it) => !layers.contains(it.id));
+      if (botPinned) candidates = candidates.where((it) => it.cat != 'saty');
+      final pool = candidates.toList();
+      if (pool.isNotEmpty) {
+        final picked = pool[rng.nextInt(pool.length)];
+        newIdx[WardrobeZone.top] = topList.indexOf(picked);
+        topId = picked.id;
       }
+    }
+
+    for (final zone in [WardrobeZone.bottom, WardrobeZone.shoes]) {
+      if (at(zoneList(zone), zone)?.pinned ?? false) continue;
       newIdx[zone] = rng.nextInt(99);
     }
     idx = newIdx;
@@ -344,7 +356,18 @@ class WardrobeStore extends ChangeNotifier {
       final pinnedIds = layers
           .where((id) => itemById(id)?.pinned ?? false)
           .toSet();
-      final pool = byCat('horni').where((it) => !pinnedIds.contains(it.id)).toList()
+      // The pool a reshuffled layer can draw from excludes every id already
+      // spoken for this shuffle — the new top, every pinned layer, and every
+      // *current* layer (pinned or not). That last part matters: without it,
+      // one unpinned layer's fresh pick could land on another unpinned
+      // layer's old id, which then falls back to "unchanged" below and
+      // collides with it.
+      final reserved = {
+        ...pinnedIds,
+        ...layers,
+        if (topId != null) topId,
+      };
+      final pool = byCat('horni').where((it) => !reserved.contains(it.id)).toList()
         ..shuffle(rng);
       var next = 0;
       layers = [
