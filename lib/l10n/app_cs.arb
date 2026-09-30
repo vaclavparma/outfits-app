@@ -159,6 +159,21 @@
   "showDressesHint": "Skryje kategorii šatů v šatníku a při přidávání oblečení. Šaty, které už máš v šatníku, zůstanou beze změny.",
 
   "onboardingTitle": "Vítej v Šatníku",
-  "onboardingSubtitle": "Pár věcí na začátek — obojí pak najdeš i v nastavení.",
-  "onboardingContinue": "Pokračovat"
+  "onboardingSubtitle": "Pár věcí na začátek — všechno půjde později změnit.",
+  "onboardingContinue": "Pokračovat",
+
+  "defaultWardrobeName": "Můj šatník",
+  "sectionWardrobeName": "název šatníku",
+  "newWardrobe": "Nový šatník",
+  "newWardrobeTile": "nový šatník",
+  "editWardrobes": "Upravit šatníky",
+  "newWardrobeHint": "např. Chata",
+  "renameWardrobeTitle": "Přejmenovat šatník",
+  "deleteWardrobeTitle": "Smazat šatník?",
+  "deleteWardrobeMessage": "Šatník „{name}“ bude smazán, včetně všeho oblečení, fotek, kolekcí a outfitů v něm.",
+  "@deleteWardrobeMessage": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  }
 }

@@ -17,6 +17,10 @@ import 'models.dart';
 /// persistence to disk.
 class WardrobeStore extends ChangeNotifier {
   static const _fileName = 'satnik_v1.json';
+
+  /// A copy of the state file taken right before it's first rewritten in
+  /// the multi-wardrobe format — insurance against a botched migration.
+  static const _legacyBackupFileName = 'satnik_v1.pre-wardrobes.json';
   static const kMaxLayers = 2;
 
   /// Every item belongs to a folder, mirroring how every saved outfit
@@ -34,10 +38,26 @@ class WardrobeStore extends ChangeNotifier {
   /// outfit never dead-ends behind "go create a collection first".
   String get fallbackCollection => _localizedFallbackName;
 
-  String get _localizedFallbackName {
+  String get _localizedFallbackName => _l10n.unsortedName;
+
+  /// Localizations for text this store has to bake into stored data (default
+  /// folder/collection/wardrobe names) without a [BuildContext] — matching
+  /// [localeCode], or the device locale when that's unset.
+  AppLocalizations get _l10n {
     final code = localeCode ?? PlatformDispatcher.instance.locale.languageCode;
-    return lookupAppLocalizations(Locale(code == 'en' ? 'en' : 'cs')).unsortedName;
+    return lookupAppLocalizations(Locale(code == 'en' ? 'en' : 'cs'));
   }
+
+  /// Every wardrobe, in display order. The *active* one's content lives in
+  /// the plain fields below ([items], [cols], [saved], [knownFolders]) so the
+  /// rest of the app never has to know there's more than one; every other
+  /// wardrobe's content waits in [_stash] until it's switched to.
+  List<Wardrobe> wardrobes = [];
+  String activeWardrobeId = '';
+  final Map<String, _WardrobeContent> _stash = {};
+
+  Wardrobe get activeWardrobe =>
+      wardrobes.firstWhere((w) => w.id == activeWardrobeId);
 
   WardrobeTabKind screen = WardrobeTabKind.outfit;
   List<ClothingItem> items = [];
@@ -88,93 +108,115 @@ class WardrobeStore extends ChangeNotifier {
   String get toast => _toast;
 
   Future<void> load() async {
-    Map<String, dynamic> data;
+    Map<String, dynamic>? data;
     try {
       final file = await _localFile();
-      if (!await file.exists()) {
-        loaded = true;
-        _applyFirstLaunchScreen();
-        notifyListeners();
-        return;
+      if (await file.exists()) {
+        data = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
       }
-      final raw = await file.readAsString();
-      data = jsonDecode(raw) as Map<String, dynamic>;
     } catch (_) {
-      // Missing or unreadable state file — start from the empty defaults.
-      loaded = true;
-      _applyFirstLaunchScreen();
-      notifyListeners();
-      return;
+      // Unreadable state file — start from the empty defaults.
     }
 
-    // Each section is parsed independently, and each entry within a section
-    // is parsed independently too, so a single corrupt item/outfit can't
-    // wipe out the rest of the wardrobe.
-    try {
-      final docsPath = (await getApplicationDocumentsDirectory()).path;
-      final rawItems = data['items'] as List<dynamic>? ?? [];
-      final parsedItems = <ClothingItem>[];
-      for (final e in rawItems) {
-        try {
-          final item = ClothingItem.fromJson(e as Map<String, dynamic>);
-          if (item.imagePath != null) {
-            item.imagePath = _resolveImagePath(item.imagePath!, docsPath);
-          }
-          parsedItems.add(item);
-        } catch (_) {}
-      }
-      items = parsedItems;
-    } catch (_) {}
+    if (data == null) {
+      final w = Wardrobe(id: _newWardrobeId(), name: _l10n.defaultWardrobeName);
+      wardrobes = [w];
+      _activate(w.id);
+    } else {
+      await _loadFrom(data);
+    }
 
-    try {
-      cols = (data['cols'] as List<dynamic>? ?? [])
-          .map((e) => e as String)
-          .toList();
-    } catch (_) {}
+    loaded = true;
+    _applyFirstLaunchScreen();
+    notifyListeners();
+  }
 
-    try {
-      final rawSaved = data['saved'] as Map<String, dynamic>? ?? {};
-      final parsedSaved = <String, List<SavedOutfit>>{};
-      rawSaved.forEach((key, value) {
-        final outfits = <SavedOutfit>[];
-        for (final e in (value as List<dynamic>? ?? [])) {
-          try {
-            outfits.add(SavedOutfit.fromJson(e as Map<String, dynamic>));
-          } catch (_) {}
-        }
-        parsedSaved[key] = outfits;
-      });
-      saved = parsedSaved;
-    } catch (_) {}
-
-    try {
-      final rawKnownFolders = data['knownFolders'] as Map<String, dynamic>?;
-      knownFolders = rawKnownFolders == null
-          ? {}
-          : rawKnownFolders.map(
-              (key, value) => MapEntry(
-                key,
-                (value as List<dynamic>).map((e) => e as String).toList(),
-              ),
-            );
-    } catch (_) {}
-
+  Future<void> _loadFrom(Map<String, dynamic> data) async {
+    // Settings first — the legacy migration below names the wardrobe it
+    // creates in the user's language.
     try {
       localeCode = data['localeCode'] as String?;
     } catch (_) {}
-
     try {
       showDresses = data['showDresses'] as bool? ?? true;
     } catch (_) {}
-
     try {
       onboardingDone = data['onboardingDone'] as bool? ?? false;
     } catch (_) {}
 
+    String? docsPath;
+    try {
+      docsPath = (await getApplicationDocumentsDirectory()).path;
+    } catch (_) {}
+
+    final rawWardrobes = data['wardrobes'];
+    final parsed = <Wardrobe>[];
+    if (rawWardrobes is List) {
+      for (final e in rawWardrobes) {
+        if (e is! Map<String, dynamic>) continue;
+        // Never drop a wardrobe over a missing id/name — the next save would
+        // then silently delete all of its content.
+        final w = Wardrobe(
+          id: e['id'] as String? ?? _newWardrobeId(),
+          name: e['name'] as String? ?? _l10n.defaultWardrobeName,
+        );
+        parsed.add(w);
+        _stash[w.id] = _WardrobeContent.fromJson(e, docsPath);
+      }
+    }
+
+    if (parsed.isEmpty) {
+      // Data from before multiple wardrobes existed: everything sits at the
+      // top level of the file. It becomes the first (and only) wardrobe.
+      // The original file is kept as a backup before it's ever overwritten
+      // in the new format.
+      await _backupLegacyFile();
+      final w = Wardrobe(id: _newWardrobeId(), name: _l10n.defaultWardrobeName);
+      parsed.add(w);
+      _stash[w.id] = _WardrobeContent.fromJson(data, docsPath);
+    }
+
+    wardrobes = parsed;
+    final savedActive = data['activeWardrobeId'];
+    _activate(
+      parsed.any((w) => w.id == savedActive) ? savedActive as String : parsed.first.id,
+    );
+  }
+
+  Future<void> _backupLegacyFile() async {
+    try {
+      final file = await _localFile();
+      final backup = File(p.join(file.parent.path, _legacyBackupFileName));
+      if (!await backup.exists()) await file.copy(backup.path);
+    } catch (_) {
+      // Best-effort — the migration itself doesn't depend on it.
+    }
+  }
+
+  String _newWardrobeId() => 'w-${DateTime.now().microsecondsSinceEpoch}';
+
+  _WardrobeContent get _liveContent => _WardrobeContent(
+    items: items,
+    cols: cols,
+    saved: saved,
+    knownFolders: knownFolders,
+  );
+
+  /// Makes [id] the active wardrobe: moves its content out of [_stash] into
+  /// the live fields, and resets the per-session outfit selection (which
+  /// refers to item ids from whichever wardrobe was active before). The
+  /// previously active wardrobe must already have been stashed.
+  void _activate(String id) {
+    final c = _stash.remove(id) ?? _WardrobeContent.empty();
+    activeWardrobeId = id;
+    items = c.items;
+    cols = c.cols;
+    saved = c.saved;
+    knownFolders = c.knownFolders;
+    idx = {for (final z in WardrobeZone.values) z: 0};
+    layers = [];
+    folderFilter = null;
     _bucketOrphanedItems();
-    loaded = true;
-    _applyFirstLaunchScreen();
-    notifyListeners();
   }
 
   /// A brand-new wardrobe opens on the Wardrobe tab — there's nothing to
@@ -215,15 +257,25 @@ class WardrobeStore extends ChangeNotifier {
   }
 
   Future<void> _persist() async {
+    // Writing before load() has populated [wardrobes] would overwrite the
+    // real file with an empty wardrobe list.
+    if (!loaded) return;
     try {
       final file = await _localFile();
       final data = {
-        'items': items.map((e) => e.toJson()).toList(),
-        'cols': cols,
-        'saved': saved.map(
-          (key, value) => MapEntry(key, value.map((e) => e.toJson()).toList()),
-        ),
-        'knownFolders': knownFolders,
+        'version': 2,
+        'wardrobes': [
+          for (final w in wardrobes)
+            {
+              'id': w.id,
+              'name': w.name,
+              ...(w.id == activeWardrobeId
+                      ? _liveContent
+                      : _stash[w.id] ?? _WardrobeContent.empty())
+                  .toJson(),
+            },
+        ],
+        'activeWardrobeId': activeWardrobeId,
         'localeCode': localeCode,
         'showDresses': showDresses,
         'onboardingDone': onboardingDone,
@@ -410,19 +462,6 @@ class WardrobeStore extends ChangeNotifier {
         if (j != index) layers[j],
     ];
     notifyListeners();
-  }
-
-  /// iOS reassigns the app's sandbox container (and thus the documents
-  /// directory's absolute path) on every update, so a path saved on a
-  /// previous install can point nowhere after the app updates — showing up
-  /// as every photo turning into the missing-image placeholder. Re-anchor
-  /// whatever was stored to the *current* documents dir by keeping only the
-  /// part from `satnik_images/` onward.
-  String _resolveImagePath(String stored, String docsPath) {
-    const marker = 'satnik_images';
-    final i = stored.indexOf(marker);
-    if (i == -1) return stored;
-    return p.join(docsPath, stored.substring(i));
   }
 
   Future<String> _newImageCopy(String sourcePath) async {
@@ -641,13 +680,16 @@ class WardrobeStore extends ChangeNotifier {
     layers = layers.where((id) => id != it.id).toList();
     notifyListeners();
     await _persist();
-    if (it.imagePath != null) {
-      try {
-        final file = File(it.imagePath!);
-        if (await file.exists()) await file.delete();
-      } catch (_) {
-        // Best-effort cleanup — a stray photo file left behind is harmless.
-      }
+    await _deleteImageFile(it.imagePath);
+  }
+
+  Future<void> _deleteImageFile(String? path) async {
+    if (path == null) return;
+    try {
+      final file = File(path);
+      if (await file.exists()) await file.delete();
+    } catch (_) {
+      // Best-effort cleanup — a stray photo file left behind is harmless.
     }
   }
 
@@ -814,10 +856,70 @@ class WardrobeStore extends ChangeNotifier {
     _persist();
   }
 
-  void completeOnboarding() {
+  /// [wardrobeName] names the (so far only) wardrobe; blank keeps the
+  /// default name it was created with.
+  void completeOnboarding({String? wardrobeName}) {
+    final name = wardrobeName?.trim() ?? '';
+    if (name.isNotEmpty) activeWardrobe.name = name;
     onboardingDone = true;
     notifyListeners();
     _persist();
+  }
+
+  bool _isFreeWardrobeName(String name) =>
+      name.isNotEmpty && !wardrobes.any((w) => w.name == name);
+
+  /// Creates a new, empty wardrobe and switches to it (a no-op for a blank
+  /// or already-taken name — mirrors [addCollection]).
+  Future<void> addWardrobe(String rawName) async {
+    final name = rawName.trim();
+    if (!_isFreeWardrobeName(name)) return;
+    final w = Wardrobe(id: _newWardrobeId(), name: name);
+    _stash[activeWardrobeId] = _liveContent;
+    wardrobes = [...wardrobes, w];
+    _activate(w.id);
+    screen = WardrobeTabKind.wardrobe;
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> switchWardrobe(String id) async {
+    if (id == activeWardrobeId || !wardrobes.any((w) => w.id == id)) return;
+    _stash[activeWardrobeId] = _liveContent;
+    _activate(id);
+    if (items.isEmpty) screen = WardrobeTabKind.wardrobe;
+    notifyListeners();
+    await _persist();
+  }
+
+  Future<void> renameWardrobe(String id, String rawName) async {
+    final name = rawName.trim();
+    if (!_isFreeWardrobeName(name)) return;
+    for (final w in wardrobes) {
+      if (w.id == id) w.name = name;
+    }
+    wardrobes = [...wardrobes];
+    notifyListeners();
+    await _persist();
+  }
+
+  /// Deletes a wardrobe with all of its content, photos included. The last
+  /// remaining wardrobe can't be deleted; deleting the active one switches
+  /// to another first.
+  Future<void> deleteWardrobe(String id) async {
+    if (wardrobes.length <= 1 || !wardrobes.any((w) => w.id == id)) return;
+    if (id == activeWardrobeId) {
+      _stash[id] = _liveContent;
+      _activate(wardrobes.firstWhere((w) => w.id != id).id);
+      if (items.isEmpty) screen = WardrobeTabKind.wardrobe;
+    }
+    final removed = _stash.remove(id);
+    wardrobes = wardrobes.where((w) => w.id != id).toList();
+    notifyListeners();
+    await _persist();
+    for (final it in removed?.items ?? const <ClothingItem>[]) {
+      await _deleteImageFile(it.imagePath);
+    }
   }
 
   @override
@@ -825,4 +927,97 @@ class WardrobeStore extends ChangeNotifier {
     _toastTimer?.cancel();
     super.dispose();
   }
+}
+
+/// iOS reassigns the app's sandbox container (and thus the documents
+/// directory's absolute path) on every update, so a path saved on a
+/// previous install can point nowhere after the app updates — showing up
+/// as every photo turning into the missing-image placeholder. Re-anchor
+/// whatever was stored to the *current* documents dir by keeping only the
+/// part from `satnik_images/` onward.
+String _resolveImagePath(String stored, String docsPath) {
+  const marker = 'satnik_images';
+  final i = stored.indexOf(marker);
+  if (i == -1) return stored;
+  return p.join(docsPath, stored.substring(i));
+}
+
+/// Everything that belongs to one wardrobe. Serialized with the same keys
+/// the whole state file used before multiple wardrobes existed, so the
+/// legacy top-level data parses with the very same code.
+class _WardrobeContent {
+  List<ClothingItem> items;
+  List<String> cols;
+  Map<String, List<SavedOutfit>> saved;
+  Map<String, List<String>> knownFolders;
+
+  _WardrobeContent({
+    required this.items,
+    required this.cols,
+    required this.saved,
+    required this.knownFolders,
+  });
+
+  _WardrobeContent.empty() : items = [], cols = [], saved = {}, knownFolders = {};
+
+  /// Each section is parsed independently, and each entry within a section
+  /// is parsed independently too, so a single corrupt item/outfit can't
+  /// wipe out the rest of the wardrobe.
+  factory _WardrobeContent.fromJson(Map<String, dynamic> data, String? docsPath) {
+    final c = _WardrobeContent.empty();
+
+    try {
+      for (final e in data['items'] as List<dynamic>? ?? []) {
+        try {
+          final item = ClothingItem.fromJson(e as Map<String, dynamic>);
+          if (item.imagePath != null && docsPath != null) {
+            item.imagePath = _resolveImagePath(item.imagePath!, docsPath);
+          }
+          c.items.add(item);
+        } catch (_) {}
+      }
+    } catch (_) {}
+
+    try {
+      c.cols = (data['cols'] as List<dynamic>? ?? [])
+          .map((e) => e as String)
+          .toList();
+    } catch (_) {}
+
+    try {
+      final rawSaved = data['saved'] as Map<String, dynamic>? ?? {};
+      rawSaved.forEach((key, value) {
+        final outfits = <SavedOutfit>[];
+        for (final e in (value as List<dynamic>? ?? [])) {
+          try {
+            outfits.add(SavedOutfit.fromJson(e as Map<String, dynamic>));
+          } catch (_) {}
+        }
+        c.saved[key] = outfits;
+      });
+    } catch (_) {}
+
+    try {
+      final rawKnownFolders = data['knownFolders'] as Map<String, dynamic>?;
+      if (rawKnownFolders != null) {
+        c.knownFolders = rawKnownFolders.map(
+          (key, value) => MapEntry(
+            key,
+            (value as List<dynamic>).map((e) => e as String).toList(),
+          ),
+        );
+      }
+    } catch (_) {}
+
+    return c;
+  }
+
+  Map<String, dynamic> toJson() => {
+    'items': items.map((e) => e.toJson()).toList(),
+    'cols': cols,
+    'saved': saved.map(
+      (key, value) => MapEntry(key, value.map((e) => e.toJson()).toList()),
+    ),
+    'knownFolders': knownFolders,
+  };
 }

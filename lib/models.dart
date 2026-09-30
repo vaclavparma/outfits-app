@@ -129,6 +129,16 @@ class SavedOutfit {
   );
 }
 
+/// One of the user's separate wardrobes (e.g. home vs. the cottage) — its
+/// own items, folders, collections and saved outfits. Only the identity
+/// lives here; the content itself is held by [WardrobeStore].
+class Wardrobe {
+  final String id;
+  String name;
+
+  Wardrobe({required this.id, required this.name});
+}
+
 enum WardrobeTabKind { outfit, wardrobe, collections }
 
 enum WardrobeZone { top, bottom, shoes }

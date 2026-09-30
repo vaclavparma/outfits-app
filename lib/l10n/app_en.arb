@@ -159,6 +159,21 @@
   "showDressesHint": "Hides the dresses category in the wardrobe and when adding clothes. Dresses already in your wardrobe stay put.",
 
   "onboardingTitle": "Welcome to Outfits",
-  "onboardingSubtitle": "A couple of things to start — you'll find both again in settings.",
-  "onboardingContinue": "Continue"
+  "onboardingSubtitle": "A few things to start — you can change all of them later.",
+  "onboardingContinue": "Continue",
+
+  "defaultWardrobeName": "My wardrobe",
+  "sectionWardrobeName": "wardrobe name",
+  "newWardrobe": "New wardrobe",
+  "newWardrobeTile": "new wardrobe",
+  "editWardrobes": "Edit wardrobes",
+  "newWardrobeHint": "e.g. Cottage",
+  "renameWardrobeTitle": "Rename wardrobe",
+  "deleteWardrobeTitle": "Delete wardrobe?",
+  "deleteWardrobeMessage": "The wardrobe “{name}” will be deleted, along with all its clothes, photos, collections and outfits.",
+  "@deleteWardrobeMessage": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  }
 }

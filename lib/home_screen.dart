@@ -28,8 +28,14 @@ class HomeScreen extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
+                      const Expanded(
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: _WardrobeSwitcher(),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
                       GestureDetector(
                         onTap: () => openSettingsSheet(context),
                         child: const Padding(
@@ -87,6 +93,92 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+enum _WardrobeMenuAction { edit }
+
+/// The active wardrobe's name with a dropdown for switching between
+/// wardrobes; adding/renaming/deleting lives in the "edit" sheet it links to.
+class _WardrobeSwitcher extends StatelessWidget {
+  const _WardrobeSwitcher();
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+
+    return PopupMenuButton<Object>(
+      position: PopupMenuPosition.under,
+      color: Colors.white,
+      elevation: 3,
+      shadowColor: const Color(0x1F000000),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.rowBorder),
+      ),
+      onSelected: (value) => _onSelected(context, store, value),
+      itemBuilder: (context) => [
+        for (final w in store.wardrobes)
+          PopupMenuItem<Object>(
+            value: w.id,
+            height: 44,
+            child: Row(
+              children: [
+                Icon(w.id == store.activeWardrobeId ? Icons.check : null, size: 17, color: AppColors.accent),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
+                    w.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.sans(size: 13.5, color: AppColors.ink),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        const PopupMenuDivider(),
+        PopupMenuItem<Object>(
+          value: _WardrobeMenuAction.edit,
+          height: 44,
+          child: Row(
+            children: [
+              const Icon(Icons.edit_outlined, size: 17, color: AppColors.mutedSoft),
+              const SizedBox(width: 10),
+              Text(l10n.editWardrobes, style: AppText.sans(size: 13.5, color: AppColors.ink)),
+            ],
+          ),
+        ),
+      ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                store.activeWardrobe.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.sans(size: 14, weight: FontWeight.w500, color: AppColors.ink),
+              ),
+            ),
+            const SizedBox(width: 2),
+            const Icon(Icons.keyboard_arrow_down, size: 20, color: AppColors.mutedSoft),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _onSelected(BuildContext context, WardrobeStore store, Object value) {
+    switch (value) {
+      case String id:
+        store.switchWardrobe(id);
+      case _WardrobeMenuAction.edit:
+        openManageWardrobesSheet(context);
+    }
   }
 }
 

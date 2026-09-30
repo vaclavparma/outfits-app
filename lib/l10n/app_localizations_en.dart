@@ -281,8 +281,37 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingSubtitle =>
-      'A couple of things to start — you\'ll find both again in settings.';
+      'A few things to start — you can change all of them later.';
 
   @override
   String get onboardingContinue => 'Continue';
+
+  @override
+  String get defaultWardrobeName => 'My wardrobe';
+
+  @override
+  String get sectionWardrobeName => 'wardrobe name';
+
+  @override
+  String get newWardrobe => 'New wardrobe';
+
+  @override
+  String get newWardrobeTile => 'new wardrobe';
+
+  @override
+  String get editWardrobes => 'Edit wardrobes';
+
+  @override
+  String get newWardrobeHint => 'e.g. Cottage';
+
+  @override
+  String get renameWardrobeTitle => 'Rename wardrobe';
+
+  @override
+  String get deleteWardrobeTitle => 'Delete wardrobe?';
+
+  @override
+  String deleteWardrobeMessage(String name) {
+    return 'The wardrobe “$name” will be deleted, along with all its clothes, photos, collections and outfits.';
+  }
 }

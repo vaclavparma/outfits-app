@@ -745,6 +745,107 @@ Future<void> _confirmDeleteItem(
   if (context.mounted) Navigator.of(context).pop();
 }
 
+void openManageWardrobesSheet(BuildContext context) {
+  _showSheet(
+    context,
+    (ctx) => AppLocalizations.of(ctx)!.editWardrobes,
+    const _ManageWardrobes(),
+  );
+}
+
+/// Rename/delete any wardrobe (not just the active one) and add new ones.
+class _ManageWardrobes extends StatelessWidget {
+  const _ManageWardrobes();
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final canDelete = store.wardrobes.length > 1;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final w in store.wardrobes)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 7),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.rowBorder),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      w.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.sans(
+                        size: 14,
+                        weight: w.id == store.activeWardrobeId ? FontWeight.w500 : FontWeight.w400,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => _rename(context, store, w),
+                    icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.mutedSoft),
+                  ),
+                  if (canDelete)
+                    IconButton(
+                      onPressed: () => _delete(context, store, w),
+                      icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.accent),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        const SizedBox(height: 4),
+        SizedBox(
+          height: 64,
+          child: AddTile(label: l10n.newWardrobeTile, onTap: () => _add(context, store)),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _rename(BuildContext context, WardrobeStore store, Wardrobe w) async {
+    final l10n = AppLocalizations.of(context)!;
+    final name = await promptTextDialog(
+      context,
+      title: l10n.renameWardrobeTitle,
+      initialValue: w.name,
+      confirmLabel: l10n.save,
+    );
+    if (name != null) await store.renameWardrobe(w.id, name);
+  }
+
+  Future<void> _delete(BuildContext context, WardrobeStore store, Wardrobe w) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await confirmDialog(
+      context,
+      title: l10n.deleteWardrobeTitle,
+      message: l10n.deleteWardrobeMessage(w.name),
+      confirmLabel: l10n.delete,
+    );
+    if (confirmed) await store.deleteWardrobe(w.id);
+  }
+
+  Future<void> _add(BuildContext context, WardrobeStore store) async {
+    final l10n = AppLocalizations.of(context)!;
+    final name = await promptTextDialog(
+      context,
+      title: l10n.newWardrobe,
+      initialValue: '',
+      hintText: l10n.newWardrobeHint,
+      confirmLabel: l10n.create,
+    );
+    if (name != null) await store.addWardrobe(name);
+  }
+}
+
 void openSettingsSheet(BuildContext context) {
   _showSheet(
     context,

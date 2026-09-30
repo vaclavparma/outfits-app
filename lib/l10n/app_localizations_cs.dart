@@ -285,8 +285,37 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get onboardingSubtitle =>
-      'Pár věcí na začátek — obojí pak najdeš i v nastavení.';
+      'Pár věcí na začátek — všechno půjde později změnit.';
 
   @override
   String get onboardingContinue => 'Pokračovat';
+
+  @override
+  String get defaultWardrobeName => 'Můj šatník';
+
+  @override
+  String get sectionWardrobeName => 'název šatníku';
+
+  @override
+  String get newWardrobe => 'Nový šatník';
+
+  @override
+  String get newWardrobeTile => 'nový šatník';
+
+  @override
+  String get editWardrobes => 'Upravit šatníky';
+
+  @override
+  String get newWardrobeHint => 'např. Chata';
+
+  @override
+  String get renameWardrobeTitle => 'Přejmenovat šatník';
+
+  @override
+  String get deleteWardrobeTitle => 'Smazat šatník?';
+
+  @override
+  String deleteWardrobeMessage(String name) {
+    return 'Šatník „$name“ bude smazán, včetně všeho oblečení, fotek, kolekcí a outfitů v něm.';
+  }
 }

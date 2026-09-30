@@ -539,7 +539,7 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingSubtitle.
   ///
   /// In cs, this message translates to:
-  /// **'Pár věcí na začátek — obojí pak najdeš i v nastavení.'**
+  /// **'Pár věcí na začátek — všechno půjde později změnit.'**
   String get onboardingSubtitle;
 
   /// No description provided for @onboardingContinue.
@@ -547,6 +547,60 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Pokračovat'**
   String get onboardingContinue;
+
+  /// No description provided for @defaultWardrobeName.
+  ///
+  /// In cs, this message translates to:
+  /// **'Můj šatník'**
+  String get defaultWardrobeName;
+
+  /// No description provided for @sectionWardrobeName.
+  ///
+  /// In cs, this message translates to:
+  /// **'název šatníku'**
+  String get sectionWardrobeName;
+
+  /// No description provided for @newWardrobe.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nový šatník'**
+  String get newWardrobe;
+
+  /// No description provided for @newWardrobeTile.
+  ///
+  /// In cs, this message translates to:
+  /// **'nový šatník'**
+  String get newWardrobeTile;
+
+  /// No description provided for @editWardrobes.
+  ///
+  /// In cs, this message translates to:
+  /// **'Upravit šatníky'**
+  String get editWardrobes;
+
+  /// No description provided for @newWardrobeHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'např. Chata'**
+  String get newWardrobeHint;
+
+  /// No description provided for @renameWardrobeTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Přejmenovat šatník'**
+  String get renameWardrobeTitle;
+
+  /// No description provided for @deleteWardrobeTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Smazat šatník?'**
+  String get deleteWardrobeTitle;
+
+  /// No description provided for @deleteWardrobeMessage.
+  ///
+  /// In cs, this message translates to:
+  /// **'Šatník „{name}“ bude smazán, včetně všeho oblečení, fotek, kolekcí a outfitů v něm.'**
+  String deleteWardrobeMessage(String name);
 }
 
 class _AppLocalizationsDelegate
