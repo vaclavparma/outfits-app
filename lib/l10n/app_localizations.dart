@@ -392,6 +392,18 @@ abstract class AppLocalizations {
   /// **'přesunout do složky'**
   String get moveToFolder;
 
+  /// No description provided for @searchHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'Hledat oblečení'**
+  String get searchHint;
+
+  /// No description provided for @nothingFound.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nic nenalezeno.'**
+  String get nothingFound;
+
   /// No description provided for @sectionItemName.
   ///
   /// In cs, this message translates to:

@@ -185,6 +185,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moveToFolder => 'move to folder';
 
   @override
+  String get searchHint => 'Search clothes';
+
+  @override
+  String get nothingFound => 'Nothing found.';
+
+  @override
   String get sectionItemName => 'name';
 
   @override

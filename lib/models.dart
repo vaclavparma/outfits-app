@@ -46,6 +46,38 @@ String categoryLabel(BuildContext context, String key) {
 String shortCategoryLabel(BuildContext context, String key) =>
     categoryLabel(context, key).split(' ').first;
 
+const _diacritics = {
+  'á': 'a', 'ä': 'a', 'à': 'a', 'â': 'a', 'ą': 'a', 'č': 'c', 'ć': 'c', 'ç': 'c',
+  'ď': 'd', 'é': 'e', 'ě': 'e', 'ë': 'e', 'è': 'e', 'ê': 'e', 'ę': 'e', 'í': 'i',
+  'î': 'i', 'ľ': 'l', 'ĺ': 'l', 'ł': 'l', 'ň': 'n', 'ń': 'n', 'ñ': 'n', 'ó': 'o',
+  'ö': 'o', 'ô': 'o', 'ő': 'o', 'ř': 'r', 'ŕ': 'r', 'š': 's', 'ś': 's', 'ß': 'ss',
+  'ť': 't', 'ú': 'u', 'ů': 'u', 'ü': 'u', 'ù': 'u', 'û': 'u', 'ű': 'u', 'ý': 'y',
+  'ž': 'z', 'ź': 'z', 'ż': 'z',
+};
+
+String _foldForSearch(String s) {
+  final b = StringBuffer();
+  for (final ch in s.toLowerCase().split('')) {
+    b.write(_diacritics[ch] ?? ch);
+  }
+  return b.toString();
+}
+
+/// Whether [item] matches a free-text search: every word of [query] has to
+/// appear in at least one of its details, its folder or [categoryLabel] —
+/// ignoring case and diacritics ("kosile" finds "Košile"). A blank query
+/// matches everything.
+bool matchesSearch(ClothingItem item, String query, {required String categoryLabel}) {
+  final words = _foldForSearch(query).split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
+  if (words.isEmpty) return true;
+  final haystack = _foldForSearch(
+    [item.name, item.seller, item.size, item.price, item.note, item.folder, categoryLabel]
+        .whereType<String>()
+        .join(' '),
+  );
+  return words.every(haystack.contains);
+}
+
 /// One piece of clothing in the wardrobe.
 class ClothingItem {
   final String id;

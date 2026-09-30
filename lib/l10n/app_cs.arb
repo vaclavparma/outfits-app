@@ -86,6 +86,8 @@
   "deleteItemTitle": "Smazat oblečení?",
   "deleteItemMessage": "Oblečení bude smazáno.",
   "moveToFolder": "přesunout do složky",
+  "searchHint": "Hledat oblečení",
+  "nothingFound": "Nic nenalezeno.",
   "sectionItemName": "název",
   "itemNameHint": "např. Zelená lněná košile",
   "sectionSeller": "prodejce",

@@ -86,6 +86,8 @@
   "deleteItemTitle": "Delete this item?",
   "deleteItemMessage": "This item will be deleted.",
   "moveToFolder": "move to folder",
+  "searchHint": "Search clothes",
+  "nothingFound": "Nothing found.",
   "sectionItemName": "name",
   "itemNameHint": "e.g. Green linen shirt",
   "sectionSeller": "seller",

@@ -11,11 +11,19 @@ import 'widgets.dart';
 
 /// One SliverGrid of folder tiles per category, mirroring [CollectionsTab]:
 /// tap a folder to see (and add) its clothing on [FolderDetailScreen]; the
-/// trailing tile in each category creates a new folder there.
-class WardrobeTab extends StatelessWidget {
+/// trailing tile in each category creates a new folder there. While
+/// searching, the folders give way to a flat grid of matching items.
+class WardrobeTab extends StatefulWidget {
   final void Function(ClothingItem item) onOpenItem;
 
   const WardrobeTab({super.key, required this.onOpenItem});
+
+  @override
+  State<WardrobeTab> createState() => _WardrobeTabState();
+}
+
+class _WardrobeTabState extends State<WardrobeTab> {
+  String _query = '';
 
   @override
   Widget build(BuildContext context) {
@@ -28,56 +36,111 @@ class WardrobeTab extends StatelessWidget {
         .map((c) => (c, store.foldersFor(c.key)))
         .toList();
 
+    final results = _query.trim().isEmpty
+        ? null
+        : store.items
+              .where(
+                (it) => matchesSearch(
+                  it,
+                  _query,
+                  categoryLabel: categoryLabel(context, it.cat),
+                ),
+              )
+              .toList();
+
     return CustomScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 6, 20, 12),
-          sliver: SliverMainAxisGroup(
-            slivers: [
-              for (final (cat, folders) in sections) ...[
-                SliverToBoxAdapter(
-                  child: SectionHeader(
-                    title: categoryLabel(context, cat.key),
-                    trailing: l10n.itemCount(store.byCat(cat.key).length),
-                  ),
-                ),
-                SliverToBoxAdapter(
-                  // A plain box-based ReorderableGridView, not the sliver
-                  // variant — the package's drag-proxy positioning math goes
-                  // wrong once it's nested inside sliver ancestors that add
-                  // their own offset (e.g. this screen's outer SliverPadding),
-                  // showing up as a ghosted second copy of the dragged card.
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 22),
-                    child: ReorderableGridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 0.82,
-                      dragStartDelay: gridDragStartDelay,
-                      onDragStart: onGridDragStart,
-                      dragWidgetBuilderV2: roundedDragFeedback(16),
-                      onReorder: (oldIndex, newIndex) =>
-                          store.reorderFolders(cat.key, oldIndex, newIndex),
-                      footer: [
-                        AddTile(
-                          label: l10n.newFolderTile,
-                          onTap: () => _createFolder(context, store, cat.key),
-                        ),
-                      ],
-                      children: [
-                        for (final f in folders)
-                          _FolderCard(key: ValueKey(f), catKey: cat.key, name: f),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ],
+          padding: const EdgeInsets.fromLTRB(20, 6, 20, 16),
+          sliver: SliverToBoxAdapter(
+            child: SearchField(onChanged: (v) => setState(() => _query = v)),
           ),
         ),
+        if (results != null)
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            sliver: results.isEmpty
+                ? SliverToBoxAdapter(
+                    child: Text(
+                      l10n.nothingFound,
+                      style: AppText.sans(size: 13, color: AppColors.mutedTag),
+                    ),
+                  )
+                : SliverGrid.count(
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 9,
+                    crossAxisSpacing: 9,
+                    childAspectRatio: 100 / 124,
+                    children: [
+                      for (final it in results)
+                        GarmentCard(
+                          width: double.infinity,
+                          height: double.infinity,
+                          slotLabel: shortCategoryLabel(
+                            context,
+                            it.cat,
+                          ).toLowerCase(),
+                          caption: it.name ?? it.folder ?? '',
+                          imagePath: it.imagePath,
+                          onTap: () => widget.onOpenItem(it),
+                        ),
+                    ],
+                  ),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+            sliver: SliverMainAxisGroup(
+              slivers: [
+                for (final (cat, folders) in sections) ...[
+                  SliverToBoxAdapter(
+                    child: SectionHeader(
+                      title: categoryLabel(context, cat.key),
+                      trailing: l10n.itemCount(store.byCat(cat.key).length),
+                    ),
+                  ),
+                  SliverToBoxAdapter(
+                    // A plain box-based ReorderableGridView, not the sliver
+                    // variant — the package's drag-proxy positioning math goes
+                    // wrong once it's nested inside sliver ancestors that add
+                    // their own offset (e.g. this screen's outer SliverPadding),
+                    // showing up as a ghosted second copy of the dragged card.
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 22),
+                      child: ReorderableGridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 0.82,
+                        dragStartDelay: gridDragStartDelay,
+                        onDragStart: onGridDragStart,
+                        dragWidgetBuilderV2: roundedDragFeedback(16),
+                        onReorder: (oldIndex, newIndex) =>
+                            store.reorderFolders(cat.key, oldIndex, newIndex),
+                        footer: [
+                          AddTile(
+                            label: l10n.newFolderTile,
+                            onTap: () => _createFolder(context, store, cat.key),
+                          ),
+                        ],
+                        children: [
+                          for (final f in folders)
+                            _FolderCard(
+                              key: ValueKey(f),
+                              catKey: cat.key,
+                              name: f,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -91,10 +154,7 @@ class _FolderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
-    final items = store
-        .byCat(catKey)
-        .where((it) => it.folder == name)
-        .toList();
+    final items = store.byCat(catKey).where((it) => it.folder == name).toList();
 
     return GestureDetector(
       onTap: () => Navigator.of(context).push(

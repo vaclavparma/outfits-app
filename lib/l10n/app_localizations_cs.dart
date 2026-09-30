@@ -188,6 +188,12 @@ class AppLocalizationsCs extends AppLocalizations {
   String get moveToFolder => 'přesunout do složky';
 
   @override
+  String get searchHint => 'Hledat oblečení';
+
+  @override
+  String get nothingFound => 'Nic nenalezeno.';
+
+  @override
   String get sectionItemName => 'název';
 
   @override

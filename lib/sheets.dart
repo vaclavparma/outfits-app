@@ -97,10 +97,20 @@ void openPickSheet(BuildContext context, WardrobeZone zone) {
   _showSheet(context, title, _PickGrid(zone: zone, hostContext: context));
 }
 
-class _PickGrid extends StatelessWidget {
+class _PickGrid extends StatefulWidget {
   final WardrobeZone zone;
   final BuildContext hostContext;
   const _PickGrid({required this.zone, required this.hostContext});
+
+  @override
+  State<_PickGrid> createState() => _PickGridState();
+}
+
+class _PickGridState extends State<_PickGrid> {
+  String _query = '';
+
+  WardrobeZone get zone => widget.zone;
+  BuildContext get hostContext => widget.hostContext;
 
   void _addNew(BuildContext context) {
     Navigator.of(context).pop();
@@ -130,14 +140,22 @@ class _PickGrid extends StatelessWidget {
         if (!allFolders.contains(f)) allFolders.add(f);
       }
     }
-    final filtered = store.folderFilter == null
-        ? fullList
-        : fullList.where((it) => it.folder == store.folderFilter).toList();
+    final filtered = fullList
+        .where((it) => store.folderFilter == null || it.folder == store.folderFilter)
+        .where((it) => matchesSearch(it, _query, categoryLabel: categoryLabel(context, it.cat)))
+        .toList();
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: SearchField(
+            fillColor: AppColors.background,
+            onChanged: (v) => setState(() => _query = v),
+          ),
+        ),
         if (allFolders.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 14),
@@ -204,12 +222,20 @@ void openLayerSheet(BuildContext context, {int? replaceIndex}) {
   );
 }
 
-class _LayerChoices extends StatelessWidget {
+class _LayerChoices extends StatefulWidget {
   final int? replaceIndex;
   const _LayerChoices({this.replaceIndex});
 
   @override
+  State<_LayerChoices> createState() => _LayerChoicesState();
+}
+
+class _LayerChoicesState extends State<_LayerChoices> {
+  String _query = '';
+
+  @override
   Widget build(BuildContext context) {
+    final replaceIndex = widget.replaceIndex;
     final store = context.watch<WardrobeStore>();
     final l10n = AppLocalizations.of(context)!;
     if (replaceIndex == null && store.layers.length >= WardrobeStore.kMaxLayers) {
@@ -230,7 +256,7 @@ class _LayerChoices extends StatelessWidget {
           (it) =>
               it.id != currentTopId &&
               (!store.layers.contains(it.id) ||
-                  (replaceIndex != null && store.layers[replaceIndex!] == it.id)),
+                  (replaceIndex != null && store.layers[replaceIndex] == it.id)),
         )
         .toList();
     if (available.isEmpty) {
@@ -240,13 +266,21 @@ class _LayerChoices extends StatelessWidget {
       );
     }
     final availableFolders = store.foldersFor('horni');
-    final choices = store.folderFilter == null
-        ? available
-        : available.where((it) => it.folder == store.folderFilter).toList();
+    final choices = available
+        .where((it) => store.folderFilter == null || it.folder == store.folderFilter)
+        .where((it) => matchesSearch(it, _query, categoryLabel: categoryLabel(context, it.cat)))
+        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: SearchField(
+            fillColor: AppColors.background,
+            onChanged: (v) => setState(() => _query = v),
+          ),
+        ),
         if (availableFolders.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
@@ -265,7 +299,7 @@ class _LayerChoices extends StatelessWidget {
           ),
         if (choices.isEmpty)
           Text(
-            l10n.noMoreLayers,
+            _query.trim().isEmpty ? l10n.noMoreLayers : l10n.nothingFound,
             style: AppText.sans(size: 12, color: AppColors.mutedTag),
           ),
         for (final it in choices)
@@ -274,7 +308,7 @@ class _LayerChoices extends StatelessWidget {
             child: GestureDetector(
               onTap: () {
                 if (replaceIndex != null) {
-                  store.setLayer(replaceIndex!, it.id);
+                  store.setLayer(replaceIndex, it.id);
                 } else {
                   store.addLayer(it.id);
                 }
@@ -302,12 +336,29 @@ class _LayerChoices extends StatelessWidget {
                           : GarmentImage(it.imagePath!),
                     ),
                     const SizedBox(width: 12),
-                    Text(
-                      it.folder ?? l10n.noFolder,
-                      style: AppText.mono(
-                        size: 8.5,
-                        letterSpacing: 0.4,
-                        color: AppColors.mutedTag,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (it.name != null)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Text(
+                                it.name!,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppText.sans(size: 13, color: AppColors.ink),
+                              ),
+                            ),
+                          Text(
+                            it.folder ?? l10n.noFolder,
+                            style: AppText.mono(
+                              size: 8.5,
+                              letterSpacing: 0.4,
+                              color: AppColors.mutedTag,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],

@@ -360,6 +360,67 @@ class AddTile extends StatelessWidget {
   }
 }
 
+/// Search input above the wardrobe and the outfit pickers — reports every
+/// change via [onChanged], with a clear button once something's typed.
+class SearchField extends StatefulWidget {
+  final ValueChanged<String> onChanged;
+  final Color fillColor;
+
+  const SearchField({super.key, required this.onChanged, this.fillColor = Colors.white});
+
+  @override
+  State<SearchField> createState() => _SearchFieldState();
+}
+
+class _SearchFieldState extends State<SearchField> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _changed(String value) {
+    setState(() {});
+    widget.onChanged(value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: AppColors.cardBorder),
+    );
+    return TextField(
+      controller: _controller,
+      onChanged: _changed,
+      textInputAction: TextInputAction.search,
+      style: AppText.sans(size: 14, color: AppColors.ink),
+      decoration: InputDecoration(
+        hintText: AppLocalizations.of(context)!.searchHint,
+        hintStyle: AppText.sans(size: 14, color: AppColors.mutedTag),
+        prefixIcon: const Icon(Icons.search, size: 19, color: AppColors.mutedSoft),
+        suffixIcon: _controller.text.isEmpty
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.close, size: 17, color: AppColors.mutedSoft),
+                onPressed: () {
+                  _controller.clear();
+                  _changed('');
+                },
+              ),
+        filled: true,
+        fillColor: widget.fillColor,
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(vertical: 11),
+        border: border,
+        enabledBorder: border,
+      ),
+    );
+  }
+}
+
 /// Section header used above wardrobe grids and collection lists.
 class SectionHeader extends StatelessWidget {
   final String title;
