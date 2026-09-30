@@ -718,11 +718,17 @@ class _ItemDetailState extends State<_ItemDetail> {
             Expanded(
               child: GestureDetector(
                 onTap: () {
+                  // A top can go in several places — ask where.
+                  if (cur.cat == 'horni') {
+                    _showSheet(
+                      context,
+                      (ctx) => AppLocalizations.of(ctx)!.wearWhereTitle,
+                      _WearTopChoices(item: cur),
+                    );
+                    return;
+                  }
                   store.useItem(cur);
-                  // Back to the home screen (on the outfit tab), not just
-                  // out of the sheet — it's usually opened from a folder
-                  // screen pushed on top.
-                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  _backToOutfit(context);
                 },
                 child: Container(
                   height: 46,
@@ -863,6 +869,95 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
             ),
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// Back to the home screen (on the outfit tab), not just out of the sheet —
+/// the item sheet is usually opened from a folder screen pushed on top.
+void _backToOutfit(BuildContext context) =>
+    Navigator.of(context).popUntil((route) => route.isFirst);
+
+/// Where in the outfit a top should go: the top itself, one of the current
+/// layers (replacing it), or a new layer — each shown with what's there now.
+class _WearTopChoices extends StatelessWidget {
+  final ClothingItem item;
+  const _WearTopChoices({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final top = store.at(store.topList, WardrobeZone.top);
+    final isWorn = top?.id == item.id || store.layers.contains(item.id);
+
+    Widget row({required String label, required ClothingItem? occupant, required VoidCallback onTap, bool isNew = false}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 7),
+        child: GestureDetector(
+          onTap: () {
+            onTap();
+            _backToOutfit(context);
+          },
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.rowBorder),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: isNew ? null : AppColors.cardFill,
+                    border: Border.all(color: isNew ? AppColors.dashedBorder : AppColors.cardBorder),
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  alignment: Alignment.center,
+                  child: isNew
+                      ? Text('+', style: AppText.sans(size: 20, weight: FontWeight.w300, color: AppColors.mutedSoft))
+                      : occupant?.imagePath == null
+                      ? const DiagonalStripes()
+                      : GarmentImage(occupant!.imagePath!),
+                ),
+                const SizedBox(width: 12),
+                Expanded(child: Text(label, style: AppText.sans(size: 14, color: AppColors.ink))),
+                if (occupant?.id == item.id)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Text(
+                      l10n.wornHere,
+                      style: AppText.mono(size: 8.5, letterSpacing: 0.4, color: AppColors.mutedTag),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        row(label: l10n.wearAsTop, occupant: top, onTap: () => store.useItem(item)),
+        for (var i = 0; i < store.layers.length; i++)
+          row(
+            label: l10n.wearAsLayer(i + 1),
+            occupant: store.itemById(store.layers[i]),
+            onTap: () => store.wearAsLayer(item, i),
+          ),
+        if (!isWorn && store.layers.length < WardrobeStore.kMaxLayers)
+          row(
+            label: l10n.wearAsNewLayer,
+            occupant: null,
+            isNew: true,
+            onTap: () => store.wearAsLayer(item, store.layers.length),
+          ),
       ],
     );
   }

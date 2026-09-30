@@ -185,6 +185,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moveToFolder => 'move to folder';
 
   @override
+  String get wearWhereTitle => 'Where in the outfit?';
+
+  @override
+  String get wearAsTop => 'Top';
+
+  @override
+  String wearAsLayer(int n) {
+    return 'Layer $n';
+  }
+
+  @override
+  String get wearAsNewLayer => 'New layer';
+
+  @override
+  String get wornHere => 'here now';
+
+  @override
   String get searchHint => 'Search clothes';
 
   @override

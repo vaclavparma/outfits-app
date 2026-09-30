@@ -86,6 +86,16 @@
   "deleteItemTitle": "Smazat oblečení?",
   "deleteItemMessage": "Oblečení bude smazáno.",
   "moveToFolder": "přesunout do složky",
+  "wearWhereTitle": "Kam do outfitu?",
+  "wearAsTop": "Top",
+  "wearAsLayer": "Vrstva {n}",
+  "@wearAsLayer": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "wearAsNewLayer": "Nová vrstva",
+  "wornHere": "teď tady",
   "searchHint": "Hledat oblečení",
   "nothingFound": "Nic nenalezeno.",
   "sectionItemName": "název",

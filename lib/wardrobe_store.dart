@@ -703,6 +703,36 @@ class WardrobeStore extends ChangeNotifier {
     _persist();
   }
 
+  /// Puts a 'horni' item into layer [slot] — an existing layer (replaced), or
+  /// `layers.length` for a new one. If the item is already worn elsewhere
+  /// it swaps places with what's in [slot]: the top can't be left empty,
+  /// and a garment can't be worn twice. (Use [useItem] to wear it as the
+  /// top instead.)
+  void wearAsLayer(ClothingItem it, int slot) {
+    final j = layers.indexOf(it.id);
+    final wasTop = at(topList, WardrobeZone.top)?.id == it.id;
+    if (slot >= layers.length) {
+      if (!wasTop && j < 0) addLayer(it.id);
+      return;
+    }
+    final displaced = layers[slot];
+    if (j == slot) {
+      // Already there — nothing to change.
+    } else if (j >= 0) {
+      layers = [
+        for (var k = 0; k < layers.length; k++)
+          k == slot ? it.id : (k == j ? displaced : layers[k]),
+      ];
+    } else if (wasTop) {
+      layers = [for (var k = 0; k < layers.length; k++) k == slot ? it.id : layers[k]];
+      idx = {...idx, WardrobeZone.top: topList.indexWhere((x) => x.id == displaced)};
+    } else {
+      setLayer(slot, it.id);
+    }
+    screen = WardrobeTabKind.outfit;
+    notifyListeners();
+  }
+
   void useItem(ClothingItem it) {
     final zone = zoneForCategory(it.cat);
     var pinMoved = false;

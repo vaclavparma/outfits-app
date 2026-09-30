@@ -86,6 +86,16 @@
   "deleteItemTitle": "Delete this item?",
   "deleteItemMessage": "This item will be deleted.",
   "moveToFolder": "move to folder",
+  "wearWhereTitle": "Where in the outfit?",
+  "wearAsTop": "Top",
+  "wearAsLayer": "Layer {n}",
+  "@wearAsLayer": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "wearAsNewLayer": "New layer",
+  "wornHere": "here now",
   "searchHint": "Search clothes",
   "nothingFound": "Nothing found.",
   "sectionItemName": "name",

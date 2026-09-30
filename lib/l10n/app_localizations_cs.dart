@@ -188,6 +188,23 @@ class AppLocalizationsCs extends AppLocalizations {
   String get moveToFolder => 'přesunout do složky';
 
   @override
+  String get wearWhereTitle => 'Kam do outfitu?';
+
+  @override
+  String get wearAsTop => 'Top';
+
+  @override
+  String wearAsLayer(int n) {
+    return 'Vrstva $n';
+  }
+
+  @override
+  String get wearAsNewLayer => 'Nová vrstva';
+
+  @override
+  String get wornHere => 'teď tady';
+
+  @override
   String get searchHint => 'Hledat oblečení';
 
   @override

@@ -392,6 +392,36 @@ abstract class AppLocalizations {
   /// **'přesunout do složky'**
   String get moveToFolder;
 
+  /// No description provided for @wearWhereTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Kam do outfitu?'**
+  String get wearWhereTitle;
+
+  /// No description provided for @wearAsTop.
+  ///
+  /// In cs, this message translates to:
+  /// **'Top'**
+  String get wearAsTop;
+
+  /// No description provided for @wearAsLayer.
+  ///
+  /// In cs, this message translates to:
+  /// **'Vrstva {n}'**
+  String wearAsLayer(int n);
+
+  /// No description provided for @wearAsNewLayer.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nová vrstva'**
+  String get wearAsNewLayer;
+
+  /// No description provided for @wornHere.
+  ///
+  /// In cs, this message translates to:
+  /// **'teď tady'**
+  String get wornHere;
+
   /// No description provided for @searchHint.
   ///
   /// In cs, this message translates to:
