@@ -41,12 +41,12 @@ flutter pub get
 echo "🏗️  Building IPA archive (${VERSION_NAME}+${NEW_BUILD})..."
 flutter build ipa --release
 
-#// echo "🏗️  Building App Bundle (${VERSION_NAME}+${NEW_BUILD})..."
-#// flutter build appbundle --release
+echo "🏗️  Building App Bundle (${VERSION_NAME}+${NEW_BUILD})..."
+flutter build appbundle --release
 
 # 5. Upload to Google Play Store
-#// echo "🚀 Uploading to Google Play Store..."
-#// (cd android && ./gradlew publishReleaseBundle)
+echo "🚀 Uploading to Google Play Store..."
+(cd android && ./gradlew publishReleaseBundle)
 
 # 6. Check for ExportOptions.plist existence
 if [ ! -f "$PLIST_PATH" ]; then
