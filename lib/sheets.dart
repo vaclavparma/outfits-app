@@ -550,28 +550,17 @@ class _ItemDetail extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 66,
-              height: 84,
-              child: GarmentCard(
-                width: 66,
-                height: 84,
-                imagePath: cur.imagePath,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                categoryLabel(context, cur.cat),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppText.sans(size: 15, color: AppColors.ink),
-              ),
-            ),
-          ],
+        GarmentCard(
+          width: double.infinity,
+          height: 260,
+          imagePath: cur.imagePath,
+        ),
+        const SizedBox(height: 10),
+        Text(
+          categoryLabel(context, cur.cat),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppText.sans(size: 15, color: AppColors.ink),
         ),
         const SizedBox(height: 18),
         Wrap(
