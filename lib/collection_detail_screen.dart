@@ -45,17 +45,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                   padding: const EdgeInsets.fromLTRB(4, 8, 12, 4),
                   child: Row(
                     children: [
-                      GestureDetector(
-                        onTap: () => Navigator.of(context).pop(),
-                        child: const Padding(
-                          padding: EdgeInsets.all(12),
-                          child: Icon(
-                            Icons.arrow_back_ios_new,
-                            size: 18,
-                            color: AppColors.ink,
-                          ),
-                        ),
-                      ),
+                      const AppBackButton(),
                       Expanded(
                         child: Text(
                           _name,

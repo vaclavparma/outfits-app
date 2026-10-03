@@ -653,21 +653,28 @@ class _ItemDetailState extends State<_ItemDetail> {
         if (otherFolders.isNotEmpty) ...[
           Text(l10n.moveToFolder, style: _sectionLabelStyle),
           const SizedBox(height: 5),
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: [
-              for (final f in otherFolders)
-                SelectChip(
-                  label: f,
-                  active: false,
-                  onTap: () {
-                    store.setFolder(cur.id, f);
-                    // It just left the folder being viewed behind the sheet.
-                    Navigator.of(context).pop();
-                  },
-                ),
-            ],
+          // One scrollable row rather than a wrapping block — with many
+          // folders a Wrap pushed the detail fields far down. Chips may
+          // scroll out under the sheet's side padding, up to its edge.
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            clipBehavior: Clip.none,
+            child: Row(
+              children: [
+                for (final (i, f) in otherFolders.indexed) ...[
+                  if (i > 0) const SizedBox(width: 7),
+                  SelectChip(
+                    label: f,
+                    active: false,
+                    onTap: () {
+                      store.setFolder(cur.id, f);
+                      // It just left the folder being viewed behind the sheet.
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              ],
+            ),
           ),
           const SizedBox(height: 14),
         ],
@@ -713,10 +720,15 @@ class _ItemDetailState extends State<_ItemDetail> {
           onChanged: (v) => store.setItemInfo(itemId, note: v),
         ),
         const SizedBox(height: 4),
+        // Equal-width side actions with a wider "Done" between them.
         Row(
           children: [
             Expanded(
-              child: GestureDetector(
+              flex: 2,
+              child: _DetailAction(
+                label: l10n.useInOutfit,
+                filled: true,
+                textColor: Colors.white,
                 onTap: () {
                   // A top can go in several places — ask where.
                   if (cur.cat == 'horni') {
@@ -730,39 +742,25 @@ class _ItemDetailState extends State<_ItemDetail> {
                   store.useItem(cur);
                   _backToOutfit(context);
                 },
-                child: Container(
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: AppColors.accent,
-                    borderRadius: BorderRadius.circular(23),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    l10n.useInOutfit,
-                    style: AppText.sans(
-                      size: 13,
-                      weight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
               ),
             ),
             const SizedBox(width: 9),
-            GestureDetector(
-              onTap: () => _confirmDeleteItem(context, store, cur),
-              child: Container(
-                height: 46,
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(23),
-                  border: Border.all(color: AppColors.cardBorder),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  l10n.delete,
-                  style: AppText.sans(size: 13, color: AppColors.muted),
-                ),
+            Expanded(
+              flex: 3,
+              child: _DetailAction(
+                label: l10n.done,
+                textColor: AppColors.ink,
+                onTap: () => Navigator.of(context).pop(),
+              ),
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              flex: 2,
+              child: _DetailAction(
+                label: l10n.delete,
+                textColor: AppColors.muted,
+                bold: false,
+                onTap: () => _confirmDeleteItem(context, store, cur),
               ),
             ),
           ],
@@ -963,6 +961,55 @@ class _WearTopChoices extends StatelessWidget {
   }
 }
 
+/// A pill button in the item detail's action row — filled accent, or
+/// outlined. A label too long for its share of the row wraps onto a second
+/// line rather than shrinking (scaling "Použít v outfitu" down to fit got
+/// it to ~10pt on a typical iPhone).
+class _DetailAction extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  final Color textColor;
+  final bool filled;
+  final bool bold;
+
+  const _DetailAction({
+    required this.label,
+    required this.onTap,
+    required this.textColor,
+    this.filled = false,
+    this.bold = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 46,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: filled ? AppColors.accent : null,
+          borderRadius: BorderRadius.circular(23),
+          border: filled ? null : Border.all(color: AppColors.cardBorder),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          label,
+          maxLines: 2,
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
+          style: AppText.sans(
+            size: 13,
+            height: 1.15,
+            weight: bold ? FontWeight.w500 : FontWeight.w400,
+            color: textColor,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// One optional, labelled free-text detail of a clothing item — same look
 /// as the outfit-name field in the save sheet.
 class _InfoField extends StatelessWidget {
@@ -996,6 +1043,9 @@ class _InfoField extends StatelessWidget {
           TextField(
             controller: controller,
             onChanged: onChanged,
+            // Text fields share one tap region, so moving between fields
+            // keeps the keyboard up; anywhere else hides it.
+            onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
             textCapitalization: TextCapitalization.sentences,
             minLines: multiline ? 2 : 1,
             maxLines: multiline ? 5 : 1,

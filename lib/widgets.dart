@@ -290,6 +290,26 @@ class SelectChip extends StatelessWidget {
   }
 }
 
+/// Back arrow for the pushed folder/collection screens. Opaque and sized to
+/// a full 48×48 target — a plain GestureDetector only reacts to taps on the
+/// icon's own pixels, which made it easy to miss.
+class AppBackButton extends StatelessWidget {
+  const AppBackButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => Navigator.of(context).pop(),
+      child: const SizedBox(
+        width: 48,
+        height: 48,
+        child: Icon(Icons.arrow_back_ios_new, size: 18, color: AppColors.ink),
+      ),
+    );
+  }
+}
+
 /// Small round icon-only button (the "+" add button, the "x" remove button).
 class RoundIconButton extends StatelessWidget {
   final Widget child;

@@ -128,6 +128,12 @@ abstract class AppLocalizations {
   /// **'Uložit'**
   String get save;
 
+  /// No description provided for @done.
+  ///
+  /// In cs, this message translates to:
+  /// **'Hotovo'**
+  String get done;
+
   /// No description provided for @delete.
   ///
   /// In cs, this message translates to:

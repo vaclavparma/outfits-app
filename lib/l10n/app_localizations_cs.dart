@@ -24,6 +24,9 @@ class AppLocalizationsCs extends AppLocalizations {
   String get save => 'Uložit';
 
   @override
+  String get done => 'Hotovo';
+
+  @override
   String get delete => 'Smazat';
 
   @override
