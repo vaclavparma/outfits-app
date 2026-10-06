@@ -19,6 +19,7 @@ Future<void> _openUrl(String url) async {
 void openAboutSheet(BuildContext context) {
   showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     barrierColor: const Color(0x47141414),

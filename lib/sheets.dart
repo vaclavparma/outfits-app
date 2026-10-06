@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
+import 'home_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'models.dart';
 import 'theme.dart';
@@ -27,6 +28,8 @@ Future<T?> _showSheet<T>(
 }) {
   return showModalBottomSheet<T>(
     context: context,
+    // Above the bottom tab bar, which lives outside the home navigator.
+    useRootNavigator: true,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     barrierColor: const Color(0x47141414),
@@ -874,8 +877,10 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
 
 /// Back to the home screen (on the outfit tab), not just out of the sheet —
 /// the item sheet is usually opened from a folder screen pushed on top.
-void _backToOutfit(BuildContext context) =>
-    Navigator.of(context).popUntil((route) => route.isFirst);
+void _backToOutfit(BuildContext context) {
+  Navigator.of(context).popUntil((route) => route.isFirst);
+  popToHomeTabs();
+}
 
 /// Where in the outfit a top should go: the top itself, one of the current
 /// layers (replacing it), or a new layer — each shown with what's there now.

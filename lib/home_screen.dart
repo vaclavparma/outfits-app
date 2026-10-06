@@ -11,6 +11,16 @@ import 'theme.dart';
 import 'wardrobe_store.dart';
 import 'wardrobe_tab.dart';
 
+/// Navigator for everything above the bottom tab bar: the tabs themselves,
+/// plus folder/collection screens pushed from them — so those open *under*
+/// a bar that stays put, instead of covering it. Sheets and dialogs still
+/// go on the root navigator and cover the bar as before.
+final homeNavigatorKey = GlobalKey<NavigatorState>();
+
+/// Closes any folder/collection screen open above the tabs.
+void popToHomeTabs() =>
+    homeNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -25,72 +35,125 @@ class HomeScreen extends StatelessWidget {
           children: [
             Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-                  child: Row(
-                    children: [
-                      const Expanded(
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: _WardrobeSwitcher(),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: () => openSettingsSheet(context),
-                        child: const Padding(
-                          padding: EdgeInsets.all(4),
-                          child: Icon(
-                            Icons.settings_outlined,
-                            size: 20,
-                            color: AppColors.mutedSoft,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: () => openAboutSheet(context),
-                        child: const Padding(
-                          padding: EdgeInsets.all(4),
-                          child: Icon(Icons.info_outline, size: 20, color: AppColors.mutedSoft),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
                 Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 220),
-                    switchInCurve: Curves.easeOut,
-                    switchOutCurve: Curves.easeIn,
-                    transitionBuilder: (child, animation) => FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: Tween<Offset>(begin: const Offset(0, 0.02), end: Offset.zero).animate(animation),
-                        child: child,
-                      ),
-                    ),
-                    child: KeyedSubtree(
-                      key: ValueKey(store.screen),
-                      child: switch (store.screen) {
-                        WardrobeTabKind.outfit => OutfitTab(
-                          onPick: (zone) => openPickSheet(context, zone),
-                          onOpenLayers: ({replaceIndex}) =>
-                              openLayerSheet(context, replaceIndex: replaceIndex),
-                          onOpenSave: () => openSaveOutfitSheet(context),
-                        ),
-                        WardrobeTabKind.wardrobe => WardrobeTab(onOpenItem: (item) => openItemSheet(context, item)),
-                        WardrobeTabKind.collections => const CollectionsTab(),
-                      },
+                  // Routes Android's back button to the nested navigator
+                  // first, so it closes an open folder instead of the app.
+                  child: NavigatorPopHandler<Object?>(
+                    onPopWithResult: (_) =>
+                        homeNavigatorKey.currentState?.maybePop(),
+                    child: Navigator(
+                      key: homeNavigatorKey,
+                      onGenerateRoute: (_) =>
+                          MaterialPageRoute(builder: (_) => const _TabsPage()),
                     ),
                   ),
                 ),
-                _BottomTabs(current: store.screen, onSelect: store.setScreen),
+                _BottomTabs(
+                  current: store.screen,
+                  onSelect: (kind) {
+                    popToHomeTabs();
+                    store.setScreen(kind);
+                  },
+                ),
               ],
             ),
-            if (store.toast.isNotEmpty) Positioned(left: 20, right: 20, top: 2, child: _Toast(message: store.toast)),
+            if (store.toast.isNotEmpty)
+              Positioned(
+                left: 20,
+                right: 20,
+                top: 2,
+                child: _Toast(message: store.toast),
+              ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// The header (wardrobe switcher, settings, about) and the active tab — the
+/// root page of [homeNavigatorKey]'s navigator.
+class _TabsPage extends StatelessWidget {
+  const _TabsPage();
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+
+    return ColoredBox(
+      color: AppColors.background,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: Row(
+              children: [
+                const Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: _WardrobeSwitcher(),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: () => openSettingsSheet(context),
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.settings_outlined,
+                      size: 20,
+                      color: AppColors.mutedSoft,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () => openAboutSheet(context),
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.info_outline,
+                      size: 20,
+                      color: AppColors.mutedSoft,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 220),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.02),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+              ),
+              child: KeyedSubtree(
+                key: ValueKey(store.screen),
+                child: switch (store.screen) {
+                  WardrobeTabKind.outfit => OutfitTab(
+                    onPick: (zone) => openPickSheet(context, zone),
+                    onOpenLayers: ({replaceIndex}) =>
+                        openLayerSheet(context, replaceIndex: replaceIndex),
+                    onOpenSave: () => openSaveOutfitSheet(context),
+                  ),
+                  WardrobeTabKind.wardrobe => WardrobeTab(
+                    onOpenItem: (item) => openItemSheet(context, item),
+                  ),
+                  WardrobeTabKind.collections => const CollectionsTab(),
+                },
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -125,7 +188,11 @@ class _WardrobeSwitcher extends StatelessWidget {
             height: 44,
             child: Row(
               children: [
-                Icon(w.id == store.activeWardrobeId ? Icons.check : null, size: 17, color: AppColors.accent),
+                Icon(
+                  w.id == store.activeWardrobeId ? Icons.check : null,
+                  size: 17,
+                  color: AppColors.accent,
+                ),
                 const SizedBox(width: 10),
                 Flexible(
                   child: Text(
@@ -144,9 +211,16 @@ class _WardrobeSwitcher extends StatelessWidget {
           height: 44,
           child: Row(
             children: [
-              const Icon(Icons.edit_outlined, size: 17, color: AppColors.mutedSoft),
+              const Icon(
+                Icons.edit_outlined,
+                size: 17,
+                color: AppColors.mutedSoft,
+              ),
               const SizedBox(width: 10),
-              Text(l10n.editWardrobes, style: AppText.sans(size: 13.5, color: AppColors.ink)),
+              Text(
+                l10n.editWardrobes,
+                style: AppText.sans(size: 13.5, color: AppColors.ink),
+              ),
             ],
           ),
         ),
@@ -161,11 +235,19 @@ class _WardrobeSwitcher extends StatelessWidget {
                 store.activeWardrobe.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppText.sans(size: 14, weight: FontWeight.w500, color: AppColors.ink),
+                style: AppText.sans(
+                  size: 14,
+                  weight: FontWeight.w500,
+                  color: AppColors.ink,
+                ),
               ),
             ),
             const SizedBox(width: 2),
-            const Icon(Icons.keyboard_arrow_down, size: 20, color: AppColors.mutedSoft),
+            const Icon(
+              Icons.keyboard_arrow_down,
+              size: 20,
+              color: AppColors.mutedSoft,
+            ),
           ],
         ),
       ),
@@ -194,7 +276,13 @@ class _Toast extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.rowBorder),
-        boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 16, offset: Offset(0, 6))],
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -203,10 +291,20 @@ class _Toast extends StatelessWidget {
             width: 6,
             height: 6,
             margin: const EdgeInsets.only(right: 10),
-            decoration: const BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
+            decoration: const BoxDecoration(
+              color: AppColors.accent,
+              shape: BoxShape.circle,
+            ),
           ),
           Flexible(
-            child: Text(message, style: AppText.sans(size: 11.5, height: 1.35, color: AppColors.ink)),
+            child: Text(
+              message,
+              style: AppText.sans(
+                size: 11.5,
+                height: 1.35,
+                color: AppColors.ink,
+              ),
+            ),
           ),
         ],
       ),
@@ -249,7 +347,9 @@ class _BottomTabs extends StatelessWidget {
                         style: AppText.mono(
                           size: 10.5,
                           letterSpacing: 1.3,
-                          color: current == kind ? AppColors.ink : AppColors.mutedSoft,
+                          color: current == kind
+                              ? AppColors.ink
+                              : AppColors.mutedSoft,
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -257,7 +357,9 @@ class _BottomTabs extends StatelessWidget {
                         width: 4,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: current == kind ? AppColors.accent : Colors.transparent,
+                          color: current == kind
+                              ? AppColors.accent
+                              : Colors.transparent,
                           shape: BoxShape.circle,
                         ),
                       ),
