@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'home_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'onboarding_screen.dart';
+import 'photo_shrink.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
 
@@ -17,7 +18,9 @@ class SatnikApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => WardrobeStore()..load(),
+      // The one-time photo shrink runs after loading, in the background —
+      // it doesn't touch store state, only the files photos point to.
+      create: (_) => WardrobeStore()..load().then((_) => shrinkExistingPhotosOnce()),
       child: Consumer<WardrobeStore>(
         builder: (context, store, _) => MaterialApp(
           title: 'Outfits',

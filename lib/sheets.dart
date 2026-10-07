@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'home_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'models.dart';
+import 'photo_shrink.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
 import 'widgets.dart';
@@ -430,6 +431,11 @@ class _AddItemFormState extends State<_AddItemForm> {
     return folders.isNotEmpty ? folders.first : store.fallbackFolder;
   }
 
+  /// Longest edge a stored photo is scaled down to (aspect ratio kept). The
+  /// biggest it's ever shown is the item detail, ~1200×660 px on the largest
+  /// iPhone — full camera resolution (up to 8K) is just wasted storage.
+  static const double _maxPhotoEdge = kMaxPhotoEdge * 1.0;
+
   Future<void> _pick(ImageSource source) async {
     if (_busy || _folder == null) return;
     setState(() => _busy = true);
@@ -439,9 +445,18 @@ class _AddItemFormState extends State<_AddItemForm> {
       // adding a handful of items of the same category/folder in one go.
       // The camera can only ever produce one photo per capture.
       final files = source == ImageSource.gallery
-          ? await picker.pickMultiImage(imageQuality: 85)
+          ? await picker.pickMultiImage(
+              maxWidth: _maxPhotoEdge,
+              maxHeight: _maxPhotoEdge,
+              imageQuality: 85,
+            )
           : await picker
-                .pickImage(source: source, imageQuality: 85)
+                .pickImage(
+                  source: source,
+                  maxWidth: _maxPhotoEdge,
+                  maxHeight: _maxPhotoEdge,
+                  imageQuality: 85,
+                )
                 .then((f) => f == null ? <XFile>[] : [f]);
       if (files.isEmpty) return;
       if (!mounted) return;
