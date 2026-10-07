@@ -24,7 +24,7 @@ NEW_BUILD=$((CURRENT_BUILD + 1))
 NEW_VERSION_LINE="version: ${VERSION_NAME}+${NEW_BUILD}"
 
 sed -i '' "s/^version: .*/$NEW_VERSION_LINE/" "$PUBSPEC"
-echo "⬆️  Version bumped: ${VERSION_NAME}+${CURRENT_BUILD} -> ${VERSION_NAME}+${NEW_BUILD}"
+echo "⬆️  Build number bumped: ${VERSION_NAME}+${CURRENT_BUILD} -> ${VERSION_NAME}+${NEW_BUILD}"
 
 # 3. Git commit
 git add "$PUBSPEC"
