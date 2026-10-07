@@ -167,6 +167,16 @@
       "category": {"type": "String"}
     }
   },
+  "outfitAlreadySavedTitle": "Outfit already saved",
+  "outfitAlreadySavedMessage": "This combination is already saved as “{name}” in {wardrobe} / {col}. Save it anyway?",
+  "@outfitAlreadySavedMessage": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "wardrobe": {"type": "String"},
+      "col": {"type": "String"}
+    }
+  },
+  "saveAnyway": "Save anyway",
   "toastOutfitSaved": "“{name}” saved to the {col} collection",
   "@toastOutfitSaved": {
     "placeholders": {

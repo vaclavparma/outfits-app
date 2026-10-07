@@ -845,6 +845,48 @@ class WardrobeStore extends ChangeNotifier {
     _persist();
   }
 
+  /// What [saveOutfit] would store, in its order: the top, its layers, the
+  /// bottom (unless the top is a dress), the shoes.
+  List<ClothingItem> get _currentOutfitParts {
+    final top = at(topList, WardrobeZone.top);
+    final bot = at(botList, WardrobeZone.bottom);
+    final shoe = at(shoeList, WardrobeZone.shoes);
+    final isDress = top != null && top.cat == 'saty';
+    return [
+      if (top != null) top,
+      for (final id in layers)
+        if (itemById(id) case final item?) item,
+      if (!isDress && bot != null) bot,
+      if (shoe != null) shoe,
+    ];
+  }
+
+  /// A saved outfit made of exactly the current outfit's items (order —
+  /// e.g. of layers — aside), looked for in the active wardrobe first, then
+  /// the others: an item moved between wardrobes keeps its id, so the same
+  /// combination can be saved elsewhere too.
+  ({String wardrobe, String col, String name})? findSavedCopyOfCurrentOutfit() {
+    final ids = _currentOutfitParts.map((i) => i.id).toSet();
+    if (ids.isEmpty) return null;
+    final ordered = [
+      ...wardrobes.where((w) => w.id == activeWardrobeId),
+      ...wardrobes.where((w) => w.id != activeWardrobeId),
+    ];
+    for (final w in ordered) {
+      final content = w.id == activeWardrobeId ? _liveContent : _stash[w.id];
+      if (content == null) continue;
+      for (final col in content.cols) {
+        for (final o in content.saved[col] ?? const <SavedOutfit>[]) {
+          final other = o.itemIds.toSet();
+          if (other.length == ids.length && other.containsAll(ids)) {
+            return (wardrobe: w.name, col: col, name: o.name);
+          }
+        }
+      }
+    }
+    return null;
+  }
+
   /// Saves the current outfit selection into [targetCol] (or the first
   /// collection, if empty — falling back to [fallbackCollection], creating
   /// it if this is the very first save), returning the collection/name it
@@ -860,18 +902,7 @@ class WardrobeStore extends ChangeNotifier {
       cols = [fallbackCollection];
       saved = {...saved, fallbackCollection: []};
     }
-    final top = at(topList, WardrobeZone.top);
-    final bot = at(botList, WardrobeZone.bottom);
-    final shoe = at(shoeList, WardrobeZone.shoes);
-    final isDress = top != null && top.cat == 'saty';
-
-    final parts = <ClothingItem>[
-      if (top != null) top,
-      for (final id in layers)
-        if (itemById(id) case final item?) item,
-      if (!isDress && bot != null) bot,
-      if (shoe != null) shoe,
-    ];
+    final parts = _currentOutfitParts;
 
     final total = cols.fold<int>(0, (a, k) => a + (saved[k]?.length ?? 0));
     final name = rawName.trim().isNotEmpty

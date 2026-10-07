@@ -320,6 +320,17 @@ class AppLocalizationsCs extends AppLocalizations {
   }
 
   @override
+  String get outfitAlreadySavedTitle => 'Outfit už je uložený';
+
+  @override
+  String outfitAlreadySavedMessage(String name, String wardrobe, String col) {
+    return 'Tahle kombinace je už uložená jako „$name“ v $wardrobe / $col. Uložit ji i tak?';
+  }
+
+  @override
+  String get saveAnyway => 'Uložit i tak';
+
+  @override
   String toastOutfitSaved(String name, String col) {
     return '„$name“ uloženo do kolekce $col';
   }

@@ -316,6 +316,17 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get outfitAlreadySavedTitle => 'Outfit already saved';
+
+  @override
+  String outfitAlreadySavedMessage(String name, String wardrobe, String col) {
+    return 'This combination is already saved as “$name” in $wardrobe / $col. Save it anyway?';
+  }
+
+  @override
+  String get saveAnyway => 'Save anyway';
+
+  @override
   String toastOutfitSaved(String name, String col) {
     return '“$name” saved to the $col collection';
   }

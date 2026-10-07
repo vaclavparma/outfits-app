@@ -868,6 +868,16 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
         const SizedBox(height: 18),
         GestureDetector(
           onTap: () async {
+            final existing = store.findSavedCopyOfCurrentOutfit();
+            if (existing != null) {
+              final saveAnyway = await confirmDialog(
+                context,
+                title: l10n.outfitAlreadySavedTitle,
+                message: l10n.outfitAlreadySavedMessage(existing.name, existing.wardrobe, existing.col),
+                confirmLabel: l10n.saveAnyway,
+              );
+              if (!saveAnyway || !context.mounted) return;
+            }
             final result = await store.saveOutfit(
               rawName: _nameController.text,
               targetCol: _selectedCol ?? '',

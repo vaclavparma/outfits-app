@@ -167,6 +167,16 @@
       "category": {"type": "String"}
     }
   },
+  "outfitAlreadySavedTitle": "Outfit už je uložený",
+  "outfitAlreadySavedMessage": "Tahle kombinace je už uložená jako „{name}“ v {wardrobe} / {col}. Uložit ji i tak?",
+  "@outfitAlreadySavedMessage": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "wardrobe": {"type": "String"},
+      "col": {"type": "String"}
+    }
+  },
+  "saveAnyway": "Uložit i tak",
   "toastOutfitSaved": "„{name}“ uloženo do kolekce {col}",
   "@toastOutfitSaved": {
     "placeholders": {

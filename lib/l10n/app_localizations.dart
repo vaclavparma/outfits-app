@@ -608,6 +608,24 @@ abstract class AppLocalizations {
   /// **'{count, plural, one{Uloženo {count} kus do „{category}“} few{Uloženo {count} kusy do „{category}“} other{Uloženo {count} kusů do „{category}“}}'**
   String toastSavedMultiple(int count, String category);
 
+  /// No description provided for @outfitAlreadySavedTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Outfit už je uložený'**
+  String get outfitAlreadySavedTitle;
+
+  /// No description provided for @outfitAlreadySavedMessage.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tahle kombinace je už uložená jako „{name}“ v {wardrobe} / {col}. Uložit ji i tak?'**
+  String outfitAlreadySavedMessage(String name, String wardrobe, String col);
+
+  /// No description provided for @saveAnyway.
+  ///
+  /// In cs, this message translates to:
+  /// **'Uložit i tak'**
+  String get saveAnyway;
+
   /// No description provided for @toastOutfitSaved.
   ///
   /// In cs, this message translates to:
