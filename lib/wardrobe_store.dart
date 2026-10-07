@@ -80,6 +80,11 @@ class WardrobeStore extends ChangeNotifier {
 
   List<String> foldersFor(String catKey) => knownFolders[catKey] ?? const [];
 
+  /// [foldersFor] in any wardrobe, not just the active one.
+  List<String> foldersIn(String wardrobeId, String catKey) => wardrobeId == activeWardrobeId
+      ? foldersFor(catKey)
+      : _stash[wardrobeId]?.knownFolders[catKey] ?? const [];
+
   /// `null` follows the system/device locale; otherwise an explicit locale
   /// code like `'cs'` or `'en'` picked in settings.
   String? localeCode;
@@ -976,6 +981,39 @@ class WardrobeStore extends ChangeNotifier {
       if (w.id == id) w.name = name;
     }
     wardrobes = [...wardrobes];
+    notifyListeners();
+    await _persist();
+  }
+
+  /// Moves an item from the active wardrobe into another one, photo and
+  /// details included, filed under [folder] there — or, by default, under
+  /// its current folder's name. Either way the folder is created in the
+  /// target category if missing. The pin doesn't come along: it belonged
+  /// to this wardrobe's outfit. Outfits saved here simply stop showing it (as with
+  /// a deleted item); its id is unchanged, so they pick it back up if it's
+  /// ever moved back.
+  Future<void> moveItemToWardrobe(String itemId, String targetWardrobeId, {String? folder}) async {
+    if (targetWardrobeId == activeWardrobeId || !wardrobes.any((w) => w.id == targetWardrobeId)) return;
+    final it = itemById(itemId);
+    if (it == null) return;
+
+    items = items.where((x) => x.id != itemId).toList();
+    layers = layers.where((id) => id != itemId).toList();
+    it.pinned = false;
+
+    final target = _stash[targetWardrobeId] ?? _WardrobeContent.empty();
+    final targetFolder = folder ?? it.folder ?? fallbackFolder;
+    it.folder = targetFolder;
+    target.items = [...target.items, it];
+    final folders = target.knownFolders[it.cat] ?? const [];
+    if (!folders.contains(targetFolder)) {
+      target.knownFolders = {
+        ...target.knownFolders,
+        it.cat: [...folders, targetFolder],
+      };
+    }
+    _stash[targetWardrobeId] = target;
+
     notifyListeners();
     await _persist();
   }

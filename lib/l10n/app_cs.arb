@@ -8,6 +8,7 @@
   "cancel": "Zrušit",
   "save": "Uložit",
   "done": "Hotovo",
+  "close": "Zavřít",
   "delete": "Smazat",
   "create": "Vytvořit",
   "add": "přidat",
@@ -86,7 +87,22 @@
   "useInOutfit": "Použít v outfitu",
   "deleteItemTitle": "Smazat oblečení?",
   "deleteItemMessage": "Oblečení bude smazáno.",
-  "moveToFolder": "přesunout do složky",
+  "moveTitle": "Přesunout",
+  "nothingToMoveTo": "Není kam přesunout — nejdřív založ další složku nebo šatník.",
+  "moveInThisWardrobe": "v tomto šatníku",
+  "moveInWardrobe": "v šatníku „{name}“",
+  "@moveInWardrobe": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "toastMovedToWardrobe": "Přesunuto do šatníku „{name}“ · složka {folder}",
+  "@toastMovedToWardrobe": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "folder": {"type": "String"}
+    }
+  },
   "wearWhereTitle": "Kam do outfitu?",
   "wearAsTop": "Top",
   "wearAsLayer": "Vrstva {n}",

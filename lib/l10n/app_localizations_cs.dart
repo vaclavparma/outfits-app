@@ -27,6 +27,9 @@ class AppLocalizationsCs extends AppLocalizations {
   String get done => 'Hotovo';
 
   @override
+  String get close => 'Zavřít';
+
+  @override
   String get delete => 'Smazat';
 
   @override
@@ -188,7 +191,24 @@ class AppLocalizationsCs extends AppLocalizations {
   String get deleteItemMessage => 'Oblečení bude smazáno.';
 
   @override
-  String get moveToFolder => 'přesunout do složky';
+  String get moveTitle => 'Přesunout';
+
+  @override
+  String get nothingToMoveTo =>
+      'Není kam přesunout — nejdřív založ další složku nebo šatník.';
+
+  @override
+  String get moveInThisWardrobe => 'v tomto šatníku';
+
+  @override
+  String moveInWardrobe(String name) {
+    return 'v šatníku „$name“';
+  }
+
+  @override
+  String toastMovedToWardrobe(String name, String folder) {
+    return 'Přesunuto do šatníku „$name“ · složka $folder';
+  }
 
   @override
   String get wearWhereTitle => 'Kam do outfitu?';

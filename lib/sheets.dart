@@ -19,8 +19,9 @@ const Map<WardrobeZone, String> _zoneDefaultCategory = {
 /// [title] is resolved inside the sheet's own builder (via [sheetContext]),
 /// not by the caller, so it stays correct if the locale changes while the
 /// sheet is open (e.g. switching language from the settings sheet itself).
-/// Sheets close via the standard swipe-down/tap-outside gestures — there's
-/// no explicit "close" link in the header.
+/// Besides swiping down / tapping outside, every sheet has a close button
+/// next to its title — the gestures alone weren't obvious enough, e.g. with
+/// one sheet stacked on top of another.
 Future<T?> _showSheet<T>(
   BuildContext context,
   String Function(BuildContext) title,
@@ -47,6 +48,9 @@ Future<T?> _showSheet<T>(
             maxHeight: MediaQuery.of(sheetContext).size.height * maxHeightFactor,
           ),
           child: Container(
+            // Full width even when the content is narrow (a few chips, a
+            // one-line message) — otherwise the sheet shrinks to fit it.
+            width: double.infinity,
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.only(
@@ -60,8 +64,14 @@ Future<T?> _showSheet<T>(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title(sheetContext), style: _sheetTitleStyle),
-                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(child: Text(title(sheetContext), style: _sheetTitleStyle)),
+                      const SizedBox(width: 8),
+                      const _SheetCloseButton(),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
                   content,
                 ],
               ),
@@ -71,6 +81,32 @@ Future<T?> _showSheet<T>(
       );
     },
   );
+}
+
+/// The "×" in a sheet header. Opaque 40×40 target, pulled right so the
+/// glyph lines up with the content's right edge.
+class _SheetCloseButton extends StatelessWidget {
+  const _SheetCloseButton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.translate(
+      offset: const Offset(10, 0),
+      child: Semantics(
+        button: true,
+        label: AppLocalizations.of(context)!.close,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => Navigator.of(context).pop(),
+          child: const SizedBox(
+            width: 40,
+            height: 40,
+            child: Icon(Icons.close, size: 22, color: AppColors.muted),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 final TextStyle _sheetTitleStyle = AppText.sans(
@@ -648,9 +684,6 @@ class _ItemDetailState extends State<_ItemDetail> {
     final itemId = widget.itemId;
     final cur = store.itemById(itemId);
     if (cur == null) return const SizedBox.shrink();
-    // The sheet is opened from inside the item's own folder, so only the
-    // *other* folders are offered — as move targets.
-    final otherFolders = store.foldersFor(cur.cat).where((f) => f != cur.folder).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -668,34 +701,6 @@ class _ItemDetailState extends State<_ItemDetail> {
           style: AppText.sans(size: 15, color: AppColors.ink),
         ),
         const SizedBox(height: 14),
-        if (otherFolders.isNotEmpty) ...[
-          Text(l10n.moveToFolder, style: _sectionLabelStyle),
-          const SizedBox(height: 5),
-          // One scrollable row rather than a wrapping block — with many
-          // folders a Wrap pushed the detail fields far down. Chips may
-          // scroll out under the sheet's side padding, up to its edge.
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            clipBehavior: Clip.none,
-            child: Row(
-              children: [
-                for (final (i, f) in otherFolders.indexed) ...[
-                  if (i > 0) const SizedBox(width: 7),
-                  SelectChip(
-                    label: f,
-                    active: false,
-                    onTap: () {
-                      store.setFolder(cur.id, f);
-                      // It just left the folder being viewed behind the sheet.
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-        ],
         _InfoField(
           label: l10n.sectionItemName,
           hint: l10n.itemNameHint,
@@ -738,11 +743,9 @@ class _ItemDetailState extends State<_ItemDetail> {
           onChanged: (v) => store.setItemInfo(itemId, note: v),
         ),
         const SizedBox(height: 4),
-        // Equal-width side actions with a wider "Done" between them.
         Row(
           children: [
             Expanded(
-              flex: 2,
               child: _DetailAction(
                 label: l10n.useInOutfit,
                 filled: true,
@@ -764,7 +767,6 @@ class _ItemDetailState extends State<_ItemDetail> {
             ),
             const SizedBox(width: 9),
             Expanded(
-              flex: 3,
               child: _DetailAction(
                 label: l10n.done,
                 textColor: AppColors.ink,
@@ -772,14 +774,20 @@ class _ItemDetailState extends State<_ItemDetail> {
               ),
             ),
             const SizedBox(width: 9),
-            Expanded(
-              flex: 2,
-              child: _DetailAction(
-                label: l10n.delete,
-                textColor: AppColors.muted,
-                bold: false,
-                onTap: () => _confirmDeleteItem(context, store, cur),
+            _DetailIconAction(
+              icon: Icons.drive_file_move_outline,
+              label: l10n.moveTitle,
+              onTap: () => _showSheet(
+                context,
+                (ctx) => AppLocalizations.of(ctx)!.moveTitle,
+                _MoveItem(itemId: itemId),
               ),
+            ),
+            const SizedBox(width: 9),
+            _DetailIconAction(
+              icon: Icons.delete_outline,
+              label: l10n.delete,
+              onTap: () => _confirmDeleteItem(context, store, cur),
             ),
           ],
         ),
@@ -981,6 +989,121 @@ class _WearTopChoices extends StatelessWidget {
   }
 }
 
+/// Where an item can be moved, grouped by wardrobe: the other folders of
+/// its category here, then each other wardrobe's folders for that category
+/// — plus the item's current folder name wherever it doesn't exist yet
+/// (created on move). One tap moves it; that takes it out of the folder
+/// being viewed, so both this sheet and the item sheet under it close.
+class _MoveItem extends StatelessWidget {
+  final String itemId;
+  const _MoveItem({required this.itemId});
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final cur = store.itemById(itemId);
+    if (cur == null) return const SizedBox.shrink();
+    // The item sheet is opened from inside the item's own folder, so only
+    // the *other* folders are offered here.
+    final otherFolders = store.foldersFor(cur.cat).where((f) => f != cur.folder).toList();
+    final otherWardrobes = store.wardrobes.where((w) => w.id != store.activeWardrobeId).toList();
+    final currentFolder = cur.folder ?? store.fallbackFolder;
+
+    void closeBoth() => Navigator.of(context)
+      ..pop()
+      ..pop();
+
+    if (otherFolders.isEmpty && otherWardrobes.isEmpty) {
+      return Text(
+        l10n.nothingToMoveTo,
+        style: AppText.sans(size: 12.5, color: AppColors.mutedTag, height: 1.4),
+      );
+    }
+
+    Widget section(String label, List<Widget> chips) => Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: _sectionLabelStyle),
+          const SizedBox(height: 8),
+          Wrap(spacing: 7, runSpacing: 7, children: chips),
+        ],
+      ),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (otherFolders.isNotEmpty)
+          section(l10n.moveInThisWardrobe, [
+            for (final f in otherFolders)
+              SelectChip(
+                label: f,
+                active: false,
+                onTap: () {
+                  store.setFolder(cur.id, f);
+                  closeBoth();
+                },
+              ),
+          ]),
+        for (final w in otherWardrobes)
+          section(l10n.moveInWardrobe(w.name), [
+            for (final f in [
+              ...store.foldersIn(w.id, cur.cat),
+              if (!store.foldersIn(w.id, cur.cat).contains(currentFolder)) currentFolder,
+            ])
+              SelectChip(
+                label: store.foldersIn(w.id, cur.cat).contains(f) ? f : '+ $f',
+                active: false,
+                onTap: () {
+                  store.moveItemToWardrobe(cur.id, w.id, folder: f);
+                  store.flash(l10n.toastMovedToWardrobe(w.name, f));
+                  closeBoth();
+                },
+              ),
+          ]),
+      ],
+    );
+  }
+}
+
+/// Round outlined icon-only button in the item detail's action row, the
+/// same height as the pill buttons next to it.
+class _DetailIconAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _DetailIconAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.cardBorder),
+          ),
+          alignment: Alignment.center,
+          child: Icon(icon, size: 20, color: AppColors.muted),
+        ),
+      ),
+    );
+  }
+}
+
 /// A pill button in the item detail's action row — filled accent, or
 /// outlined. A label too long for its share of the row wraps onto a second
 /// line rather than shrinking (scaling "Použít v outfitu" down to fit got
@@ -990,14 +1113,12 @@ class _DetailAction extends StatelessWidget {
   final VoidCallback onTap;
   final Color textColor;
   final bool filled;
-  final bool bold;
 
   const _DetailAction({
     required this.label,
     required this.onTap,
     required this.textColor,
     this.filled = false,
-    this.bold = true,
   });
 
   @override
@@ -1021,7 +1142,7 @@ class _DetailAction extends StatelessWidget {
           style: AppText.sans(
             size: 13,
             height: 1.15,
-            weight: bold ? FontWeight.w500 : FontWeight.w400,
+            weight: FontWeight.w500,
             color: textColor,
           ),
         ),

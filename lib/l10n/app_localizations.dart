@@ -134,6 +134,12 @@ abstract class AppLocalizations {
   /// **'Hotovo'**
   String get done;
 
+  /// No description provided for @close.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zavřít'**
+  String get close;
+
   /// No description provided for @delete.
   ///
   /// In cs, this message translates to:
@@ -392,11 +398,35 @@ abstract class AppLocalizations {
   /// **'Oblečení bude smazáno.'**
   String get deleteItemMessage;
 
-  /// No description provided for @moveToFolder.
+  /// No description provided for @moveTitle.
   ///
   /// In cs, this message translates to:
-  /// **'přesunout do složky'**
-  String get moveToFolder;
+  /// **'Přesunout'**
+  String get moveTitle;
+
+  /// No description provided for @nothingToMoveTo.
+  ///
+  /// In cs, this message translates to:
+  /// **'Není kam přesunout — nejdřív založ další složku nebo šatník.'**
+  String get nothingToMoveTo;
+
+  /// No description provided for @moveInThisWardrobe.
+  ///
+  /// In cs, this message translates to:
+  /// **'v tomto šatníku'**
+  String get moveInThisWardrobe;
+
+  /// No description provided for @moveInWardrobe.
+  ///
+  /// In cs, this message translates to:
+  /// **'v šatníku „{name}“'**
+  String moveInWardrobe(String name);
+
+  /// No description provided for @toastMovedToWardrobe.
+  ///
+  /// In cs, this message translates to:
+  /// **'Přesunuto do šatníku „{name}“ · složka {folder}'**
+  String toastMovedToWardrobe(String name, String folder);
 
   /// No description provided for @wearWhereTitle.
   ///

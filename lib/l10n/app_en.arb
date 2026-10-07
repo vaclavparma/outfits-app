@@ -8,6 +8,7 @@
   "cancel": "Cancel",
   "save": "Save",
   "done": "Done",
+  "close": "Close",
   "delete": "Delete",
   "create": "Create",
   "add": "add",
@@ -86,7 +87,22 @@
   "useInOutfit": "Use in outfit",
   "deleteItemTitle": "Delete this item?",
   "deleteItemMessage": "This item will be deleted.",
-  "moveToFolder": "move to folder",
+  "moveTitle": "Move",
+  "nothingToMoveTo": "Nowhere to move it yet — create another folder or wardrobe first.",
+  "moveInThisWardrobe": "in this wardrobe",
+  "moveInWardrobe": "in “{name}”",
+  "@moveInWardrobe": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "toastMovedToWardrobe": "Moved to the “{name}” wardrobe · {folder}",
+  "@toastMovedToWardrobe": {
+    "placeholders": {
+      "name": {"type": "String"},
+      "folder": {"type": "String"}
+    }
+  },
   "wearWhereTitle": "Where in the outfit?",
   "wearAsTop": "Top",
   "wearAsLayer": "Layer {n}",

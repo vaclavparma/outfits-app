@@ -27,6 +27,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get done => 'Done';
 
   @override
+  String get close => 'Close';
+
+  @override
   String get delete => 'Delete';
 
   @override
@@ -185,7 +188,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteItemMessage => 'This item will be deleted.';
 
   @override
-  String get moveToFolder => 'move to folder';
+  String get moveTitle => 'Move';
+
+  @override
+  String get nothingToMoveTo =>
+      'Nowhere to move it yet — create another folder or wardrobe first.';
+
+  @override
+  String get moveInThisWardrobe => 'in this wardrobe';
+
+  @override
+  String moveInWardrobe(String name) {
+    return 'in “$name”';
+  }
+
+  @override
+  String toastMovedToWardrobe(String name, String folder) {
+    return 'Moved to the “$name” wardrobe · $folder';
+  }
 
   @override
   String get wearWhereTitle => 'Where in the outfit?';
