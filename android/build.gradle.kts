@@ -24,5 +24,5 @@ tasks.register<Delete>("clean") {
 }
 
 plugins {
-    id("com.github.triplet.play") version "3.10.1" apply false
+    id("com.github.triplet.play") version "4.1.1" apply false
 }
