@@ -47,6 +47,7 @@ flutter build appbundle --release
 # 5. Upload to Google Play Store
 echo "🚀 Uploading to Google Play Store..."
 (cd android && ./gradlew publishReleaseBundle)
+echo "✅ Success! Build ${VERSION_NAME}+${NEW_BUILD} uploaded to Google Play Store."
 
 # 6. Check for ExportOptions.plist existence
 if [ ! -f "$PLIST_PATH" ]; then
