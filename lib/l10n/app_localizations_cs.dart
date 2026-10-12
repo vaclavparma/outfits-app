@@ -42,22 +42,10 @@ class AppLocalizationsCs extends AppLocalizations {
   String get actionCannotBeUndone => 'Tuto akci nelze vrátit.';
 
   @override
-  String get noFolder => 'bez složky';
-
-  @override
   String get rename => 'Přejmenovat';
 
   @override
   String get unsortedName => 'Nezařazené';
-
-  @override
-  String get addTopPlaceholder => 'Přidej top';
-
-  @override
-  String get addBottomPlaceholder => 'Přidej spodek';
-
-  @override
-  String get addShoesPlaceholder => 'Přidej boty';
 
   @override
   String get shuffleButton => 'Zamíchat';
@@ -76,6 +64,15 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get categoryBoty => 'Boty';
+
+  @override
+  String get defaultTypesTop => 'Trička, Košile, Mikiny, Svetry';
+
+  @override
+  String get defaultTypesBottom => 'Kalhoty, Džíny, Sukně, Kraťasy';
+
+  @override
+  String get defaultTypesShoes => 'Tenisky, Polobotky, Sandály';
 
   @override
   String itemCount(int count) {
@@ -134,43 +131,7 @@ class AppLocalizationsCs extends AppLocalizations {
   }
 
   @override
-  String get pickTopTitle => 'Vyber top nebo šaty';
-
-  @override
-  String get pickBottomTitle => 'Vyber spodek';
-
-  @override
-  String get pickShoesTitle => 'Vyber boty';
-
-  @override
-  String get addLayerTitle => 'Přidat vrstvu';
-
-  @override
-  String get changeLayerTitle => 'Vyměnit vrstvu';
-
-  @override
-  String layerLimitMessage(int max) {
-    String _temp0 = intl.Intl.pluralLogic(
-      max,
-      locale: localeName,
-      other: 'Můžeš mít nejvýš $max vrstev navíc.',
-      few: 'Můžeš mít nejvýš $max vrstvy navíc.',
-      one: 'Můžeš mít nejvýš $max vrstvu navíc.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get noMoreLayers => 'Žádné další vrstvy k přidání.';
-
-  @override
   String get addItemTitle => 'Přidat oblečení';
-
-  @override
-  String get sectionCategory => 'kategorie';
-
-  @override
-  String get sectionFolder => 'složka';
 
   @override
   String get takePhoto => 'Vyfotit';
@@ -194,35 +155,12 @@ class AppLocalizationsCs extends AppLocalizations {
   String get moveTitle => 'Přesunout';
 
   @override
-  String get nothingToMoveTo =>
-      'Není kam přesunout — nejdřív založ další složku nebo šatník.';
-
-  @override
-  String get moveInThisWardrobe => 'v tomto šatníku';
-
-  @override
-  String moveInWardrobe(String name) {
-    return 'v šatníku „$name“';
-  }
-
-  @override
-  String toastMovedToWardrobe(String name, String folder) {
-    return 'Přesunuto do šatníku „$name“ · složka $folder';
+  String toastMovedToWardrobe(String name) {
+    return 'Přesunuto do šatníku „$name“';
   }
 
   @override
   String get wearWhereTitle => 'Kam do outfitu?';
-
-  @override
-  String get wearAsTop => 'Top';
-
-  @override
-  String wearAsLayer(int n) {
-    return 'Vrstva $n';
-  }
-
-  @override
-  String get wearAsNewLayer => 'Nová vrstva';
 
   @override
   String get wornHere => 'teď tady';
@@ -271,26 +209,6 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get sectionCollection => 'kolekce';
-
-  @override
-  String get newFolderTile => 'nová složka';
-
-  @override
-  String get newFolderDialogTitle => 'Nová složka';
-
-  @override
-  String get newFolderHint => 'např. Košile';
-
-  @override
-  String get renameFolderTitle => 'Přejmenovat složku';
-
-  @override
-  String get deleteFolderTitle => 'Smazat složku?';
-
-  @override
-  String deleteFolderMessage(String folder) {
-    return 'Složka „$folder“ bude smazána. Oblečení v ní se přesune do složky „Nezařazené“.';
-  }
 
   @override
   String toastSavedWithPhoto(String category) {
@@ -365,16 +283,6 @@ class AppLocalizationsCs extends AppLocalizations {
   String get themeDark => 'Tmavý';
 
   @override
-  String get sectionOther => 'ostatní';
-
-  @override
-  String get showDressesLabel => 'Zobrazovat šaty v šatníku';
-
-  @override
-  String get showDressesHint =>
-      'Skryje kategorii šatů v šatníku a při přidávání oblečení. Šaty, které už máš v šatníku, zůstanou beze změny.';
-
-  @override
   String get onboardingTitle => 'Vítej v Šatníku';
 
   @override
@@ -430,4 +338,101 @@ class AppLocalizationsCs extends AppLocalizations {
   String colorSlot(int n) {
     return 'Barva $n';
   }
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get sectionKinds => 'druhy a typy';
+
+  @override
+  String get addTypeChip => 'typ';
+
+  @override
+  String get newKind => 'Vlastní druh';
+
+  @override
+  String get newKindHint => 'např. Čepice';
+
+  @override
+  String get renameKindTitle => 'Přejmenovat druh';
+
+  @override
+  String get deleteKindTitle => 'Smazat druh?';
+
+  @override
+  String deleteKindMessage(String name) {
+    return 'Druh „$name“ i s jeho typy bude smazán.';
+  }
+
+  @override
+  String get kindNotEmptyTitle => 'Druh není prázdný';
+
+  @override
+  String kindNotEmptyMessage(String name, String items) {
+    return 'V druhu „$name“ je ještě $items (počítají se všechny šatníky). Nejdřív je přesuň do jiného druhu nebo smaž.';
+  }
+
+  @override
+  String get newTypeTitle => 'Nový typ';
+
+  @override
+  String get newTypeHint => 'např. Košile';
+
+  @override
+  String get renameTypeTitle => 'Přejmenovat typ';
+
+  @override
+  String get deleteTypeTitle => 'Smazat typ?';
+
+  @override
+  String get kindsHint =>
+      'Druhy jsou karty na hlavní stránce, typy třídí oblečení uvnitř druhu. Pořadí změníš přetažením za úchyt.';
+
+  @override
+  String get sectionKind => 'druh';
+
+  @override
+  String get sectionType => 'typ';
+
+  @override
+  String get sectionWardrobe => 'šatník';
+
+  @override
+  String wearOnCard(String kind, int n) {
+    return '$kind $n';
+  }
+
+  @override
+  String get wearNewCard => 'Nová karta';
+
+  @override
+  String get all => 'Vše';
+
+  @override
+  String get addClothes => 'Přidat';
+
+  @override
+  String get canvasEmpty =>
+      'Na plátně zatím nic není.\nPřidej karty tlačítky dole — podržením je pak přesuneš, dvěma prsty změníš velikost.';
+
+  @override
+  String get otherTypeName => 'Ostatní';
+
+  @override
+  String get defaultTypesDress => 'Letní, Společenské';
+
+  @override
+  String deleteTypeMoveMessage(String name, String items) {
+    return 'V typu „$name“ je $items. Kam je přesunout?';
+  }
+
+  @override
+  String get dropToRemove => 'Pusť sem pro odebrání';
+
+  @override
+  String get reorder => 'Změnit pořadí';
+
+  @override
+  String get newTypeTile => 'nový typ';
 }

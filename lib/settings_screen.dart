@@ -19,7 +19,8 @@ void openSettingsScreen(BuildContext context) {
   Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
 }
 
-/// The app card (version, links), the wardrobes, and the app-wide options.
+/// The app card (version, links), the wardrobes, the kinds and types of
+/// clothing, and the app-wide options.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -58,6 +59,17 @@ class SettingsScreen extends StatelessWidget {
                     SettingsSectionLabel(l10n.sectionWardrobes, uppercase: true),
                     const SizedBox(height: 8),
                     const _WardrobesCard(),
+                    const SizedBox(height: 22),
+                    SettingsSectionLabel(l10n.sectionKinds, uppercase: true),
+                    const SizedBox(height: 8),
+                    const _KindsCard(),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+                      child: Text(
+                        l10n.kindsHint,
+                        style: AppText.sans(size: 11.5, color: AppColors.mutedTag, height: 1.4),
+                      ),
+                    ),
                     const SizedBox(height: 22),
                     const SettingsContent(uppercaseLabels: true),
                   ],
@@ -347,4 +359,336 @@ class _RowIcon extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Every kind of clothing, in the order the wardrobe shows them: drag the
+/// handle to reorder, pencil/bin to rename/delete, tap to see its types.
+class _KindsCard extends StatefulWidget {
+  const _KindsCard();
+
+  @override
+  State<_KindsCard> createState() => _KindsCardState();
+}
+
+class _KindsCardState extends State<_KindsCard> {
+  final Set<String> _expanded = {};
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final kinds = store.kinds;
+    return SettingsCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            proxyDecorator: _liftedRow,
+            itemCount: kinds.length,
+            onReorderItem: store.reorderKinds,
+            itemBuilder: (context, i) {
+              final k = kinds[i];
+              return _KindRow(
+                key: ValueKey(k.id),
+                index: i,
+                kind: k,
+                expanded: _expanded.contains(k.id),
+                onToggleExpanded: () => setState(() {
+                  if (!_expanded.remove(k.id)) _expanded.add(k.id);
+                }),
+              );
+            },
+          ),
+          Semantics(
+            button: true,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _add(context, store),
+              child: Padding(
+                padding: const EdgeInsets.only(left: 44),
+                child: SizedBox(
+                  height: 56,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('+ ${l10n.newKind}', style: AppText.sans(size: 15, color: AppColors.accent)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _add(BuildContext context, WardrobeStore store) async {
+    final l10n = AppLocalizations.of(context)!;
+    final name = await promptTextDialog(
+      context,
+      title: l10n.newKind,
+      initialValue: '',
+      hintText: l10n.newKindHint,
+      confirmLabel: l10n.create,
+    );
+    if (name == null) return;
+    final kind = store.addKind(name);
+    // Straight to its types.
+    if (kind != null) setState(() => _expanded.add(kind.id));
+  }
+}
+
+/// A row being dragged to a new place: lifted off the card.
+Widget _liftedRow(Widget child, int index, Animation<double> animation) => AnimatedBuilder(
+  animation: animation,
+  builder: (context, child) => Material(
+    color: AppColors.surface,
+    elevation: 6 * animation.value,
+    shadowColor: const Color(0x33000000),
+    borderRadius: BorderRadius.circular(12),
+    child: child,
+  ),
+  child: child,
+);
+
+/// The grip a row is dragged by.
+class _DragHandle extends StatelessWidget {
+  final int index;
+  final double width;
+  const _DragHandle({required this.index, this.width = 44});
+
+  @override
+  Widget build(BuildContext context) {
+    return ReorderableDragStartListener(
+      index: index,
+      child: Semantics(
+        label: AppLocalizations.of(context)!.reorder,
+        child: SizedBox(
+          width: width,
+          height: 48,
+          child: Icon(Icons.drag_indicator, size: 20, color: AppColors.mutedSoft),
+        ),
+      ),
+    );
+  }
+}
+
+class _KindRow extends StatelessWidget {
+  final int index;
+  final ClothingKind kind;
+  final bool expanded;
+  final VoidCallback onToggleExpanded;
+
+  const _KindRow({
+    super.key,
+    required this.index,
+    required this.kind,
+    required this.expanded,
+    required this.onToggleExpanded,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.read<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          button: true,
+          expanded: expanded,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: onToggleExpanded,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(0, 6, 6, 6),
+              child: Row(
+                children: [
+                  _DragHandle(index: index),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          kind.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.sans(size: 16, color: AppColors.ink),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          kind.types.map((t) => t.name).join(', '),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.sans(size: 12, color: AppColors.mutedTag),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  _RowIcon(icon: Icons.edit_outlined, label: l10n.rename, onTap: () => _rename(context, store)),
+                  _RowIcon(icon: Icons.delete_outline, label: l10n.delete, onTap: () => _delete(context, store)),
+                  AnimatedRotation(
+                    turns: expanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 180),
+                    child: SizedBox(
+                      width: 34,
+                      child: Icon(Icons.keyboard_arrow_down, size: 22, color: AppColors.mutedSoft),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          alignment: Alignment.topCenter,
+          child: expanded ? _TypeList(kind: kind) : const SizedBox(width: double.infinity),
+        ),
+        Divider(height: 1, thickness: 1, color: AppColors.rowBorder),
+      ],
+    );
+  }
+
+  Future<void> _rename(BuildContext context, WardrobeStore store) async {
+    final l10n = AppLocalizations.of(context)!;
+    final name = await promptTextDialog(
+      context,
+      title: l10n.renameKindTitle,
+      initialValue: kind.name,
+      confirmLabel: l10n.save,
+    );
+    if (name != null) store.renameKind(kind.id, name);
+  }
+
+  Future<void> _delete(BuildContext context, WardrobeStore store) async {
+    final l10n = AppLocalizations.of(context)!;
+    final count = store.kindItemCount(kind.id);
+    if (count > 0) {
+      await infoDialog(
+        context,
+        title: l10n.kindNotEmptyTitle,
+        message: l10n.kindNotEmptyMessage(kind.name, l10n.itemCount(count)),
+      );
+      return;
+    }
+    final confirmed = await confirmDialog(
+      context,
+      title: l10n.deleteKindTitle,
+      message: l10n.deleteKindMessage(kind.name),
+      confirmLabel: l10n.delete,
+    );
+    if (confirmed) store.deleteKind(kind.id);
+  }
+}
+
+/// An expanded kind's types: reorderable rows with their item counts,
+/// rename and delete, and a row to add one.
+class _TypeList extends StatelessWidget {
+  final ClothingKind kind;
+  const _TypeList({required this.kind});
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final types = kind.types;
+    return Container(
+      color: AppColors.background.withValues(alpha: 0.6),
+      padding: const EdgeInsets.only(left: 32, bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            proxyDecorator: _liftedRow,
+            itemCount: types.length,
+            onReorderItem: (from, to) => store.reorderTypes(kind.id, from, to),
+            itemBuilder: (context, i) {
+              final t = types[i];
+              return Padding(
+                key: ValueKey(t.id),
+                padding: const EdgeInsets.only(right: 40),
+                child: Row(
+                  children: [
+                    _DragHandle(index: i, width: 40),
+                    Expanded(
+                      child: Text(
+                        t.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.sans(size: 14.5, color: AppColors.ink),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      l10n.itemCount(store.typeItemCount(kind.id, t.id)),
+                      style: AppText.mono(size: 9.5, letterSpacing: 0.4, color: AppColors.mutedTag),
+                    ),
+                    const SizedBox(width: 10),
+                    _RowIcon(icon: Icons.edit_outlined, label: l10n.rename, onTap: () => _rename(context, store, t)),
+                    // Greyed out for the last type: every item needs one.
+                    _RowIcon(
+                      icon: Icons.delete_outline,
+                      label: l10n.delete,
+                      onTap: types.length > 1 ? () => _delete(context, store, t) : null,
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          Semantics(
+            button: true,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _add(context, store),
+              child: Padding(
+                padding: const EdgeInsets.only(left: 40),
+                child: SizedBox(
+                  height: 44,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('+ ${l10n.newTypeTitle}', style: AppText.sans(size: 14, color: AppColors.accent)),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _add(BuildContext context, WardrobeStore store) async {
+    final l10n = AppLocalizations.of(context)!;
+    final name = await promptTextDialog(
+      context,
+      title: l10n.newTypeTitle,
+      initialValue: '',
+      hintText: l10n.newTypeHint,
+      confirmLabel: l10n.create,
+    );
+    if (name != null) store.addType(kind.id, name);
+  }
+
+  Future<void> _rename(BuildContext context, WardrobeStore store, ClothingType t) async {
+    final l10n = AppLocalizations.of(context)!;
+    final name = await promptTextDialog(
+      context,
+      title: l10n.renameTypeTitle,
+      initialValue: t.name,
+      confirmLabel: l10n.save,
+    );
+    if (name != null) store.renameType(kind.id, t.id, name);
+  }
+
+  Future<void> _delete(BuildContext context, WardrobeStore store, ClothingType t) =>
+      deleteTypeAskingWhereTo(context, kind, t);
 }

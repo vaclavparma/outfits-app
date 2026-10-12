@@ -8,9 +8,8 @@ import 'wardrobe_store.dart';
 import 'widgets.dart';
 
 /// One-time screen shown before [HomeScreen] until [WardrobeStore.completeOnboarding]
-/// is called — lets the user name their wardrobe, pick a language and
-/// whether they want to see the "šaty" (dresses) category, reusing the exact
-/// same controls as the settings sheet for the latter two.
+/// is called — lets the user name their wardrobe and pick the appearance and
+/// language, reusing the exact same controls as settings for the latter.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 

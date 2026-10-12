@@ -22,6 +22,7 @@ class AppPalette {
   final Color emptyStateBorder;
   final Color accent;
   final Color accentDark;
+  final Color danger;
 
   const AppPalette({
     required this.background,
@@ -44,6 +45,7 @@ class AppPalette {
     required this.emptyStateBorder,
     required this.accent,
     required this.accentDark,
+    required this.danger,
   });
 
   /// Design tokens lifted from the Šatník mockup (Satnik.dc.html).
@@ -68,6 +70,7 @@ class AppPalette {
     emptyStateBorder: Color(0xFFE2E0DC),
     accent: Color(0xFF006D77),
     accentDark: Color(0xFF004852),
+    danger: Color(0xFFD64541),
   );
 
   /// The same warm greys, inverted: near-black surfaces with light ink. The
@@ -94,6 +97,7 @@ class AppPalette {
     emptyStateBorder: Color(0xFF3A3835),
     accent: Color(0xFF177E88),
     accentDark: Color(0xFF0E5C64),
+    danger: Color(0xFFC9403C),
   );
 }
 
@@ -132,6 +136,9 @@ class AppColors {
   /// Teal accent for primary actions and links.
   static Color get accent => current.accent;
   static Color get accentDark => current.accentDark;
+
+  /// Red for destructive actions; white text on it.
+  static Color get danger => current.danger;
 }
 
 class AppText {

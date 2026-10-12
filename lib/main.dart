@@ -66,7 +66,7 @@ class SatnikApp extends StatelessWidget {
 }
 
 /// Swaps [AppColors.current] and, if that changed anything, rebuilds every
-/// widget below [context] in place — state (open folders, scroll positions,
+/// widget below [context] in place — state (open screens, scroll positions,
 /// half-typed text) is kept; widgets just re-read their colors. Most don't
 /// depend on Theme, so nothing else would tell them to.
 ///

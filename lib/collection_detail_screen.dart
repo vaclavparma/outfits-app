@@ -212,10 +212,6 @@ class _OutfitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
-    final items = outfit.itemIds
-        .map(store.itemById)
-        .whereType<ClothingItem>()
-        .toList();
     return GestureDetector(
       // Switches to the outfit tab; this collection stays open in its own
       // tab, for when you come back.
@@ -230,7 +226,9 @@ class _OutfitCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(child: OutfitCollage(items: items)),
+            Expanded(
+              child: OutfitPreview(slots: outfit.slots, itemById: store.itemById),
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(10, 8, 4, 8),
               child: Row(
@@ -248,9 +246,7 @@ class _OutfitCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          outfit.catKeys
-                              .map((k) => shortCategoryLabel(context, k))
-                              .join(' · '),
+                          outfit.catKeys.map(store.kindName).join(' · '),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppText.mono(

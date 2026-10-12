@@ -164,12 +164,6 @@ abstract class AppLocalizations {
   /// **'Tuto akci nelze vrátit.'**
   String get actionCannotBeUndone;
 
-  /// No description provided for @noFolder.
-  ///
-  /// In cs, this message translates to:
-  /// **'bez složky'**
-  String get noFolder;
-
   /// No description provided for @rename.
   ///
   /// In cs, this message translates to:
@@ -181,24 +175,6 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Nezařazené'**
   String get unsortedName;
-
-  /// No description provided for @addTopPlaceholder.
-  ///
-  /// In cs, this message translates to:
-  /// **'Přidej top'**
-  String get addTopPlaceholder;
-
-  /// No description provided for @addBottomPlaceholder.
-  ///
-  /// In cs, this message translates to:
-  /// **'Přidej spodek'**
-  String get addBottomPlaceholder;
-
-  /// No description provided for @addShoesPlaceholder.
-  ///
-  /// In cs, this message translates to:
-  /// **'Přidej boty'**
-  String get addShoesPlaceholder;
 
   /// No description provided for @shuffleButton.
   ///
@@ -235,6 +211,24 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Boty'**
   String get categoryBoty;
+
+  /// Comma-separated types a fresh install starts with under tops.
+  ///
+  /// In cs, this message translates to:
+  /// **'Trička, Košile, Mikiny, Svetry'**
+  String get defaultTypesTop;
+
+  /// No description provided for @defaultTypesBottom.
+  ///
+  /// In cs, this message translates to:
+  /// **'Kalhoty, Džíny, Sukně, Kraťasy'**
+  String get defaultTypesBottom;
+
+  /// No description provided for @defaultTypesShoes.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tenisky, Polobotky, Sandály'**
+  String get defaultTypesShoes;
 
   /// No description provided for @itemCount.
   ///
@@ -302,65 +296,11 @@ abstract class AppLocalizations {
   /// **'„{name}“ bude smazán.'**
   String deleteOutfitMessage(String name);
 
-  /// No description provided for @pickTopTitle.
-  ///
-  /// In cs, this message translates to:
-  /// **'Vyber top nebo šaty'**
-  String get pickTopTitle;
-
-  /// No description provided for @pickBottomTitle.
-  ///
-  /// In cs, this message translates to:
-  /// **'Vyber spodek'**
-  String get pickBottomTitle;
-
-  /// No description provided for @pickShoesTitle.
-  ///
-  /// In cs, this message translates to:
-  /// **'Vyber boty'**
-  String get pickShoesTitle;
-
-  /// No description provided for @addLayerTitle.
-  ///
-  /// In cs, this message translates to:
-  /// **'Přidat vrstvu'**
-  String get addLayerTitle;
-
-  /// No description provided for @changeLayerTitle.
-  ///
-  /// In cs, this message translates to:
-  /// **'Vyměnit vrstvu'**
-  String get changeLayerTitle;
-
-  /// No description provided for @layerLimitMessage.
-  ///
-  /// In cs, this message translates to:
-  /// **'{max, plural, one{Můžeš mít nejvýš {max} vrstvu navíc.} few{Můžeš mít nejvýš {max} vrstvy navíc.} other{Můžeš mít nejvýš {max} vrstev navíc.}}'**
-  String layerLimitMessage(int max);
-
-  /// No description provided for @noMoreLayers.
-  ///
-  /// In cs, this message translates to:
-  /// **'Žádné další vrstvy k přidání.'**
-  String get noMoreLayers;
-
   /// No description provided for @addItemTitle.
   ///
   /// In cs, this message translates to:
   /// **'Přidat oblečení'**
   String get addItemTitle;
-
-  /// No description provided for @sectionCategory.
-  ///
-  /// In cs, this message translates to:
-  /// **'kategorie'**
-  String get sectionCategory;
-
-  /// No description provided for @sectionFolder.
-  ///
-  /// In cs, this message translates to:
-  /// **'složka'**
-  String get sectionFolder;
 
   /// No description provided for @takePhoto.
   ///
@@ -404,53 +344,17 @@ abstract class AppLocalizations {
   /// **'Přesunout'**
   String get moveTitle;
 
-  /// No description provided for @nothingToMoveTo.
-  ///
-  /// In cs, this message translates to:
-  /// **'Není kam přesunout — nejdřív založ další složku nebo šatník.'**
-  String get nothingToMoveTo;
-
-  /// No description provided for @moveInThisWardrobe.
-  ///
-  /// In cs, this message translates to:
-  /// **'v tomto šatníku'**
-  String get moveInThisWardrobe;
-
-  /// No description provided for @moveInWardrobe.
-  ///
-  /// In cs, this message translates to:
-  /// **'v šatníku „{name}“'**
-  String moveInWardrobe(String name);
-
   /// No description provided for @toastMovedToWardrobe.
   ///
   /// In cs, this message translates to:
-  /// **'Přesunuto do šatníku „{name}“ · složka {folder}'**
-  String toastMovedToWardrobe(String name, String folder);
+  /// **'Přesunuto do šatníku „{name}“'**
+  String toastMovedToWardrobe(String name);
 
   /// No description provided for @wearWhereTitle.
   ///
   /// In cs, this message translates to:
   /// **'Kam do outfitu?'**
   String get wearWhereTitle;
-
-  /// No description provided for @wearAsTop.
-  ///
-  /// In cs, this message translates to:
-  /// **'Top'**
-  String get wearAsTop;
-
-  /// No description provided for @wearAsLayer.
-  ///
-  /// In cs, this message translates to:
-  /// **'Vrstva {n}'**
-  String wearAsLayer(int n);
-
-  /// No description provided for @wearAsNewLayer.
-  ///
-  /// In cs, this message translates to:
-  /// **'Nová vrstva'**
-  String get wearAsNewLayer;
 
   /// No description provided for @wornHere.
   ///
@@ -547,42 +451,6 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'kolekce'**
   String get sectionCollection;
-
-  /// No description provided for @newFolderTile.
-  ///
-  /// In cs, this message translates to:
-  /// **'nová složka'**
-  String get newFolderTile;
-
-  /// No description provided for @newFolderDialogTitle.
-  ///
-  /// In cs, this message translates to:
-  /// **'Nová složka'**
-  String get newFolderDialogTitle;
-
-  /// No description provided for @newFolderHint.
-  ///
-  /// In cs, this message translates to:
-  /// **'např. Košile'**
-  String get newFolderHint;
-
-  /// No description provided for @renameFolderTitle.
-  ///
-  /// In cs, this message translates to:
-  /// **'Přejmenovat složku'**
-  String get renameFolderTitle;
-
-  /// No description provided for @deleteFolderTitle.
-  ///
-  /// In cs, this message translates to:
-  /// **'Smazat složku?'**
-  String get deleteFolderTitle;
-
-  /// No description provided for @deleteFolderMessage.
-  ///
-  /// In cs, this message translates to:
-  /// **'Složka „{folder}“ bude smazána. Oblečení v ní se přesune do složky „Nezařazené“.'**
-  String deleteFolderMessage(String folder);
 
   /// No description provided for @toastSavedWithPhoto.
   ///
@@ -686,24 +554,6 @@ abstract class AppLocalizations {
   /// **'Tmavý'**
   String get themeDark;
 
-  /// No description provided for @sectionOther.
-  ///
-  /// In cs, this message translates to:
-  /// **'ostatní'**
-  String get sectionOther;
-
-  /// No description provided for @showDressesLabel.
-  ///
-  /// In cs, this message translates to:
-  /// **'Zobrazovat šaty v šatníku'**
-  String get showDressesLabel;
-
-  /// No description provided for @showDressesHint.
-  ///
-  /// In cs, this message translates to:
-  /// **'Skryje kategorii šatů v šatníku a při přidávání oblečení. Šaty, které už máš v šatníku, zůstanou beze změny.'**
-  String get showDressesHint;
-
   /// No description provided for @onboardingTitle.
   ///
   /// In cs, this message translates to:
@@ -805,6 +655,180 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Barva {n}'**
   String colorSlot(int n);
+
+  /// No description provided for @ok.
+  ///
+  /// In cs, this message translates to:
+  /// **'OK'**
+  String get ok;
+
+  /// No description provided for @sectionKinds.
+  ///
+  /// In cs, this message translates to:
+  /// **'druhy a typy'**
+  String get sectionKinds;
+
+  /// No description provided for @addTypeChip.
+  ///
+  /// In cs, this message translates to:
+  /// **'typ'**
+  String get addTypeChip;
+
+  /// No description provided for @newKind.
+  ///
+  /// In cs, this message translates to:
+  /// **'Vlastní druh'**
+  String get newKind;
+
+  /// No description provided for @newKindHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'např. Čepice'**
+  String get newKindHint;
+
+  /// No description provided for @renameKindTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Přejmenovat druh'**
+  String get renameKindTitle;
+
+  /// No description provided for @deleteKindTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Smazat druh?'**
+  String get deleteKindTitle;
+
+  /// No description provided for @deleteKindMessage.
+  ///
+  /// In cs, this message translates to:
+  /// **'Druh „{name}“ i s jeho typy bude smazán.'**
+  String deleteKindMessage(String name);
+
+  /// No description provided for @kindNotEmptyTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Druh není prázdný'**
+  String get kindNotEmptyTitle;
+
+  /// No description provided for @kindNotEmptyMessage.
+  ///
+  /// In cs, this message translates to:
+  /// **'V druhu „{name}“ je ještě {items} (počítají se všechny šatníky). Nejdřív je přesuň do jiného druhu nebo smaž.'**
+  String kindNotEmptyMessage(String name, String items);
+
+  /// No description provided for @newTypeTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nový typ'**
+  String get newTypeTitle;
+
+  /// No description provided for @newTypeHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'např. Košile'**
+  String get newTypeHint;
+
+  /// No description provided for @renameTypeTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Přejmenovat typ'**
+  String get renameTypeTitle;
+
+  /// No description provided for @deleteTypeTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Smazat typ?'**
+  String get deleteTypeTitle;
+
+  /// No description provided for @kindsHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'Druhy jsou karty na hlavní stránce, typy třídí oblečení uvnitř druhu. Pořadí změníš přetažením za úchyt.'**
+  String get kindsHint;
+
+  /// No description provided for @sectionKind.
+  ///
+  /// In cs, this message translates to:
+  /// **'druh'**
+  String get sectionKind;
+
+  /// No description provided for @sectionType.
+  ///
+  /// In cs, this message translates to:
+  /// **'typ'**
+  String get sectionType;
+
+  /// No description provided for @sectionWardrobe.
+  ///
+  /// In cs, this message translates to:
+  /// **'šatník'**
+  String get sectionWardrobe;
+
+  /// No description provided for @wearOnCard.
+  ///
+  /// In cs, this message translates to:
+  /// **'{kind} {n}'**
+  String wearOnCard(String kind, int n);
+
+  /// No description provided for @wearNewCard.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nová karta'**
+  String get wearNewCard;
+
+  /// No description provided for @all.
+  ///
+  /// In cs, this message translates to:
+  /// **'Vše'**
+  String get all;
+
+  /// No description provided for @addClothes.
+  ///
+  /// In cs, this message translates to:
+  /// **'Přidat'**
+  String get addClothes;
+
+  /// No description provided for @canvasEmpty.
+  ///
+  /// In cs, this message translates to:
+  /// **'Na plátně zatím nic není.\nPřidej karty tlačítky dole — podržením je pak přesuneš, dvěma prsty změníš velikost.'**
+  String get canvasEmpty;
+
+  /// No description provided for @otherTypeName.
+  ///
+  /// In cs, this message translates to:
+  /// **'Ostatní'**
+  String get otherTypeName;
+
+  /// No description provided for @defaultTypesDress.
+  ///
+  /// In cs, this message translates to:
+  /// **'Letní, Společenské'**
+  String get defaultTypesDress;
+
+  /// No description provided for @deleteTypeMoveMessage.
+  ///
+  /// In cs, this message translates to:
+  /// **'V typu „{name}“ je {items}. Kam je přesunout?'**
+  String deleteTypeMoveMessage(String name, String items);
+
+  /// No description provided for @dropToRemove.
+  ///
+  /// In cs, this message translates to:
+  /// **'Pusť sem pro odebrání'**
+  String get dropToRemove;
+
+  /// No description provided for @reorder.
+  ///
+  /// In cs, this message translates to:
+  /// **'Změnit pořadí'**
+  String get reorder;
+
+  /// No description provided for @newTypeTile.
+  ///
+  /// In cs, this message translates to:
+  /// **'nový typ'**
+  String get newTypeTile;
 }
 
 class _AppLocalizationsDelegate

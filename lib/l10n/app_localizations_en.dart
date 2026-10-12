@@ -42,22 +42,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionCannotBeUndone => 'This action can\'t be undone.';
 
   @override
-  String get noFolder => 'no folder';
-
-  @override
   String get rename => 'Rename';
 
   @override
   String get unsortedName => 'Unsorted';
-
-  @override
-  String get addTopPlaceholder => 'Add a top';
-
-  @override
-  String get addBottomPlaceholder => 'Add a bottom';
-
-  @override
-  String get addShoesPlaceholder => 'Add shoes';
 
   @override
   String get shuffleButton => 'Shuffle';
@@ -76,6 +64,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get categoryBoty => 'Shoes';
+
+  @override
+  String get defaultTypesTop => 'T-shirts, Shirts, Hoodies, Sweaters';
+
+  @override
+  String get defaultTypesBottom => 'Trousers, Jeans, Skirts, Shorts';
+
+  @override
+  String get defaultTypesShoes => 'Sneakers, Dress shoes, Sandals';
 
   @override
   String itemCount(int count) {
@@ -132,42 +129,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get pickTopTitle => 'Choose a top or dress';
-
-  @override
-  String get pickBottomTitle => 'Choose a bottom';
-
-  @override
-  String get pickShoesTitle => 'Choose shoes';
-
-  @override
-  String get addLayerTitle => 'Add a layer';
-
-  @override
-  String get changeLayerTitle => 'Change layer';
-
-  @override
-  String layerLimitMessage(int max) {
-    String _temp0 = intl.Intl.pluralLogic(
-      max,
-      locale: localeName,
-      other: 'You can have at most $max extra layers.',
-      one: 'You can have at most $max extra layer.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get noMoreLayers => 'No more layers to add.';
-
-  @override
   String get addItemTitle => 'Add clothing';
-
-  @override
-  String get sectionCategory => 'category';
-
-  @override
-  String get sectionFolder => 'folder';
 
   @override
   String get takePhoto => 'Take photo';
@@ -191,35 +153,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moveTitle => 'Move';
 
   @override
-  String get nothingToMoveTo =>
-      'Nowhere to move it yet — create another folder or wardrobe first.';
-
-  @override
-  String get moveInThisWardrobe => 'in this wardrobe';
-
-  @override
-  String moveInWardrobe(String name) {
-    return 'in “$name”';
-  }
-
-  @override
-  String toastMovedToWardrobe(String name, String folder) {
-    return 'Moved to the “$name” wardrobe · $folder';
+  String toastMovedToWardrobe(String name) {
+    return 'Moved to the “$name” wardrobe';
   }
 
   @override
   String get wearWhereTitle => 'Where in the outfit?';
-
-  @override
-  String get wearAsTop => 'Top';
-
-  @override
-  String wearAsLayer(int n) {
-    return 'Layer $n';
-  }
-
-  @override
-  String get wearAsNewLayer => 'New layer';
 
   @override
   String get wornHere => 'here now';
@@ -268,26 +207,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sectionCollection => 'collection';
-
-  @override
-  String get newFolderTile => 'new folder';
-
-  @override
-  String get newFolderDialogTitle => 'New folder';
-
-  @override
-  String get newFolderHint => 'e.g. Shirts';
-
-  @override
-  String get renameFolderTitle => 'Rename folder';
-
-  @override
-  String get deleteFolderTitle => 'Delete folder?';
-
-  @override
-  String deleteFolderMessage(String folder) {
-    return 'The folder “$folder” will be deleted. Items in it will move to “Nezařazené”.';
-  }
 
   @override
   String toastSavedWithPhoto(String category) {
@@ -361,16 +280,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeDark => 'Dark';
 
   @override
-  String get sectionOther => 'other';
-
-  @override
-  String get showDressesLabel => 'Show dresses in wardrobe';
-
-  @override
-  String get showDressesHint =>
-      'Hides the dresses category in the wardrobe and when adding clothes. Dresses already in your wardrobe stay put.';
-
-  @override
   String get onboardingTitle => 'Welcome to Outfits';
 
   @override
@@ -426,4 +335,101 @@ class AppLocalizationsEn extends AppLocalizations {
   String colorSlot(int n) {
     return 'Color $n';
   }
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get sectionKinds => 'kinds and types';
+
+  @override
+  String get addTypeChip => 'type';
+
+  @override
+  String get newKind => 'Custom kind';
+
+  @override
+  String get newKindHint => 'e.g. Hats';
+
+  @override
+  String get renameKindTitle => 'Rename kind';
+
+  @override
+  String get deleteKindTitle => 'Delete kind?';
+
+  @override
+  String deleteKindMessage(String name) {
+    return 'The kind “$name” and its types will be deleted.';
+  }
+
+  @override
+  String get kindNotEmptyTitle => 'Kind isn’t empty';
+
+  @override
+  String kindNotEmptyMessage(String name, String items) {
+    return '“$name” still has $items (counting every wardrobe). Move them to another kind or delete them first.';
+  }
+
+  @override
+  String get newTypeTitle => 'New type';
+
+  @override
+  String get newTypeHint => 'e.g. Shirts';
+
+  @override
+  String get renameTypeTitle => 'Rename type';
+
+  @override
+  String get deleteTypeTitle => 'Delete type?';
+
+  @override
+  String get kindsHint =>
+      'Kinds are the cards on the main page; types sort clothes within a kind. Drag the handle to reorder.';
+
+  @override
+  String get sectionKind => 'kind';
+
+  @override
+  String get sectionType => 'type';
+
+  @override
+  String get sectionWardrobe => 'wardrobe';
+
+  @override
+  String wearOnCard(String kind, int n) {
+    return '$kind $n';
+  }
+
+  @override
+  String get wearNewCard => 'New card';
+
+  @override
+  String get all => 'All';
+
+  @override
+  String get addClothes => 'Add';
+
+  @override
+  String get canvasEmpty =>
+      'Nothing on the canvas yet.\nAdd cards with the buttons below — hold one to move it, pinch to resize it.';
+
+  @override
+  String get otherTypeName => 'Other';
+
+  @override
+  String get defaultTypesDress => 'Summer, Formal';
+
+  @override
+  String deleteTypeMoveMessage(String name, String items) {
+    return '“$name” has $items. Where should they go?';
+  }
+
+  @override
+  String get dropToRemove => 'Drop here to remove';
+
+  @override
+  String get reorder => 'Reorder';
+
+  @override
+  String get newTypeTile => 'new type';
 }

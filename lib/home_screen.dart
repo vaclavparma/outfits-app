@@ -14,17 +14,18 @@ import 'wardrobe_tab.dart';
 import 'widgets.dart';
 
 /// One navigator per tab for everything above the bottom tab bar: the tab
-/// itself plus folder/collection screens pushed from it. They open *under*
-/// a bar that stays put, and each tab keeps its own stack — leave a folder
-/// for another tab and coming back lands you in that folder again. Sheets
+/// itself plus type/collection screens pushed from it. They open *under* a
+/// bar that stays put, and each tab keeps its own stack — leave a type for
+/// another tab and coming back lands you in it again. Sheets
 /// and dialogs go on the root navigator and cover the bar.
 final Map<WardrobeTabKind, GlobalKey<NavigatorState>> _tabNavigatorKeys = {
   for (final kind in WardrobeTabKind.values) kind: GlobalKey<NavigatorState>(),
 };
 
 /// How many screens are open on top of each tab's root. Swiping between
-/// tabs only works while the visible tab is at its root — inside a folder a
-/// sideways swipe is iOS "back" instead.
+/// tabs only works while the visible tab is at its root — inside a
+/// type or collection a sideways swipe is iOS "back" instead — and not while a
+/// finger is on an outfit card (swiping, moving or resizing it).
 final Map<WardrobeTabKind, ValueNotifier<int>> _tabDepth = {
   for (final kind in WardrobeTabKind.values) kind: ValueNotifier(0),
 };
@@ -60,7 +61,7 @@ class _DepthObserver extends NavigatorObserver {
   void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) => _bump(-1);
 }
 
-/// Closes any folder/collection screen open in [kind]'s tab.
+/// Closes any type/collection screen open in [kind]'s tab.
 void _popTabToRoot(WardrobeTabKind kind) =>
     _tabNavigatorKeys[kind]!.currentState?.popUntil((route) => route.isFirst);
 
@@ -107,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
 
-    // A folder/collection kept open in another tab belongs to the wardrobe
+    // A type/collection kept open in another tab belongs to the wardrobe
     // it was opened in — drop them all when the wardrobe changes.
     if (_wardrobeId != null && _wardrobeId != store.activeWardrobeId) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -133,10 +134,10 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Expanded(
                   child: ListenableBuilder(
-                    listenable: _tabDepth[store.screen]!,
+                    listenable: Listenable.merge([_tabDepth[store.screen]!, canvasTouches]),
                     builder: (context, _) => PageView(
                       controller: _pages,
-                      physics: _tabDepth[store.screen]!.value == 0
+                      physics: _tabDepth[store.screen]!.value == 0 && canvasTouches.value == 0
                           ? const PageScrollPhysics()
                           : const NeverScrollableScrollPhysics(),
                       onPageChanged: (i) {
@@ -182,7 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 /// A tab's own navigator, one page of the tab pager — kept alive while
-/// scrolled away so its stack (an open folder…) survives. Only the current
+/// scrolled away so its stack (an open type…) survives. Only the current
 /// tab handles the back button, runs animations and is read out by
 /// screen readers.
 class _TabNavigator extends StatefulWidget {
@@ -208,7 +209,7 @@ class _TabNavigatorState extends State<_TabNavigator> with AutomaticKeepAliveCli
       child: TickerMode(
         enabled: widget.active,
         // Routes Android's back button to this tab's navigator first,
-        // so it closes an open folder instead of the app.
+        // so it closes an open type or collection instead of the app.
         child: NavigatorPopHandler<Object?>(
           enabled: widget.active,
           onPopWithResult: (_) => key.currentState?.maybePop(),
@@ -268,9 +269,7 @@ class _TabRoot extends StatelessWidget {
           Expanded(
             child: switch (kind) {
               WardrobeTabKind.outfit => OutfitTab(
-                onPick: (zone) => openPickSheet(context, zone),
-                onOpenLayers: ({replaceIndex}) =>
-                    openLayerSheet(context, replaceIndex: replaceIndex),
+                onPick: (slotId) => openPickSheet(context, slotId),
                 onOpenSave: () => openSaveOutfitSheet(context),
               ),
               WardrobeTabKind.wardrobe => WardrobeTab(

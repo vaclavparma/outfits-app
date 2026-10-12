@@ -1,41 +1,3 @@
-import 'package:flutter/widgets.dart';
-
-import 'l10n/app_localizations.dart';
-
-/// A single garment category, mirroring CATS from the mockup. [key] is a
-/// stable internal identifier (used for persistence and category matching)
-/// — it never changes with locale. The display label is looked up
-/// separately via [categoryLabel], since it depends on [BuildContext].
-class ClothingCategory {
-  final String key;
-
-  const ClothingCategory(this.key);
-}
-
-const List<ClothingCategory> kCategories = [
-  ClothingCategory('horni'),
-  ClothingCategory('saty'),
-  ClothingCategory('dolni'),
-  ClothingCategory('boty'),
-];
-
-String categoryLabel(BuildContext context, String key) {
-  final l10n = AppLocalizations.of(context)!;
-  return switch (key) {
-    'horni' => l10n.categoryHorni,
-    'saty' => l10n.categorySaty,
-    'dolni' => l10n.categoryDolni,
-    'boty' => l10n.categoryBoty,
-    _ => key,
-  };
-}
-
-/// Short single-word form of [categoryLabel], used where a full item name
-/// would otherwise be shown (item names carry no real information — items
-/// are identified by their photo and folder instead).
-String shortCategoryLabel(BuildContext context, String key) =>
-    categoryLabel(context, key).split(' ').first;
-
 const _diacritics = {
   'á': 'a', 'ä': 'a', 'à': 'a', 'â': 'a', 'ą': 'a', 'č': 'c', 'ć': 'c', 'ç': 'c',
   'ď': 'd', 'é': 'e', 'ě': 'e', 'ë': 'e', 'è': 'e', 'ê': 'e', 'ę': 'e', 'í': 'i',
@@ -54,33 +16,155 @@ String _foldForSearch(String s) {
 }
 
 /// Whether [item] matches a free-text search: every word of [query] has to
-/// appear in at least one of its details, its folder or [categoryLabel] —
-/// ignoring case and diacritics ("kosile" finds "Košile"). A blank query
-/// matches everything.
-bool matchesSearch(ClothingItem item, String query, {required String categoryLabel}) {
+/// appear in at least one of its details, its kind's name ([kindName]) or
+/// its type's ([typeName]) — ignoring case and diacritics ("kosile" finds
+/// "Košile"). A blank query matches everything.
+bool matchesSearch(ClothingItem item, String query, {required String kindName, String? typeName}) {
   final words = _foldForSearch(query).split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
   if (words.isEmpty) return true;
   final haystack = _foldForSearch(
-    [item.name, item.seller, item.size, item.price, item.note, item.folder, categoryLabel]
+    [item.name, item.seller, item.size, item.price, item.note, typeName, kindName]
         .whereType<String>()
         .join(' '),
   );
   return words.every(haystack.contains);
 }
 
+/// A kind of clothing (top, shoes, a hat…) — what the outfit canvas has
+/// cards for. Shared by every wardrobe and managed in settings. The
+/// built-in kinds keep the ids the old fixed categories had
+/// (`horni`, `saty`, `dolni`, `boty`), so older data still points at them.
+class ClothingKind {
+  final String id;
+  String name;
+
+  /// Its types (t-shirt, shirt…), in display order — always at least one,
+  /// since every item has a type.
+  List<ClothingType> types;
+
+  ClothingKind({required this.id, required this.name, List<ClothingType>? types})
+    : types = types ?? [];
+
+  ClothingType? typeById(String? id) {
+    for (final t in types) {
+      if (t.id == id) return t;
+    }
+    return null;
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'types': types.map((t) => t.toJson()).toList(),
+  };
+
+  factory ClothingKind.fromJson(Map<String, dynamic> json) => ClothingKind(
+    id: json['id'] as String,
+    name: json['name'] as String? ?? '',
+    types: [
+      for (final t in json['types'] as List<dynamic>? ?? const [])
+        if (t is Map<String, dynamic> && t['id'] is String) ClothingType.fromJson(t),
+    ],
+  );
+}
+
+/// A type within a [ClothingKind] (e.g. "shirts" under tops) — like a
+/// folder an item can be filed in.
+class ClothingType {
+  final String id;
+  String name;
+
+  ClothingType({required this.id, required this.name});
+
+  Map<String, dynamic> toJson() => {'id': id, 'name': name};
+
+  factory ClothingType.fromJson(Map<String, dynamic> json) =>
+      ClothingType(id: json['id'] as String, name: json['name'] as String? ?? '');
+}
+
+/// How cards sit on the outfit canvas — shared by the canvas itself and the
+/// saved outfits' previews, so a preview is the canvas in miniature.
+abstract final class CanvasGeometry {
+  /// A card's size at scale 1 on a canvas of [refWidth] × [refHeight]
+  /// (about a phone's); a bigger canvas scales everything up ([unitFor]).
+  static const cardWidth = 170.0;
+  static const cardHeight = 190.0;
+  static const refWidth = 370.0;
+  static const refHeight = 560.0;
+
+  static double unitFor(double width, double height) =>
+      (width / refWidth < height / refHeight ? width / refWidth : height / refHeight).clamp(0.55, 2.0);
+
+  /// Where a card centered at ([x], [y]) (fractions of [width] × [height])
+  /// sits, nudged back inside the canvas unless [free].
+  static ({double left, double top, double width, double height}) cardRect({
+    required double width,
+    required double height,
+    required double unit,
+    required double x,
+    required double y,
+    required double scale,
+    double dx = 0,
+    double dy = 0,
+    bool free = false,
+  }) {
+    final w = cardWidth * unit * scale, h = cardHeight * unit * scale;
+    var cx = x * width + dx, cy = y * height + dy;
+    if (!free) {
+      double place(double c, double extent, double max) =>
+          max > extent ? c.clamp(extent / 2, max - extent / 2) : max / 2;
+      cx = place(cx, w, width);
+      cy = place(cy, h, height);
+    }
+    return (left: cx - w / 2, top: cy - h / 2, width: w, height: h);
+  }
+
+  /// A slight, stable tilt per card (in degrees), so the canvas looks laid
+  /// out by hand.
+  static double tilt(String slotId) => (slotId.codeUnits.fold(0, (a, c) => a + c) % 9 - 4) * 0.55;
+}
+
+/// One card on the outfit canvas: which kind it shows, where its center
+/// sits ([x], [y] as fractions of the canvas, 0–1) and how big it is.
+class CanvasSlot {
+  static const minScale = 0.6;
+  static const maxScale = 1.8;
+
+  final String id;
+  final String kindId;
+  double x;
+  double y;
+  double scale;
+
+  CanvasSlot({required this.id, required this.kindId, required this.x, required this.y, this.scale = 1});
+
+  Map<String, dynamic> toJson() => {'id': id, 'kind': kindId, 'x': x, 'y': y, 'scale': scale};
+
+  factory CanvasSlot.fromJson(Map<String, dynamic> json) => CanvasSlot(
+    id: json['id'] as String,
+    kindId: json['kind'] as String,
+    x: (json['x'] as num).toDouble().clamp(0.0, 1.0),
+    y: (json['y'] as num).toDouble().clamp(0.0, 1.0),
+    scale: (json['scale'] as num? ?? 1).toDouble().clamp(minScale, maxScale),
+  );
+}
+
 /// One piece of clothing in the wardrobe.
 class ClothingItem {
   final String id;
-  final String cat;
 
-  /// The folder this item is filed under, within its own category (e.g.
-  /// `'košile'` under `'horni'`) — or `null` if it hasn't been filed yet.
-  String? folder;
+  /// Id of the [ClothingKind] it belongs to (stored as `cat`, which is
+  /// what it was called when kinds were fixed categories).
+  String cat;
+
+  /// Id of its [ClothingType] within that kind. Only `null` in data read
+  /// from disk before it's been checked — the store gives every item a type.
+  String? typeId;
 
   String? imagePath;
 
-  /// When true and this item is the one currently showing in its outfit
-  /// zone (or as a layer), [WardrobeStore.shuffle] leaves that slot alone.
+  /// When true and this item is showing on the outfit canvas,
+  /// [WardrobeStore.shuffle] leaves its card alone.
   bool pinned;
 
   /// Optional free-text details, each `null` when not filled in. Price is
@@ -100,7 +184,7 @@ class ClothingItem {
   ClothingItem({
     required this.id,
     required this.cat,
-    this.folder,
+    this.typeId,
     this.imagePath,
     this.pinned = false,
     this.name,
@@ -114,7 +198,7 @@ class ClothingItem {
   Map<String, dynamic> toJson() => {
     'id': id,
     'cat': cat,
-    'folder': folder,
+    'typeId': typeId,
     'imagePath': imagePath,
     'pinned': pinned,
     'name': name,
@@ -128,7 +212,7 @@ class ClothingItem {
   factory ClothingItem.fromJson(Map<String, dynamic> json) => ClothingItem(
     id: json['id'] as String,
     cat: json['cat'] as String,
-    folder: json['folder'] as String?,
+    typeId: json['typeId'] as String?,
     imagePath: json['imagePath'] as String?,
     pinned: json['pinned'] as bool? ?? false,
     name: json['name'] as String?,
@@ -141,39 +225,105 @@ class ClothingItem {
 }
 
 /// A saved combination of items, filed under a collection. [catKeys] mirrors
-/// the category of each item in [itemIds] at save time, so a resilient
-/// summary caption can still be shown (localized, at display time) even if
-/// an item was later deleted from the wardrobe.
+/// the kind of each item in [itemIds] at save time, so a resilient summary
+/// caption can still be shown even if an item was later deleted. [slots]
+/// is the canvas it was laid out on.
 class SavedOutfit {
   final String name;
   final List<String> catKeys;
   final List<String> itemIds;
+  final List<SavedSlot> slots;
 
   SavedOutfit({
     required this.name,
     required this.catKeys,
     required this.itemIds,
+    required this.slots,
   });
 
   Map<String, dynamic> toJson() => {
     'name': name,
     'catKeys': catKeys,
     'itemIds': itemIds,
+    'slots': slots.map((s) => s.toJson()).toList(),
   };
 
-  factory SavedOutfit.fromJson(Map<String, dynamic> json) => SavedOutfit(
-    name: json['name'] as String,
-    catKeys: (json['catKeys'] as List<dynamic>? ?? [])
-        .map((e) => e as String)
-        .toList(),
-    itemIds: (json['itemIds'] as List<dynamic>? ?? [])
-        .map((e) => e as String)
-        .toList(),
+  factory SavedOutfit.fromJson(Map<String, dynamic> json) {
+    final catKeys = (json['catKeys'] as List<dynamic>? ?? []).map((e) => e as String).toList();
+    final itemIds = (json['itemIds'] as List<dynamic>? ?? []).map((e) => e as String).toList();
+    final rawSlots = json['slots'] as List<dynamic>?;
+    return SavedOutfit(
+      name: json['name'] as String,
+      catKeys: catKeys,
+      itemIds: itemIds,
+      slots: rawSlots == null
+          ? legacyLayout(catKeys, itemIds)
+          : rawSlots.whereType<Map<String, dynamic>>().map(SavedSlot.fromJson).toList(),
+    );
+  }
+
+  /// A canvas for an outfit saved before there was one, laid out like the
+  /// old fixed outfit screen: the top upper left, any layers (further tops)
+  /// smaller beside it, the bottom below and to the right, shoes at the
+  /// bottom — or a dress, tall, in place of top and bottom. Those outfits
+  /// always listed the top first, then layers, bottom and shoes.
+  static List<SavedSlot> legacyLayout(List<String> catKeys, List<String> itemIds) {
+    final hasLayers = catKeys.where((k) => k == 'horni' || k == 'saty').length > 1;
+    var tops = 0;
+    final slots = <SavedSlot>[];
+    for (var i = 0; i < itemIds.length && i < catKeys.length; i++) {
+      final kind = catKeys[i];
+      // 0 for the top itself, then 1, 2… for the layers over it.
+      final layer = kind == 'horni' || kind == 'saty' ? tops++ : 0;
+      final (x, y, scale) = layer > 0
+          ? (0.70 + layer * 0.06, 0.14 + layer * 0.08, 0.72)
+          : switch (kind) {
+              'saty' => (hasLayers ? 0.38 : 0.45, 0.42, 1.55),
+              'horni' => (hasLayers ? 0.36 : 0.42, 0.22, hasLayers ? 0.88 : 1.0),
+              'dolni' => (0.56, 0.53, 1.0),
+              'boty' => (0.40, 0.83, 0.8),
+              _ => (0.5, 0.5, 0.9),
+            };
+      slots.add(SavedSlot(id: 'legacy-$i', kindId: kind, x: x, y: y, scale: scale, itemId: itemIds[i]));
+    }
+    return slots;
+  }
+}
+
+/// One card of a [SavedOutfit]'s canvas: its place and size, and the item
+/// that was in it (`null` for an empty card). [id] is the card's own, so it
+/// comes back exactly as it was — tilt included (see [CanvasGeometry.tilt]).
+class SavedSlot {
+  final String id;
+  final String kindId;
+  final double x;
+  final double y;
+  final double scale;
+  final String? itemId;
+
+  const SavedSlot({
+    required this.id,
+    required this.kindId,
+    required this.x,
+    required this.y,
+    required this.scale,
+    this.itemId,
+  });
+
+  Map<String, dynamic> toJson() => {'id': id, 'kind': kindId, 'x': x, 'y': y, 'scale': scale, 'item': itemId};
+
+  factory SavedSlot.fromJson(Map<String, dynamic> json) => SavedSlot(
+    id: json['id'] as String? ?? '${json['kind']}-${json['x']}-${json['y']}',
+    kindId: json['kind'] as String,
+    x: (json['x'] as num).toDouble(),
+    y: (json['y'] as num).toDouble(),
+    scale: (json['scale'] as num? ?? 1).toDouble(),
+    itemId: json['item'] as String?,
   );
 }
 
 /// One of the user's separate wardrobes (e.g. home vs. the cottage) — its
-/// own items, folders, collections and saved outfits. Only the identity
+/// own items, collections and saved outfits. Only the identity
 /// lives here; the content itself is held by [WardrobeStore].
 class Wardrobe {
   final String id;
@@ -183,15 +333,3 @@ class Wardrobe {
 }
 
 enum WardrobeTabKind { outfit, wardrobe, collections }
-
-enum WardrobeZone { top, bottom, shoes }
-
-/// Which builder zone a category occupies. Every category maps to one —
-/// "horní díl" items also double as [WardrobeStore.layers] candidates, but
-/// that's an additional role, not a separate category.
-WardrobeZone? zoneForCategory(String cat) => switch (cat) {
-  'horni' || 'saty' => WardrobeZone.top,
-  'dolni' => WardrobeZone.bottom,
-  'boty' => WardrobeZone.shoes,
-  _ => null,
-};

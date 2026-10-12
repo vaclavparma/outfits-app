@@ -13,43 +13,36 @@ import 'color_detect.dart';
 import 'l10n/app_localizations.dart';
 import 'models.dart';
 
-/// Holds the entire wardrobe/outfit state and mirrors the `Component` logic
-/// class from the Šatník mockup (Satnik.dc.html): seeded items, the current
-/// outfit selection per zone, layers, collections of saved outfits, and
-/// persistence to disk.
+/// Holds the entire app state: the wardrobes and their clothing, the kinds
+/// and types it's sorted into, the outfit canvas with what's currently on
+/// it, collections of saved outfits, settings — and persistence to disk.
 class WardrobeStore extends ChangeNotifier {
   static const _fileName = 'satnik_v1.json';
-  static const kMaxLayers = 2;
 
-  /// Every item belongs to a folder, mirroring how every saved outfit
-  /// belongs to a collection. This is the catch-all a category's items land
-  /// in when none was picked (e.g. the first item of a category) or its
-  /// folder was deleted — never left as `null`. Localized at the
-  /// moment it's created (matching [localeCode], or the device locale when
-  /// that's unset) since it's stored as a plain folder name from then on,
-  /// just like any user-created one — it doesn't retroactively re-translate
-  /// if the app language changes later.
-  String get fallbackFolder => _localizedFallbackName;
+  /// A copy of the state file as it was before kinds and types replaced the
+  /// fixed categories and folders — kept in case that migration ever needs
+  /// to be looked into.
+  static const _preKindsBackupName = 'satnik_v1.pre-kinds.json';
 
-  /// Mirrors [fallbackFolder] for collections — the catch-all a saved outfit
-  /// lands in when the user hasn't created a collection yet, so saving an
-  /// outfit never dead-ends behind "go create a collection first".
-  String get fallbackCollection => _localizedFallbackName;
-
-  String get _localizedFallbackName => _l10n.unsortedName;
+  /// The catch-all a saved outfit lands in when the user hasn't created a
+  /// collection yet, so saving an outfit never dead-ends behind "go create
+  /// a collection first". Localized at the moment it's created (matching
+  /// [localeCode], or the device locale when that's unset) since it's
+  /// stored as a plain name from then on, just like any user-created one.
+  String get fallbackCollection => _l10n.unsortedName;
 
   /// Localizations for text this store has to bake into stored data (default
-  /// folder/collection/wardrobe names) without a [BuildContext] — matching
-  /// [localeCode], or the device locale when that's unset.
+  /// kind/type/collection/wardrobe names) without a [BuildContext] —
+  /// matching [localeCode], or the device locale when that's unset.
   AppLocalizations get _l10n {
     final code = localeCode ?? PlatformDispatcher.instance.locale.languageCode;
     return lookupAppLocalizations(Locale(code == 'en' ? 'en' : 'cs'));
   }
 
   /// Every wardrobe, in display order. The *active* one's content lives in
-  /// the plain fields below ([items], [cols], [saved], [knownFolders]) so the
-  /// rest of the app never has to know there's more than one; every other
-  /// wardrobe's content waits in [_stash] until it's switched to.
+  /// the plain fields below ([items], [cols], [saved]) so the rest of the
+  /// app never has to know there's more than one; every other wardrobe's
+  /// content waits in [_stash] until it's switched to.
   List<Wardrobe> wardrobes = [];
   String activeWardrobeId = '';
   final Map<String, _WardrobeContent> _stash = {};
@@ -63,29 +56,74 @@ class WardrobeStore extends ChangeNotifier {
 
   WardrobeTabKind screen = WardrobeTabKind.outfit;
   List<ClothingItem> items = [];
-  Map<WardrobeZone, int> idx = {
-    WardrobeZone.top: 0,
-    WardrobeZone.bottom: 0,
-    WardrobeZone.shoes: 0,
-  };
-  List<String> layers = [];
   List<String> cols = [];
   Map<String, List<SavedOutfit>> saved = {};
-  String? folderFilter;
 
-  /// Folders known to the app, one list per category key — e.g. `'horni'`:
-  /// `['košile', 'trička', 'mikiny']`. Managed explicitly via the "manage
-  /// folders" sheet, independent of which items currently sit in them, so a
-  /// folder stays assignable even if no item happens to be in it right now
-  /// (and doesn't vanish just because the last item in it was deleted).
-  Map<String, List<String>> knownFolders = {};
+  /// Every kind of clothing, in display order — shared by all wardrobes.
+  List<ClothingKind> kinds = [];
 
-  List<String> foldersFor(String catKey) => knownFolders[catKey] ?? const [];
+  ClothingKind? kindById(String id) {
+    for (final k in kinds) {
+      if (k.id == id) return k;
+    }
+    return null;
+  }
 
-  /// [foldersFor] in any wardrobe, not just the active one.
-  List<String> foldersIn(String wardrobeId, String catKey) => wardrobeId == activeWardrobeId
-      ? foldersFor(catKey)
-      : _stash[wardrobeId]?.knownFolders[catKey] ?? const [];
+  /// The kind's name, or its id if it's gone (shouldn't happen — a kind
+  /// can only be deleted once no item uses it).
+  String kindName(String kindId) => kindById(kindId)?.name ?? kindId;
+
+  /// The name of [item]'s type (`null` only if its type is somehow gone).
+  String? typeName(ClothingItem item) => kindById(item.cat)?.typeById(item.typeId)?.name;
+
+  /// The active wardrobe's items of one kind, in the order they were added.
+  List<ClothingItem> itemsOfKind(String kindId) =>
+      items.where((i) => i.cat == kindId).toList();
+
+  /// Items of [kindId] in *every* wardrobe — a kind can only be deleted
+  /// once there are none.
+  int kindItemCount(String kindId) => _allItems.where((i) => i.cat == kindId).length;
+
+  Iterable<ClothingItem> get _allItems => [
+    ...items,
+    for (final c in _stash.values) ...c.items,
+  ];
+
+  /// The outfit canvas: one card per slot. Shared by all wardrobes, like
+  /// [kinds]; what each card shows is per session ([itemInSlot]).
+  List<CanvasSlot> canvas = [];
+
+  /// The slots shown — all of them, unless one's kind has gone missing.
+  List<CanvasSlot> get visibleSlots =>
+      canvas.where((s) => kindById(s.kindId) != null).toList();
+
+  /// Which item each canvas slot shows, by slot id. Not persisted — every
+  /// launch (and wardrobe switch) opens on a fresh random outfit.
+  Map<String, String> _worn = {};
+
+  CanvasSlot? slotById(String id) {
+    for (final s in canvas) {
+      if (s.id == id) return s;
+    }
+    return null;
+  }
+
+  /// What [slotId]'s card shows — `null` for an empty card (its kind has no
+  /// items to spare in this wardrobe).
+  ClothingItem? itemInSlot(String slotId) {
+    final slot = slotById(slotId);
+    final it = itemById(_worn[slotId] ?? '');
+    if (slot == null || it == null || it.cat != slot.kindId) return null;
+    return it;
+  }
+
+  /// The visible slot [itemId] is worn in, if any.
+  CanvasSlot? slotWearing(String itemId) {
+    for (final s in visibleSlots) {
+      if (itemInSlot(s.id)?.id == itemId) return s;
+    }
+    return null;
+  }
 
   /// `null` follows the system/device locale; otherwise an explicit locale
   /// code like `'cs'` or `'en'` picked in settings.
@@ -101,13 +139,8 @@ class WardrobeStore extends ChangeNotifier {
     _ => ThemeMode.system,
   };
 
-  /// Whether the "dresses" category shows up in the wardrobe and when
-  /// adding clothes. Turning it off doesn't apply retroactively — dresses
-  /// already in the wardrobe stay put and still work in the outfit builder.
-  bool showDresses = true;
-
-  /// Whether the one-time onboarding screen (language + dresses) has been
-  /// completed. Checked by [main.dart] to decide what to show first.
+  /// Whether the one-time onboarding screen has been completed. Checked by
+  /// [main.dart] to decide what to show first.
   bool onboardingDone = false;
 
   /// Whether [load] has finished at least once. Distinct from
@@ -116,18 +149,18 @@ class WardrobeStore extends ChangeNotifier {
   /// persisted ones are in.
   bool loaded = false;
 
-  /// [kCategories], minus any category turned off in settings.
-  List<ClothingCategory> get visibleCategories =>
-      kCategories.where((c) => c.key != 'saty' || showDresses).toList();
-
   String _toast = '';
   Timer? _toastTimer;
   String get toast => _toast;
 
+  int _idSeq = 0;
+  String _newId(String prefix) => '$prefix-${DateTime.now().microsecondsSinceEpoch}-${_idSeq++}';
+
   Future<void> load() async {
     Map<String, dynamic>? data;
+    File? file;
     try {
-      final file = await _localFile();
+      file = await _localFile();
       if (await file.exists()) {
         data = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
       }
@@ -135,30 +168,57 @@ class WardrobeStore extends ChangeNotifier {
       // Unreadable state file — start from the empty defaults.
     }
 
+    var migrated = false;
+    var fixed = false;
     if (data == null) {
+      kinds = _defaultKinds();
+      canvas = _defaultCanvas();
       final w = Wardrobe(id: _newWardrobeId(), name: _l10n.defaultWardrobeName);
       wardrobes = [w];
       _activate(w.id);
     } else {
+      migrated = data['kinds'] == null;
+      if (migrated && file != null) await _backUpBeforeKinds(file);
+      // Outfits saved before the canvas get a layout as they're parsed
+      // (see SavedOutfit.legacyLayout); written back below.
+      fixed = _hasOutfitsWithoutLayout(data);
       await _loadFrom(data);
+      fixed = _ensureTypes() || fixed;
     }
 
     loaded = true;
     _applyFirstLaunchScreen();
     notifyListeners();
+    // Write the migrated/fixed data right away, so it isn't redone (with
+    // fresh type ids) on every launch until something else happens to save.
+    if (migrated || fixed) await _persist();
+  }
+
+  static bool _hasOutfitsWithoutLayout(Map<String, dynamic> data) => [
+    if (data['wardrobes'] case final List<dynamic> wardrobes)
+      for (final w in wardrobes)
+        if (w is Map && w['saved'] is Map)
+          for (final outfits in (w['saved'] as Map).values)
+            if (outfits is List) ...outfits,
+  ].any((o) => o is Map && o['slots'] == null);
+
+  Future<void> _backUpBeforeKinds(File file) async {
+    try {
+      final backup = File(p.join(file.parent.path, _preKindsBackupName));
+      if (!await backup.exists()) await file.copy(backup.path);
+    } catch (_) {
+      // A missing backup isn't worth failing the launch over.
+    }
   }
 
   Future<void> _loadFrom(Map<String, dynamic> data) async {
-    // Settings first — a default wardrobe created below is named in the
-    // user's language.
+    // Settings first — default names created below are in the user's
+    // language.
     try {
       localeCode = data['localeCode'] as String?;
     } catch (_) {}
     try {
       themeModeCode = data['themeMode'] as String?;
-    } catch (_) {}
-    try {
-      showDresses = data['showDresses'] as bool? ?? true;
     } catch (_) {}
     try {
       onboardingDone = data['onboardingDone'] as bool? ?? false;
@@ -169,25 +229,43 @@ class WardrobeStore extends ChangeNotifier {
       docsPath = (await getApplicationDocumentsDirectory()).path;
     } catch (_) {}
 
-    final rawWardrobes = data['wardrobes'];
+    final rawWardrobes = [
+      if (data['wardrobes'] case final List<dynamic> list)
+        for (final e in list)
+          if (e is Map<String, dynamic>) e,
+    ];
+
+    final rawKinds = data['kinds'];
+    if (rawKinds is List) {
+      kinds = [
+        for (final e in rawKinds)
+          if (e is Map<String, dynamic> && e['id'] is String) ClothingKind.fromJson(e),
+      ];
+      canvas = [
+        for (final e in data['canvas'] as List<dynamic>? ?? const [])
+          if (e is Map<String, dynamic>) ?_tryParseSlot(e),
+      ];
+    } else {
+      _migrateToKinds(rawWardrobes, showDresses: data['showDresses'] as bool? ?? true);
+      // _ensureTypes (after loading) files untyped items under "Other".
+    }
+
     final parsed = <Wardrobe>[];
-    if (rawWardrobes is List) {
-      for (final e in rawWardrobes) {
-        if (e is! Map<String, dynamic>) continue;
-        // Never drop a wardrobe over a missing id/name — the next save would
-        // then silently delete all of its content.
-        final w = Wardrobe(
-          id: e['id'] as String? ?? _newWardrobeId(),
-          name: e['name'] as String? ?? _l10n.defaultWardrobeName,
-        );
-        parsed.add(w);
-        _stash[w.id] = _WardrobeContent.fromJson(e, docsPath);
-      }
+    for (final e in rawWardrobes) {
+      // Never drop a wardrobe over a missing id/name — the next save would
+      // then silently delete all of its content.
+      final w = Wardrobe(
+        id: e['id'] as String? ?? _newWardrobeId(),
+        name: e['name'] as String? ?? _l10n.defaultWardrobeName,
+      );
+      parsed.add(w);
+      _stash[w.id] = _WardrobeContent.fromJson(e, docsPath);
     }
 
     if (parsed.isEmpty) {
       parsed.add(Wardrobe(id: _newWardrobeId(), name: _l10n.defaultWardrobeName));
     }
+    _ensureKindsForItems();
 
     wardrobes = parsed;
     final savedActive = data['activeWardrobeId'];
@@ -196,44 +274,172 @@ class WardrobeStore extends ChangeNotifier {
     );
   }
 
+  CanvasSlot? _tryParseSlot(Map<String, dynamic> json) {
+    try {
+      return CanvasSlot.fromJson(json);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Turns the old fixed categories (`horni`, `saty`, `dolni`, `boty`) and
+  /// their per-wardrobe folders into kinds with types, in the raw JSON
+  /// before it's parsed: every folder used in any wardrobe becomes a type
+  /// of its category's kind, and each item's folder name becomes that
+  /// type's id. The old catch-all folder ("Nezařazené") is left out — its
+  /// items end up under "Other" like any other untyped ones. Dresses only
+  /// stay a kind if they were shown or someone has some.
+  void _migrateToKinds(List<Map<String, dynamic>> rawWardrobes, {required bool showDresses}) {
+    final hasDresses = rawWardrobes.any(
+      (w) => (w['items'] as List<dynamic>? ?? const []).any((i) => i is Map && i['cat'] == 'saty'),
+    );
+    kinds = [
+      for (final k in _defaultKinds(withTypes: false))
+        if (k.id != 'saty' || showDresses || hasDresses) k,
+    ];
+    final unsorted = {
+      lookupAppLocalizations(const Locale('cs')).unsortedName,
+      lookupAppLocalizations(const Locale('en')).unsortedName,
+    };
+
+    String? typeIdFor(String cat, String? folder) {
+      final name = folder?.trim() ?? '';
+      if (name.isEmpty || unsorted.contains(name)) return null;
+      var kind = kindById(cat);
+      if (kind == null) {
+        kind = ClothingKind(id: cat, name: cat);
+        kinds.add(kind);
+      }
+      for (final t in kind.types) {
+        if (t.name == name) return t.id;
+      }
+      final t = ClothingType(id: _newId('t'), name: name);
+      kind.types.add(t);
+      return t.id;
+    }
+
+    for (final w in rawWardrobes) {
+      // Folders first, in the order they were arranged; then any folder an
+      // item uses that somehow wasn't listed.
+      if (w['knownFolders'] case final Map<String, dynamic> folders) {
+        folders.forEach((cat, names) {
+          if (names is! List) return;
+          for (final n in names) {
+            if (n is String) typeIdFor(cat, n);
+          }
+        });
+      }
+      for (final item in w['items'] as List<dynamic>? ?? const []) {
+        if (item is! Map<String, dynamic> || item['cat'] is! String) continue;
+        item['typeId'] = typeIdFor(item['cat'] as String, item['folder'] as String?);
+        item.remove('folder');
+      }
+      w.remove('knownFolders');
+    }
+    canvas = _defaultCanvas();
+  }
+
+  /// An item whose kind is missing (a damaged file) gets a kind of its own
+  /// rather than becoming unreachable.
+  void _ensureKindsForItems() {
+    for (final it in _allItems) {
+      if (kindById(it.cat) == null) kinds.add(ClothingKind(id: it.cat, name: it.cat));
+    }
+  }
+
+  /// Every item has a type and every kind at least one: a kind without
+  /// types gets "Other", and so does any item without a (valid) type — e.g.
+  /// one that was in the old catch-all folder. Returns whether anything
+  /// changed.
+  bool _ensureTypes() {
+    var changed = false;
+    for (final kind in kinds) {
+      if (kind.types.isEmpty) {
+        _otherType(kind);
+        changed = true;
+      }
+    }
+    for (final it in _allItems) {
+      final kind = kindById(it.cat);
+      if (kind == null || kind.typeById(it.typeId) != null) continue;
+      it.typeId = _otherType(kind).id;
+      changed = true;
+    }
+    return changed;
+  }
+
+  /// [kind]'s "Other" type, created (at the end) if it has none.
+  ClothingType _otherType(ClothingKind kind) {
+    final name = _l10n.otherTypeName;
+    for (final t in kind.types) {
+      if (t.name == name) return t;
+    }
+    final t = ClothingType(id: _newId('t'), name: name);
+    kind.types = [...kind.types, t];
+    return t;
+  }
+
+  /// The kinds a fresh install starts with — the four that used to be
+  /// fixed categories — with a few common types each ([withTypes]).
+  List<ClothingKind> _defaultKinds({bool withTypes = true}) {
+    final l = _l10n;
+    List<ClothingType> types(String csv) => [
+      if (withTypes)
+        for (final n in csv.split(','))
+          if (n.trim().isNotEmpty) ClothingType(id: _newId('t'), name: n.trim()),
+    ];
+    return [
+      ClothingKind(id: 'horni', name: l.categoryHorni, types: types(l.defaultTypesTop)),
+      ClothingKind(id: 'saty', name: l.categorySaty, types: types(l.defaultTypesDress)),
+      ClothingKind(id: 'dolni', name: l.categoryDolni, types: types(l.defaultTypesBottom)),
+      ClothingKind(id: 'boty', name: l.categoryBoty, types: types(l.defaultTypesShoes)),
+    ];
+  }
+
+  /// Top, bottom and shoes, laid out the way the outfit screen used to be.
+  List<CanvasSlot> _defaultCanvas() => [
+    CanvasSlot(id: _newId('s'), kindId: 'horni', x: 0.42, y: 0.22),
+    CanvasSlot(id: _newId('s'), kindId: 'dolni', x: 0.56, y: 0.53),
+    CanvasSlot(id: _newId('s'), kindId: 'boty', x: 0.40, y: 0.83, scale: 0.8),
+  ];
+
   String _newWardrobeId() => 'w-${DateTime.now().microsecondsSinceEpoch}';
 
   _WardrobeContent get _liveContent => _WardrobeContent(
     items: items,
     cols: cols,
     saved: saved,
-    knownFolders: knownFolders,
   );
 
   /// Makes [id] the active wardrobe: moves its content out of [_stash] into
-  /// the live fields, and resets the per-session outfit selection (which
-  /// refers to item ids from whichever wardrobe was active before). The
-  /// previously active wardrobe must already have been stashed.
+  /// the live fields, and resets what the canvas shows (which refers to
+  /// item ids from whichever wardrobe was active before). The previously
+  /// active wardrobe must already have been stashed.
   void _activate(String id) {
     final c = _stash.remove(id) ?? _WardrobeContent.empty();
     activeWardrobeId = id;
     items = c.items;
     cols = c.cols;
     saved = c.saved;
-    knownFolders = c.knownFolders;
-    layers = [];
-    folderFilter = null;
     // Open on a random outfit, as if Shuffle had just been pressed — with
-    // any pinned garment already in its slot, since that's what Shuffle
+    // pinned garments already on their cards, since that's what Shuffle
     // keeps (otherwise a pin would sit on an item that isn't even showing).
-    idx = {
-      for (final z in WardrobeZone.values)
-        z: max(0, zoneList(z).indexWhere((it) => it.pinned)),
-    };
+    _worn = {};
+    for (final it in items.where((i) => i.pinned)) {
+      for (final s in visibleSlots) {
+        if (s.kindId == it.cat && !_worn.containsKey(s.id)) {
+          _worn[s.id] = it.id;
+          break;
+        }
+      }
+    }
     _shuffleSelection();
   }
 
   /// A brand-new wardrobe opens on the Wardrobe tab — there's nothing to
-  /// build an outfit from yet, so the Outfit tab's three empty "add"
-  /// placeholders are a worse landing spot than the wardrobe itself. Once
-  /// there's at least one item, later launches land on the Outfit tab as
-  /// usual (this only ever raises the tab a fresh install starts on, so it
-  /// runs after every load path, not just the fresh-install one).
+  /// build an outfit from yet, so the Outfit tab's empty cards are a worse
+  /// landing spot than the wardrobe itself. Once there's at least one item,
+  /// later launches land on the Outfit tab as usual.
   void _applyFirstLaunchScreen() {
     if (items.isEmpty) screen = WardrobeTabKind.wardrobe;
   }
@@ -250,7 +456,9 @@ class WardrobeStore extends ChangeNotifier {
     try {
       final file = await _localFile();
       final data = {
-        'version': 2,
+        'version': 3,
+        'kinds': kinds.map((k) => k.toJson()).toList(),
+        'canvas': canvas.map((s) => s.toJson()).toList(),
         'wardrobes': [
           for (final w in wardrobes)
             {
@@ -265,7 +473,6 @@ class WardrobeStore extends ChangeNotifier {
         'activeWardrobeId': activeWardrobeId,
         'localeCode': localeCode,
         'themeMode': themeModeCode,
-        'showDresses': showDresses,
         'onboardingDone': onboardingDone,
       };
       // Write to a temp file and rename over the real one, so a crash or
@@ -277,6 +484,15 @@ class WardrobeStore extends ChangeNotifier {
       // Best-effort persistence; nothing the UI can do about a write failure.
     }
   }
+
+  /// For changes that come in bursts (dragging a card): saved once they
+  /// settle.
+  void _persistSoon() {
+    _canvasPersistTimer?.cancel();
+    _canvasPersistTimer = Timer(const Duration(milliseconds: 400), _persist);
+  }
+
+  Timer? _canvasPersistTimer;
 
   void setScreen(WardrobeTabKind s) {
     screen = s;
@@ -307,182 +523,119 @@ class WardrobeStore extends ChangeNotifier {
   List<ClothingItem>? _indexedItems;
   Map<String, ClothingItem> _itemIndex = const {};
 
-  List<ClothingItem> byCat(String cat) =>
-      items.where((i) => i.cat == cat).toList();
-  List<ClothingItem> get topList => [...byCat('horni'), ...byCat('saty')];
-  List<ClothingItem> get botList => byCat('dolni');
-  List<ClothingItem> get shoeList => byCat('boty');
+  // ---------------------------------------------------------------------
+  // Kinds and types
 
-  List<ClothingItem> zoneList(WardrobeZone z) {
-    switch (z) {
-      case WardrobeZone.top:
-        return topList;
-      case WardrobeZone.bottom:
-        return botList;
-      case WardrobeZone.shoes:
-        return shoeList;
-    }
+  bool _isFreeKindName(String name, {String? except}) =>
+      name.isNotEmpty && !kinds.any((k) => k.id != except && k.name == name);
+
+  /// Adds a new kind (a no-op for a blank or taken name), starting with
+  /// a single "Other" type so clothing can be added to it right away.
+  ClothingKind? addKind(String rawName) {
+    final name = rawName.trim();
+    if (!_isFreeKindName(name)) return null;
+    final kind = ClothingKind(id: _newId('k'), name: name);
+    _otherType(kind);
+    kinds = [...kinds, kind];
+    notifyListeners();
+    _persist();
+    return kind;
   }
 
-  ClothingItem? at(List<ClothingItem> list, WardrobeZone zone) {
-    if (list.isEmpty) return null;
-    final i = ((idx[zone]! % list.length) + list.length) % list.length;
-    return list[i];
+  void renameKind(String kindId, String rawName) {
+    final name = rawName.trim();
+    final kind = kindById(kindId);
+    if (kind == null || !_isFreeKindName(name, except: kindId)) return;
+    kind.name = name;
+    kinds = [...kinds];
+    notifyListeners();
+    _persist();
   }
 
-  /// If [oldItem] was pinned, moves the pin onto [newItem] instead of
-  /// leaving it stuck on an item that's no longer shown there. Manually
-  /// swapping what's in a pinned slot should keep the slot "locked" to
-  /// whatever you just picked — not drop the lock, and not leave the old
-  /// item pinned somewhere it might resurface later (e.g. shuffled back
-  /// into some other zone) and unexpectedly resist shuffling again.
-  /// Returns whether anything actually changed (so callers know whether
-  /// they need to persist).
-  bool _transferPin(ClothingItem? oldItem, ClothingItem? newItem) {
-    if (oldItem == null || !oldItem.pinned || oldItem.id == newItem?.id) {
-      return false;
-    }
-    items = items.map((i) {
-      if (i.id == oldItem.id) return i..pinned = false;
-      if (newItem != null && i.id == newItem.id) return i..pinned = true;
-      return i;
-    }).toList();
+  /// Moves the kind at [oldIndex] to [newIndex] (both in the list as it is
+  /// before the move).
+  void reorderKinds(int oldIndex, int newIndex) {
+    if (oldIndex < 0 || oldIndex >= kinds.length) return;
+    final reordered = [...kinds];
+    reordered.insert(newIndex.clamp(0, kinds.length - 1), reordered.removeAt(oldIndex));
+    kinds = reordered;
+    notifyListeners();
+    _persist();
+  }
+
+  /// Deletes a kind along with its canvas cards — only once no wardrobe has
+  /// any items of it; returns whether it was deleted.
+  bool deleteKind(String kindId) {
+    if (kindItemCount(kindId) > 0) return false;
+    kinds = kinds.where((k) => k.id != kindId).toList();
+    canvas = canvas.where((s) => s.kindId != kindId).toList();
+    notifyListeners();
+    _persist();
     return true;
   }
 
-  void step(WardrobeZone zone, int dir) {
-    final list = zoneList(zone);
-    final oldItem = at(list, zone);
-    var next = idx[zone]! + dir;
-    // Swiping the top skips garments already worn as a layer.
-    bool isLayer(int i) =>
-        list.isNotEmpty && layers.contains(list[((i % list.length) + list.length) % list.length].id);
-    if (zone == WardrobeZone.top) {
-      for (var n = 0; n < list.length && isLayer(next); n++) {
-        next += dir;
-      }
+  /// Adds a type to [kindId] (a no-op for a blank or taken name there),
+  /// returning it.
+  ClothingType? addType(String kindId, String rawName) {
+    final name = rawName.trim();
+    final kind = kindById(kindId);
+    if (kind == null || name.isEmpty || kind.types.any((t) => t.name == name)) return null;
+    final type = ClothingType(id: _newId('t'), name: name);
+    kind.types = [...kind.types, type];
+    kinds = [...kinds];
+    notifyListeners();
+    _persist();
+    return type;
+  }
+
+  void renameType(String kindId, String typeId, String rawName) {
+    final name = rawName.trim();
+    final kind = kindById(kindId);
+    final type = kind?.typeById(typeId);
+    if (kind == null || type == null || name.isEmpty) return;
+    if (kind.types.any((t) => t.id != typeId && t.name == name)) return;
+    type.name = name;
+    kinds = [...kinds];
+    notifyListeners();
+    _persist();
+  }
+
+  /// How many items, in every wardrobe, are of type [typeId].
+  int typeItemCount(String kindId, String typeId) =>
+      _allItems.where((i) => i.cat == kindId && i.typeId == typeId).length;
+
+  /// Deletes a type, moving its items (in every wardrobe) to [moveTo] — by
+  /// default the kind's first other type. A kind's last type can't be
+  /// deleted.
+  void deleteType(String kindId, String typeId, {String? moveTo}) {
+    final kind = kindById(kindId);
+    if (kind == null || kind.types.length < 2 || kind.typeById(typeId) == null) return;
+    final rest = kind.types.where((t) => t.id != typeId).toList();
+    final target = rest.firstWhere((t) => t.id == moveTo, orElse: () => rest.first);
+    kind.types = rest;
+    kinds = [...kinds];
+    for (final it in _allItems) {
+      if (it.cat == kindId && it.typeId == typeId) it.typeId = target.id;
     }
-    idx = {...idx, zone: next};
-    _dropTopFromLayers();
-    final pinMoved = _transferPin(oldItem, at(list, zone));
+    items = [...items];
     notifyListeners();
-    if (pinMoved) _persist();
+    _persist();
   }
 
-  void selectIndex(WardrobeZone zone, int i) {
-    final oldItem = at(zoneList(zone), zone);
-    idx = {...idx, zone: i};
-    _dropTopFromLayers();
-    final pinMoved = _transferPin(oldItem, at(zoneList(zone), zone));
+  /// Moves [kindId]'s type at [oldIndex] to [newIndex].
+  void reorderTypes(String kindId, int oldIndex, int newIndex) {
+    final kind = kindById(kindId);
+    if (kind == null || oldIndex < 0 || oldIndex >= kind.types.length) return;
+    final reordered = [...kind.types];
+    reordered.insert(newIndex.clamp(0, reordered.length - 1), reordered.removeAt(oldIndex));
+    kind.types = reordered;
+    kinds = [...kinds];
     notifyListeners();
-    if (pinMoved) _persist();
+    _persist();
   }
 
-  /// A garment can't be worn as the top and as a layer at once — explicitly
-  /// choosing one of the layers as the top moves it there.
-  void _dropTopFromLayers() {
-    final topId = at(topList, WardrobeZone.top)?.id;
-    if (topId != null && layers.contains(topId)) {
-      layers = layers.where((id) => id != topId).toList();
-    }
-  }
-
-  /// Randomizes each zone and every layer — except any slot whose current
-  /// item is [ClothingItem.pinned], which is left exactly as it is. If the
-  /// bottom is pinned, the top is also kept off dresses — a dress replaces
-  /// the bottom slot entirely, which would silently bench the pinned item.
-  /// The top and every layer are also kept mutually exclusive throughout —
-  /// the same garment can't end up worn as the top and layered over itself,
-  /// or as two layers at once.
-  void shuffle() {
-    _shuffleSelection();
-    notifyListeners();
-  }
-
-  void _shuffleSelection() {
-    final rng = Random();
-    final newIdx = {...idx};
-    final botPinned = at(botList, WardrobeZone.bottom)?.pinned ?? false;
-    final topPinned = at(topList, WardrobeZone.top)?.pinned ?? false;
-
-    // Decided before the layer reshuffle below, so that step can steer
-    // clear of whatever the top ends up being.
-    var topId = at(topList, WardrobeZone.top)?.id;
-    if (!topPinned) {
-      var candidates = topList.where((it) => !layers.contains(it.id));
-      if (botPinned) candidates = candidates.where((it) => it.cat != 'saty');
-      final pool = candidates.toList();
-      if (pool.isNotEmpty) {
-        final picked = pool[rng.nextInt(pool.length)];
-        newIdx[WardrobeZone.top] = topList.indexOf(picked);
-        topId = picked.id;
-      }
-    }
-
-    for (final zone in [WardrobeZone.bottom, WardrobeZone.shoes]) {
-      if (at(zoneList(zone), zone)?.pinned ?? false) continue;
-      newIdx[zone] = rng.nextInt(99);
-    }
-    idx = newIdx;
-
-    if (layers.isNotEmpty) {
-      final pinnedIds = layers
-          .where((id) => itemById(id)?.pinned ?? false)
-          .toSet();
-      // The pool a reshuffled layer can draw from excludes every id already
-      // spoken for this shuffle — the new top, every pinned layer, and every
-      // *current* layer (pinned or not). That last part matters: without it,
-      // one unpinned layer's fresh pick could land on another unpinned
-      // layer's old id, which then falls back to "unchanged" below and
-      // collides with it.
-      final reserved = {
-        ...pinnedIds,
-        ...layers,
-        if (topId != null) topId,
-      };
-      final pool = byCat('horni').where((it) => !reserved.contains(it.id)).toList()
-        ..shuffle(rng);
-      var next = 0;
-      layers = [
-        for (final id in layers)
-          if (pinnedIds.contains(id))
-            id
-          else if (next < pool.length)
-            pool[next++].id
-          else
-            id, // no unpinned alternative available — leave it as-is
-      ];
-    }
-  }
-
-  void addLayer(String itemId) {
-    if (layers.contains(itemId) || layers.length >= kMaxLayers) return;
-    layers = [...layers, itemId];
-    screen = WardrobeTabKind.outfit;
-    notifyListeners();
-  }
-
-  /// Swaps the item at an existing layer slot for a different one, without
-  /// touching the number of layers — used when tapping an already-added
-  /// layer to change it, as opposed to [addLayer] appending a new one.
-  void setLayer(int index, String itemId) {
-    if (index < 0 || index >= layers.length) return;
-    final oldItem = itemById(layers[index]);
-    layers = [
-      for (var j = 0; j < layers.length; j++) if (j == index) itemId else layers[j],
-    ];
-    final pinMoved = _transferPin(oldItem, itemById(itemId));
-    notifyListeners();
-    if (pinMoved) _persist();
-  }
-
-  void removeLayer(int index) {
-    layers = [
-      for (var j = 0; j < layers.length; j++)
-        if (j != index) layers[j],
-    ];
-    notifyListeners();
-  }
+  // ---------------------------------------------------------------------
+  // Items
 
   Future<String> _newImageCopy(String sourcePath) async {
     final dir = await getApplicationDocumentsDirectory();
@@ -497,18 +650,19 @@ class WardrobeStore extends ChangeNotifier {
     return dest;
   }
 
-  /// Adds one new item per path in [sourceImagePaths] (all sharing [cat] and
-  /// [folder]) — e.g. picking several photos at once to add a handful of
-  /// t-shirts in one go instead of repeating the whole form per item. A
-  /// photo that fails to copy just leaves that one item photo-less rather
-  /// than failing the whole batch; the count of such failures is reported
-  /// back rather than flashed here, since composing user-facing text needs
-  /// a [BuildContext] this store doesn't have.
+  /// Adds one new item per path in [sourceImagePaths] (all of kind [kindId]
+  /// and type [typeId] — the kind's first type if that isn't one of its) — e.g. picking several photos at once to add a
+  /// handful of t-shirts in one go. A photo that fails to copy just leaves
+  /// that one item photo-less rather than failing the whole batch; the
+  /// count of such failures is reported back rather than flashed here,
+  /// since composing user-facing text needs a [BuildContext].
   Future<({List<ClothingItem> items, int photoFailures})> addItems(
-    String cat,
-    String folder, {
+    String kindId,
+    String typeId, {
     required List<String> sourceImagePaths,
   }) async {
+    final kind = kindById(kindId);
+    final type = kind?.typeById(typeId) ?? (kind == null ? null : kind.types.firstOrNull ?? _otherType(kind));
     final newItems = <ClothingItem>[];
     var photoFailures = 0;
     for (final sourcePath in sourceImagePaths) {
@@ -516,28 +670,21 @@ class WardrobeStore extends ChangeNotifier {
       try {
         imagePath = await _newImageCopy(sourcePath);
       } catch (_) {
-        // Keep the item usable (category + folder) even if the photo
-        // couldn't be saved — losing the whole item over a storage hiccup
-        // is worse.
+        // Keep the item usable even if the photo couldn't be saved — losing
+        // the whole item over a storage hiccup is worse.
         photoFailures++;
       }
       newItems.add(
         ClothingItem(
-          id: '$cat-new-${DateTime.now().microsecondsSinceEpoch}-${newItems.length}',
-          cat: cat,
-          folder: folder,
+          id: '$kindId-new-${DateTime.now().microsecondsSinceEpoch}-${newItems.length}',
+          cat: kindId,
+          typeId: type?.id,
           imagePath: imagePath,
         ),
       );
     }
     items = [...items, ...newItems];
-    final current = knownFolders[cat] ?? const [];
-    if (!current.contains(folder)) {
-      knownFolders = {
-        ...knownFolders,
-        cat: [...current, folder],
-      };
-    }
+    _fillEmptySlots();
     notifyListeners();
     await _persist();
     for (final it in newItems) {
@@ -546,10 +693,17 @@ class WardrobeStore extends ChangeNotifier {
     return (items: newItems, photoFailures: photoFailures);
   }
 
-  /// Moves an item to a different (already-existing) folder within its own
-  /// category.
-  void setFolder(String id, String folder) {
-    items = items.map((i) => i.id == id ? (i..folder = folder) : i).toList();
+  /// Files an item under another kind and/or type.
+  void moveItem(String itemId, String kindId, String typeId) {
+    final it = itemById(itemId);
+    final kind = kindById(kindId);
+    final type = kind?.typeById(typeId);
+    if (it == null || kind == null || type == null) return;
+    it.cat = kindId;
+    it.typeId = type.id;
+    items = [...items];
+    // A card of the old kind can't show it any more.
+    _fillEmptySlots();
     notifyListeners();
     _persist();
   }
@@ -598,10 +752,7 @@ class WardrobeStore extends ChangeNotifier {
   /// existed). One photo at a time, so it never competes much with the UI;
   /// a pass cut short by closing the app just continues next time.
   Future<void> detectMissingColors() async {
-    final pending = [
-      for (final it in items) it,
-      for (final c in _stash.values) ...c.items,
-    ].where((it) => it.colors == null && it.imagePath != null).toList();
+    final pending = _allItems.where((it) => it.colors == null && it.imagePath != null).toList();
     var done = 0;
     for (final it in pending) {
       if (await _detect(it) && ++done % 10 == 0) await _persist();
@@ -653,180 +804,223 @@ class WardrobeStore extends ChangeNotifier {
     _persist();
   }
 
-  /// Adds a brand-new folder under [catKey] (a no-op if it already exists
-  /// there) — mirrors [addCollection].
-  Future<void> addFolder(String catKey, String rawName) async {
-    final name = rawName.trim();
-    final current = knownFolders[catKey] ?? const [];
-    if (name.isEmpty || current.contains(name)) return;
-    knownFolders = {
-      ...knownFolders,
-      catKey: [...current, name],
-    };
+  Future<void> deleteItem(ClothingItem it) async {
+    items = items.where((x) => x.id != it.id).toList();
+    _fillEmptySlots();
     notifyListeners();
     await _persist();
+    await _deleteImageFile(it.imagePath);
   }
 
-  /// Renames a folder, returning the name that ended up in effect (the new
-  /// name on success, or the unchanged [oldName] if the rename was rejected
-  /// — empty, unchanged, a duplicate, or the folder is gone). Mirrors
-  /// [renameCollection].
-  Future<String> renameFolder(
-    String catKey,
-    String oldName,
-    String rawNewName,
-  ) async {
-    final newName = rawNewName.trim();
-    final current = knownFolders[catKey] ?? const [];
-    if (newName.isEmpty || newName == oldName || current.contains(newName)) {
-      return oldName;
-    }
-    if (!current.contains(oldName)) return oldName;
-    knownFolders = {
-      ...knownFolders,
-      catKey: [for (final f in current) f == oldName ? newName : f],
-    };
-    items = items
-        .map(
-          (i) => i.cat == catKey && i.folder == oldName
-              ? (i..folder = newName)
-              : i,
-        )
-        .toList();
-    if (folderFilter == oldName) folderFilter = newName;
-    notifyListeners();
-    // Deliberately not awaited: the folder detail screen awaits this whole
-    // call and then updates its own local "current name" state right after.
-    // If persisting were awaited here too, that real disk-write gap would
-    // give a Consumer rebuild a chance to run first — with a still-stale
-    // local name — and misread the rename as the folder having been
-    // deleted. Persistence is already best-effort (see [_persist]); nothing
-    // upstream needs to wait for it.
-    unawaited(_persist());
-    return newName;
-  }
+  // ---------------------------------------------------------------------
+  // Outfit canvas
 
-  /// Deletes a folder. Unlike [deleteCollection] (which deletes its outfits
-  /// too), the items in it are kept — photos are harder to lose than an
-  /// outfit combination — and moved to [fallbackFolder] instead.
-  Future<void> deleteFolder(String catKey, String name) async {
-    final hasOrphans = items.any((i) => i.cat == catKey && i.folder == name);
-    if (hasOrphans && name != fallbackFolder) {
-      items = items
-          .map(
-            (i) => i.cat == catKey && i.folder == name
-                ? (i..folder = fallbackFolder)
-                : i,
-          )
-          .toList();
-    }
-    var catFolders = (knownFolders[catKey] ?? const [])
-        .where((f) => f != name)
-        .toList();
-    // If items ended up (or stayed) in the fallback folder, keep it listed —
-    // deleting it while it's still in use would just orphan them again.
-    if (hasOrphans && !catFolders.contains(fallbackFolder)) {
-      catFolders = [...catFolders, fallbackFolder];
-    }
-    knownFolders = {...knownFolders, catKey: catFolders};
-    if (folderFilter == name) folderFilter = null;
-    notifyListeners();
-    await _persist();
-  }
-
-  /// Moves the folder at [oldIndex] to [newIndex] within [catKey]'s own
-  /// folder order — manual reordering in the wardrobe grid.
-  void reorderFolders(String catKey, int oldIndex, int newIndex) {
-    final current = <String>[...knownFolders[catKey] ?? const []];
-    if (oldIndex < 0 || oldIndex >= current.length) return;
-    current.insert(newIndex, current.removeAt(oldIndex));
-    knownFolders = {...knownFolders, catKey: current};
-    notifyListeners();
-    _persist();
-  }
-
-  /// Moves the item at [oldIndex] to [newIndex] among [folder]'s own items,
-  /// without disturbing the relative order of items outside that folder —
-  /// [items] is one shared list across every category and folder, so the
-  /// reorder is applied to just the matching slots within it.
-  void reorderFolderItems(
-    String catKey,
-    String folder,
-    int oldIndex,
-    int newIndex,
-  ) {
-    final slots = [
-      for (var i = 0; i < items.length; i++)
-        if (items[i].cat == catKey && items[i].folder == folder) i,
-    ];
-    if (oldIndex < 0 || oldIndex >= slots.length) return;
-    final subset = [for (final i in slots) items[i]];
-    subset.insert(newIndex, subset.removeAt(oldIndex));
-    final reordered = [...items];
-    for (var k = 0; k < slots.length; k++) {
-      reordered[slots[k]] = subset[k];
-    }
-    items = reordered;
-    notifyListeners();
-    _persist();
-  }
-
-  /// Puts a 'horni' item into layer [slot] — an existing layer (replaced), or
-  /// `layers.length` for a new one. If the item is already worn elsewhere
-  /// it swaps places with what's in [slot]: the top can't be left empty,
-  /// and a garment can't be worn twice. (Use [useItem] to wear it as the
-  /// top instead.)
-  void wearAsLayer(ClothingItem it, int slot) {
-    final j = layers.indexOf(it.id);
-    final wasTop = at(topList, WardrobeZone.top)?.id == it.id;
-    if (slot >= layers.length) {
-      if (!wasTop && j < 0) addLayer(it.id);
-      return;
-    }
-    final displaced = layers[slot];
-    if (j == slot) {
-      // Already there — nothing to change.
-    } else if (j >= 0) {
-      layers = [
-        for (var k = 0; k < layers.length; k++)
-          k == slot ? it.id : (k == j ? displaced : layers[k]),
-      ];
-    } else if (wasTop) {
-      layers = [for (var k = 0; k < layers.length; k++) k == slot ? it.id : layers[k]];
-      idx = {...idx, WardrobeZone.top: topList.indexWhere((x) => x.id == displaced)};
+  /// Adds a card of [kindId] — at [x], [y] if given, otherwise wherever
+  /// there's the most room — showing [itemId] or, by default, a random
+  /// item of that kind not on the canvas yet. Returns the new slot.
+  CanvasSlot addSlot(String kindId, {String? itemId, double? x, double? y, double scale = 1}) {
+    final spot = x != null && y != null ? (x: x, y: y) : _freeSpot();
+    final slot = CanvasSlot(id: _newId('s'), kindId: kindId, x: spot.x, y: spot.y, scale: scale);
+    canvas = [...canvas, slot];
+    if (itemId != null) {
+      _wearIn(slot, itemId);
     } else {
-      setLayer(slot, it.id);
+      _fillEmptySlots();
     }
-    screen = WardrobeTabKind.outfit;
+    notifyListeners();
+    _persist();
+    return slot;
+  }
+
+  /// The point on the canvas farthest from every card's center, out of a
+  /// grid of candidates — where a new card overlaps the least.
+  ({double x, double y}) _freeSpot() {
+    final taken = visibleSlots;
+    if (taken.isEmpty) return (x: 0.5, y: 0.45);
+    var best = (x: 0.5, y: 0.5);
+    var bestDistance = -1.0;
+    for (var gy = 0; gy < 5; gy++) {
+      for (var gx = 0; gx < 4; gx++) {
+        final c = (x: 0.2 + gx * 0.2, y: 0.14 + gy * 0.18);
+        final d = taken
+            .map((s) => pow(s.x - c.x, 2) + pow((s.y - c.y) * 0.8, 2))
+            .reduce(min)
+            .toDouble();
+        if (d > bestDistance) {
+          bestDistance = d;
+          best = c;
+        }
+      }
+    }
+    return best;
+  }
+
+  void removeSlot(String slotId) {
+    canvas = canvas.where((s) => s.id != slotId).toList();
+    _worn.remove(slotId);
+    notifyListeners();
+    _persist();
+  }
+
+  /// Drags a card: its center to [x], [y] (fractions of the canvas).
+  void moveSlot(String slotId, double x, double y) {
+    final slot = slotById(slotId);
+    if (slot == null) return;
+    slot.x = x.clamp(0.0, 1.0);
+    slot.y = y.clamp(0.0, 1.0);
+    // Brought to the front, like picking up a photo from a pile.
+    canvas = [...canvas.where((s) => s.id != slotId), slot];
+    notifyListeners();
+    _persistSoon();
+  }
+
+  void scaleSlot(String slotId, double scale) {
+    final slot = slotById(slotId);
+    if (slot == null) return;
+    slot.scale = scale.clamp(CanvasSlot.minScale, CanvasSlot.maxScale);
+    canvas = [...canvas];
+    notifyListeners();
+    _persistSoon();
+  }
+
+  /// Swipes a card to the next (+1) or previous (-1) item of its kind,
+  /// skipping items worn on other cards.
+  void stepSlot(String slotId, int dir) {
+    final slot = slotById(slotId);
+    if (slot == null) return;
+    final current = itemInSlot(slotId);
+    final elsewhere = {
+      for (final s in visibleSlots)
+        if (s.id != slotId) ?itemInSlot(s.id)?.id,
+    };
+    final list = itemsOfKind(slot.kindId)
+        .where((i) => i.id == current?.id || !elsewhere.contains(i.id))
+        .toList();
+    if (list.isEmpty) return;
+    final i = current == null ? (dir > 0 ? -1 : 0) : list.indexWhere((x) => x.id == current.id);
+    final next = list[((i + dir) % list.length + list.length) % list.length];
+    final pinMoved = _transferPin(current, next);
+    _worn[slotId] = next.id;
+    notifyListeners();
+    if (pinMoved) _persist();
+  }
+
+  /// Puts [itemId] on [slotId]'s card. If it's already on another card,
+  /// the two cards swap — a garment can't be worn twice.
+  void setSlotItem(String slotId, String itemId) {
+    final slot = slotById(slotId);
+    if (slot == null) return;
+    final pinMoved = _wearIn(slot, itemId);
+    notifyListeners();
+    if (pinMoved) _persist();
+  }
+
+  bool _wearIn(CanvasSlot slot, String itemId) {
+    final current = itemInSlot(slot.id);
+    final other = slotWearing(itemId);
+    if (other != null && other.id != slot.id) {
+      if (current != null) {
+        _worn[other.id] = current.id;
+      } else {
+        _worn.remove(other.id);
+      }
+    }
+    _worn[slot.id] = itemId;
+    if (other != null) return false;
+    return _transferPin(current, itemById(itemId));
+  }
+
+  /// If [oldItem] was pinned, moves the pin onto [newItem] instead of
+  /// leaving it stuck on an item that's no longer shown there. Manually
+  /// swapping what's on a pinned card should keep the card "locked" to
+  /// whatever you just picked — not drop the lock, and not leave the old
+  /// item pinned somewhere it might resurface later and unexpectedly resist
+  /// shuffling. Returns whether anything actually changed (so callers know
+  /// whether they need to persist).
+  bool _transferPin(ClothingItem? oldItem, ClothingItem? newItem) {
+    if (oldItem == null || !oldItem.pinned || oldItem.id == newItem?.id) {
+      return false;
+    }
+    items = items.map((i) {
+      if (i.id == oldItem.id) return i..pinned = false;
+      if (newItem != null && i.id == newItem.id) return i..pinned = true;
+      return i;
+    }).toList();
+    return true;
+  }
+
+  /// Randomizes every card — except any whose item is [ClothingItem.pinned],
+  /// which is left exactly as it is. No garment ends up on two cards.
+  void shuffle() {
+    _shuffleSelection();
     notifyListeners();
   }
 
-  void useItem(ClothingItem it) {
-    final zone = zoneForCategory(it.cat);
-    var pinMoved = false;
-    if (zone != null) {
-      final i = zoneList(zone).indexWhere((x) => x.id == it.id);
-      if (i >= 0) {
-        final oldItem = at(zoneList(zone), zone);
-        idx = {...idx, zone: i};
-        _dropTopFromLayers();
-        pinMoved = _transferPin(oldItem, it);
+  void _shuffleSelection() {
+    final rng = Random();
+    final slots = visibleSlots;
+    final used = <String>{};
+    final keep = <String>{};
+    for (final s in slots) {
+      final it = itemInSlot(s.id);
+      if (it != null && it.pinned && used.add(it.id)) keep.add(s.id);
+    }
+    for (final s in slots) {
+      if (keep.contains(s.id)) continue;
+      final pool = itemsOfKind(s.kindId).where((i) => !used.contains(i.id)).toList();
+      if (pool.isEmpty) {
+        _worn.remove(s.id);
+        continue;
       }
-    } else if (!layers.contains(it.id) && layers.length < kMaxLayers) {
-      layers = [...layers, it.id];
+      final picked = pool[rng.nextInt(pool.length)];
+      used.add(picked.id);
+      _worn[s.id] = picked.id;
+    }
+  }
+
+  /// Gives every empty card (or one showing an item that's gone or changed
+  /// kind) a random item of its kind that isn't on another card.
+  void _fillEmptySlots() {
+    final rng = Random();
+    final slots = visibleSlots;
+    final used = {for (final s in slots) ?itemInSlot(s.id)?.id};
+    for (final s in slots) {
+      if (itemInSlot(s.id) != null) continue;
+      final pool = itemsOfKind(s.kindId).where((i) => !used.contains(i.id)).toList();
+      if (pool.isEmpty) {
+        _worn.remove(s.id);
+        continue;
+      }
+      final picked = pool[rng.nextInt(pool.length)];
+      used.add(picked.id);
+      _worn[s.id] = picked.id;
+    }
+  }
+
+  /// Wears [it] in the outfit: on [slotId]'s card if given; otherwise on
+  /// the card of its kind (adding one if there's none). With several cards
+  /// of its kind, the UI asks which one first and passes [slotId]. Nothing
+  /// changes if it's already worn.
+  void useItem(ClothingItem it, {String? slotId}) {
+    var pinMoved = false;
+    final target = slotId == null ? null : slotById(slotId);
+    if (target != null) {
+      pinMoved = _wearIn(target, it.id);
+    } else if (slotWearing(it.id) == null) {
+      final slots = visibleSlots.where((s) => s.kindId == it.cat).toList();
+      if (slots.isEmpty) {
+        addSlot(it.cat, itemId: it.id);
+      } else {
+        pinMoved = _wearIn(slots.first, it.id);
+      }
     }
     screen = WardrobeTabKind.outfit;
     notifyListeners();
     if (pinMoved) _persist();
   }
 
-  Future<void> deleteItem(ClothingItem it) async {
-    items = items.where((x) => x.id != it.id).toList();
-    layers = layers.where((id) => id != it.id).toList();
-    notifyListeners();
-    await _persist();
-    await _deleteImageFile(it.imagePath);
-  }
+  // ---------------------------------------------------------------------
+  // Collections and saved outfits
 
   Future<void> _deleteImageFile(String? path) async {
     if (path == null) return;
@@ -862,7 +1056,12 @@ class WardrobeStore extends ChangeNotifier {
     newSaved[newName] = list;
     saved = newSaved;
     notifyListeners();
-    // Deliberately not awaited — see the matching note in [renameFolder].
+    // Deliberately not awaited: the collection screen awaits this whole
+    // call and then updates its own local "current name" state right after.
+    // If persisting were awaited here too, that real disk-write gap would
+    // give a Consumer rebuild a chance to run first — with a still-stale
+    // local name — and misread the rename as the collection having been
+    // deleted. Persistence is already best-effort (see [_persist]).
     unawaited(_persist());
     return newName;
   }
@@ -908,28 +1107,18 @@ class WardrobeStore extends ChangeNotifier {
     _persist();
   }
 
-  /// What [saveOutfit] would store, in its order: the top, its layers, the
-  /// bottom (unless the top is a dress), the shoes.
-  List<ClothingItem> get _currentOutfitParts {
-    final top = at(topList, WardrobeZone.top);
-    final bot = at(botList, WardrobeZone.bottom);
-    final shoe = at(shoeList, WardrobeZone.shoes);
-    final isDress = top != null && top.cat == 'saty';
-    return [
-      if (top != null) top,
-      for (final id in layers)
-        if (itemById(id) case final item?) item,
-      if (!isDress && bot != null) bot,
-      if (shoe != null) shoe,
-    ];
+  /// What the canvas shows, top to bottom — what [saveOutfit] stores.
+  List<ClothingItem> get currentOutfitItems {
+    final slots = visibleSlots..sort((a, b) => a.y.compareTo(b.y));
+    return [for (final s in slots) ?itemInSlot(s.id)];
   }
 
-  /// A saved outfit made of exactly the current outfit's items (order —
-  /// e.g. of layers — aside), looked for in the active wardrobe first, then
-  /// the others: an item moved between wardrobes keeps its id, so the same
-  /// combination can be saved elsewhere too.
+  /// A saved outfit made of exactly the current outfit's items (layout
+  /// aside), looked for in the active wardrobe first, then the others: an
+  /// item moved between wardrobes keeps its id, so the same combination can
+  /// be saved elsewhere too.
   ({String wardrobe, String col, String name})? findSavedCopyOfCurrentOutfit() {
-    final ids = _currentOutfitParts.map((i) => i.id).toSet();
+    final ids = currentOutfitItems.map((i) => i.id).toSet();
     if (ids.isEmpty) return null;
     final ordered = [
       ...wardrobes.where((w) => w.id == activeWardrobeId),
@@ -950,12 +1139,12 @@ class WardrobeStore extends ChangeNotifier {
     return null;
   }
 
-  /// Saves the current outfit selection into [targetCol] (or the first
-  /// collection, if empty — falling back to [fallbackCollection], creating
-  /// it if this is the very first save), returning the collection/name it
-  /// landed under. [defaultName] supplies the auto-generated name ("Outfit
-  /// N") when [rawName] is blank, since that text needs a [BuildContext]
-  /// this store doesn't have.
+  /// Saves the current outfit, canvas layout included, into [targetCol]
+  /// (or the first collection, if empty — falling back to
+  /// [fallbackCollection], creating it if this is the very first save),
+  /// returning the collection/name it landed under. [defaultName] supplies
+  /// the auto-generated name ("Outfit N") when [rawName] is blank, since
+  /// that text needs a [BuildContext] this store doesn't have.
   Future<({String col, String name})> saveOutfit({
     required String rawName,
     required String targetCol,
@@ -965,7 +1154,7 @@ class WardrobeStore extends ChangeNotifier {
       cols = [fallbackCollection];
       saved = {...saved, fallbackCollection: []};
     }
-    final parts = _currentOutfitParts;
+    final parts = currentOutfitItems;
 
     final total = cols.fold<int>(0, (a, k) => a + (saved[k]?.length ?? 0));
     final name = rawName.trim().isNotEmpty
@@ -977,6 +1166,10 @@ class WardrobeStore extends ChangeNotifier {
       name: name,
       catKeys: parts.map((i) => i.cat).toList(),
       itemIds: parts.map((i) => i.id).toList(),
+      slots: [
+        for (final s in visibleSlots)
+          SavedSlot(id: s.id, kindId: s.kindId, x: s.x, y: s.y, scale: s.scale, itemId: itemInSlot(s.id)?.id),
+      ],
     );
     saved = {
       ...saved,
@@ -987,38 +1180,32 @@ class WardrobeStore extends ChangeNotifier {
     return (col: col, name: name);
   }
 
+  /// Puts a saved outfit on the canvas, laid out as it was saved.
   void loadOutfit(SavedOutfit o) {
-    final newIdx = {...idx};
-    final newLayers = <String>[];
-    // 'horni' covers both the primary top and every layer worn over it, so
-    // category alone can't tell them apart any more. [saveOutfit] always
-    // writes the primary top first, then layers, then bottom/shoes — so the
-    // first top-zone item found is the top; any top-zone item after that is
-    // a layer.
-    var topAssigned = false;
-    for (final id in o.itemIds) {
-      final it = itemById(id);
-      if (it == null) continue;
-      final zone = zoneForCategory(it.cat);
-      if (zone == WardrobeZone.top && topAssigned) {
-        newLayers.add(id);
-        continue;
-      }
-      if (zone != null) {
-        newIdx[zone] = zoneList(zone).indexWhere((x) => x.id == id);
-        if (zone == WardrobeZone.top) topAssigned = true;
-      }
+    _worn = {};
+    final restored = <CanvasSlot>[];
+    for (final ss in o.slots) {
+      if (kindById(ss.kindId) == null) continue;
+      final slot = CanvasSlot(
+        // Its own id again (unless taken), so it's tilted as it was.
+        id: restored.any((r) => r.id == ss.id) ? _newId('s') : ss.id,
+        kindId: ss.kindId,
+        x: ss.x.clamp(0.0, 1.0),
+        y: ss.y.clamp(0.0, 1.0),
+        scale: ss.scale.clamp(CanvasSlot.minScale, CanvasSlot.maxScale),
+      );
+      restored.add(slot);
+      if (ss.itemId != null) _worn[slot.id] = ss.itemId!;
     }
-    idx = newIdx;
-    layers = newLayers;
+    canvas = restored;
+    _fillEmptySlots();
     screen = WardrobeTabKind.outfit;
     notifyListeners();
+    _persist();
   }
 
-  void toggleFolderFilter(String folder) {
-    folderFilter = folderFilter == folder ? null : folder;
-    notifyListeners();
-  }
+  // ---------------------------------------------------------------------
+  // Settings and wardrobes
 
   void setLocale(String? code) {
     localeCode = code;
@@ -1028,12 +1215,6 @@ class WardrobeStore extends ChangeNotifier {
 
   void setThemeMode(String? code) {
     themeModeCode = code;
-    notifyListeners();
-    _persist();
-  }
-
-  void setShowDresses(bool value) {
-    showDresses = value;
     notifyListeners();
     _persist();
   }
@@ -1085,34 +1266,23 @@ class WardrobeStore extends ChangeNotifier {
     await _persist();
   }
 
-  /// Moves an item from the active wardrobe into another one, photo and
-  /// details included, filed under [folder] there — or, by default, under
-  /// its current folder's name. Either way the folder is created in the
-  /// target category if missing. The pin doesn't come along: it belonged
-  /// to this wardrobe's outfit. Outfits saved here simply stop showing it (as with
-  /// a deleted item); its id is unchanged, so they pick it back up if it's
-  /// ever moved back.
-  Future<void> moveItemToWardrobe(String itemId, String targetWardrobeId, {String? folder}) async {
+  /// Moves an item from the active wardrobe into another one, photo, kind,
+  /// type and details included (kinds and types are shared by every
+  /// wardrobe). The pin doesn't come along: it belonged to this wardrobe's
+  /// outfit. Outfits saved here simply stop showing it (as with a deleted
+  /// item); its id is unchanged, so they pick it back up if it's ever moved
+  /// back.
+  Future<void> moveItemToWardrobe(String itemId, String targetWardrobeId) async {
     if (targetWardrobeId == activeWardrobeId || !wardrobes.any((w) => w.id == targetWardrobeId)) return;
     final it = itemById(itemId);
     if (it == null) return;
 
     items = items.where((x) => x.id != itemId).toList();
-    layers = layers.where((id) => id != itemId).toList();
     it.pinned = false;
-
     final target = _stash[targetWardrobeId] ?? _WardrobeContent.empty();
-    final targetFolder = folder ?? it.folder ?? fallbackFolder;
-    it.folder = targetFolder;
     target.items = [...target.items, it];
-    final folders = target.knownFolders[it.cat] ?? const [];
-    if (!folders.contains(targetFolder)) {
-      target.knownFolders = {
-        ...target.knownFolders,
-        it.cat: [...folders, targetFolder],
-      };
-    }
     _stash[targetWardrobeId] = target;
+    _fillEmptySlots();
 
     notifyListeners();
     await _persist();
@@ -1141,6 +1311,7 @@ class WardrobeStore extends ChangeNotifier {
   void dispose() {
     _toastTimer?.cancel();
     _persistTimer?.cancel();
+    _canvasPersistTimer?.cancel();
     super.dispose();
   }
 }
@@ -1163,16 +1334,14 @@ class _WardrobeContent {
   List<ClothingItem> items;
   List<String> cols;
   Map<String, List<SavedOutfit>> saved;
-  Map<String, List<String>> knownFolders;
 
   _WardrobeContent({
     required this.items,
     required this.cols,
     required this.saved,
-    required this.knownFolders,
   });
 
-  _WardrobeContent.empty() : items = [], cols = [], saved = {}, knownFolders = {};
+  _WardrobeContent.empty() : items = [], cols = [], saved = {};
 
   /// Each section is parsed independently, and each entry within a section
   /// is parsed independently too, so a single corrupt item/outfit can't
@@ -1211,18 +1380,6 @@ class _WardrobeContent {
       });
     } catch (_) {}
 
-    try {
-      final rawKnownFolders = data['knownFolders'] as Map<String, dynamic>?;
-      if (rawKnownFolders != null) {
-        c.knownFolders = rawKnownFolders.map(
-          (key, value) => MapEntry(
-            key,
-            (value as List<dynamic>).map((e) => e as String).toList(),
-          ),
-        );
-      }
-    } catch (_) {}
-
     return c;
   }
 
@@ -1232,6 +1389,5 @@ class _WardrobeContent {
     'saved': saved.map(
       (key, value) => MapEntry(key, value.map((e) => e.toJson()).toList()),
     ),
-    'knownFolders': knownFolders,
   };
 }

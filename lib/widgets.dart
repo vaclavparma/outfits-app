@@ -28,7 +28,7 @@ void onGridDragStart(int _) => HapticFeedback.mediumImpact();
 /// and deepens the shadow for a "lifted" feel.
 ///
 /// Takes a screenshot of the tile instead of re-mounting the live widget in
-/// the drag overlay: our cards (e.g. `_FolderCard`) rebuild off
+/// the drag overlay: our cards (e.g. `_CollectionCard`) rebuild off
 /// `context.watch`, and the package's own docs/examples call out re-mounting
 /// such a widget fresh in the overlay as unreliable — it showed up here as a
 /// second, half-rendered "ghost" copy layered behind the real drag proxy.
@@ -115,8 +115,8 @@ class GarmentImage extends StatelessWidget {
 }
 
 /// A garment "card": rounded, textured or photo-filled tile with a small
-/// uppercase mono slot label and a name/folder caption, as used across the
-/// outfit builder, wardrobe grid and pick sheets.
+/// uppercase mono slot label and a name/type caption, as used across the
+/// outfit canvas, wardrobe and pick sheets.
 class GarmentCard extends StatelessWidget {
   final double width;
   final double height;
@@ -313,7 +313,7 @@ class SelectChip extends StatelessWidget {
   }
 }
 
-/// Back arrow for the pushed folder/collection screens. Opaque and sized to
+/// Back arrow for the pushed type/collection screens. Opaque and sized to
 /// a full 48×48 target — a plain GestureDetector only reacts to taps on the
 /// icon's own pixels, which made it easy to miss.
 class AppBackButton extends StatelessWidget {
@@ -370,7 +370,7 @@ class RoundIconButton extends StatelessWidget {
 }
 
 /// Dashed-border "+" tile used as the trailing cell in a grid (or list) to
-/// add a new item — a garment, a layer, a collection...
+/// add a new item — a garment, a type, a collection...
 class AddTile extends StatelessWidget {
   final VoidCallback onTap;
   final String label;
@@ -525,6 +525,27 @@ Future<bool> confirmDialog(
   return confirmed == true;
 }
 
+/// A message with a single "OK" — for telling why something can't be done.
+Future<void> infoDialog(BuildContext context, {required String title, required String message}) {
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      backgroundColor: AppColors.surface,
+      title: Text(title, style: AppText.sans(size: 16, color: AppColors.ink)),
+      content: Text(message, style: AppText.sans(size: 13, color: AppColors.label, height: 1.4)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: Text(
+            AppLocalizations.of(dialogContext)!.ok,
+            style: AppText.sans(size: 13, weight: FontWeight.w500, color: AppColors.accent),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 /// Shared text-entry dialog (used for both renaming and creating) — a
 /// titled text field pre-filled with [initialValue], returning the edited
 /// text or null if cancelled.
@@ -595,10 +616,9 @@ class _TextPromptDialogState extends State<_TextPromptDialog> {
   }
 }
 
-/// A compact collage of an outfit's item photos, so it reads at a glance —
-/// one big tile for a single item, a big-plus-stacked split for 2-3, and a
-/// full 2x2 grid for 4. Used both for an outfit's own card and as a
-/// collection's cover preview (its most recent outfit).
+/// A compact collage of item photos, so a group reads at a glance — one
+/// big tile for a single item, a big-plus-stacked split for 2-3, and a full
+/// 2x2 grid for 4. Used for the type folders in the wardrobe.
 class OutfitCollage extends StatelessWidget {
   final List<ClothingItem> items;
   const OutfitCollage({super.key, required this.items});
@@ -867,3 +887,149 @@ class ColorBar extends StatelessWidget {
   }
 }
 
+
+/// One tab of [TypeTabs]: [key] is a type id, or `null` for "all".
+typedef TypeTab = ({String? key, String label, int count});
+
+/// The type tabs for [items] (all of [kind]): "all", then every type that
+/// has any of them. Empty when that would only repeat "all" — every item
+/// of the same type.
+List<TypeTab> typeTabsFor(ClothingKind? kind, List<ClothingItem> items, AppLocalizations l10n) {
+  final tabs = <TypeTab>[
+    for (final t in kind?.types ?? const <ClothingType>[])
+      if (items.where((i) => i.typeId == t.id).length case final n when n > 0) (key: t.id, label: t.name, count: n),
+  ];
+  if (tabs.length < 2) return const [];
+  return [(key: null, label: l10n.all, count: items.length), ...tabs];
+}
+
+/// Whether [item] belongs under the [TypeTab] with [key].
+bool inTypeTab(ClothingItem item, String? key) => key == null || item.typeId == key;
+
+/// A row of underlined tabs ("Vše 5  Košile 2  Mikiny 3"), scrolling
+/// sideways when they don't fit.
+class TypeTabs extends StatelessWidget {
+  final List<TypeTab> tabs;
+  final String? selected;
+  final ValueChanged<String?> onSelect;
+  final EdgeInsetsGeometry? padding;
+
+  const TypeTabs({super.key, required this.tabs, required this.selected, required this.onSelect, this.padding});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: padding,
+      child: Row(
+        children: [
+          for (final t in tabs)
+            Semantics(
+              button: true,
+              selected: t.key == selected,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => onSelect(t.key),
+                child: Container(
+                  margin: const EdgeInsets.only(right: 18),
+                  padding: const EdgeInsets.symmetric(vertical: 7),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: t.key == selected ? AppColors.accent : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        t.label,
+                        style: AppText.sans(
+                          size: 13.5,
+                          weight: t.key == selected ? FontWeight.w500 : FontWeight.w400,
+                          color: t.key == selected ? AppColors.ink : AppColors.mutedTag,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text('${t.count}', style: AppText.mono(size: 10, color: AppColors.mutedSoft)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A saved outfit as it was laid out on the canvas, in miniature: the
+/// cards placed as on a canvas of the reference size ([CanvasGeometry]),
+/// cropped to the area they cover and scaled to fit. Photos are decoded for
+/// the small size they're shown at, not the virtual one.
+class OutfitPreview extends StatelessWidget {
+  final List<SavedSlot> slots;
+  final ClothingItem? Function(String id) itemById;
+
+  const OutfitPreview({super.key, required this.slots, required this.itemById});
+
+  @override
+  Widget build(BuildContext context) {
+    const w = CanvasGeometry.refWidth, h = CanvasGeometry.refHeight;
+    final cards = [
+      for (final s in slots)
+        (
+          slot: s,
+          rect: () {
+            final r = CanvasGeometry.cardRect(width: w, height: h, unit: 1, x: s.x, y: s.y, scale: s.scale);
+            return Rect.fromLTWH(r.left, r.top, r.width, r.height);
+          }(),
+        ),
+    ];
+    if (cards.isEmpty) return ColoredBox(color: AppColors.background);
+    // Room around the cards for their tilt and shadow.
+    final bounds = cards.map((c) => c.rect).reduce((a, b) => a.expandToInclude(b)).inflate(18);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final scale = math.min(constraints.maxWidth / bounds.width, constraints.maxHeight / bounds.height);
+        final media = MediaQuery.of(context);
+        return ColoredBox(
+          color: AppColors.background,
+          child: ClipRect(
+            child: Center(
+              child: FittedBox(
+                child: MediaQuery(
+                  data: media.copyWith(devicePixelRatio: media.devicePixelRatio * scale),
+                  child: SizedBox(
+                    width: bounds.width,
+                    height: bounds.height,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        for (final c in cards)
+                          Positioned.fromRect(
+                            rect: c.rect.shift(-bounds.topLeft),
+                            child: GarmentCard(
+                              width: c.rect.width,
+                              height: c.rect.height,
+                              rotationDeg: CanvasGeometry.tilt(c.slot.id),
+                              imagePath: c.slot.itemId == null ? null : itemById(c.slot.itemId!)?.imagePath,
+                              shadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 2))],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}

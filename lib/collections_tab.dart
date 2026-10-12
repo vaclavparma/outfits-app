@@ -4,7 +4,6 @@ import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 
 import 'collection_detail_screen.dart';
 import 'l10n/app_localizations.dart';
-import 'models.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
 import 'widgets.dart';
@@ -52,12 +51,6 @@ class _CollectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
     final outfits = store.saved[name] ?? [];
-    final cover = outfits.isEmpty
-        ? null
-        : outfits.last.itemIds
-              .map(store.itemById)
-              .whereType<ClothingItem>()
-              .toList();
 
     return GestureDetector(
       onTap: () => Navigator.of(context).push(
@@ -74,7 +67,7 @@ class _CollectionCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: cover == null
+              child: outfits.isEmpty
                   ? Container(
                       color: AppColors.cardFill,
                       alignment: Alignment.center,
@@ -84,7 +77,7 @@ class _CollectionCard extends StatelessWidget {
                         color: AppColors.mutedSoft,
                       ),
                     )
-                  : OutfitCollage(items: cover),
+                  : OutfitPreview(slots: outfits.last.slots, itemById: store.itemById),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),

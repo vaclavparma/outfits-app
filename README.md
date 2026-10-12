@@ -6,9 +6,9 @@ A local-first wardrobe app for planning outfits: photograph what you own, mix to
 
 ## Features
 
-- **Outfit builder** — swipe through your tops, bottoms and shoes (or pick one from a grid), stack up to two extra layers (e.g. jackets), and shuffle for a random combination.
-- **Wardrobe** — add clothing with a camera photo or one from your gallery, sorted into categories (tops, dresses, jackets, trousers, skirts, shoes).
-- **Tags** — tag items freely, filter the wardrobe and the outfit picker by tag, and rename or delete tags across the whole wardrobe at once.
+- **Outfit canvas** — lay out cards for the kinds of clothing you want to combine (top, trousers, shoes, a hat, a second layer…): hold a card to move it, pinch to resize it, swipe it for the next item, pin the ones you want to keep, and shuffle the rest.
+- **Wardrobe** — add clothing with a camera photo or one from your gallery, sorted into kinds and types (e.g. Tops → Shirts, T-shirts), with detected colors and optional details (name, seller, size, price, note), and search across all of it.
+- **Kinds and types** — fully your own: create, rename, reorder or delete them in settings, and move clothing between them (or between wardrobes) at any time.
 - **Collections** — save an outfit under a named collection (e.g. "Work", "Weekend") and browse, rename or delete collections and the outfits in them later.
 - **Offline, on-device storage** — wardrobe data is a single JSON file and photos are plain files in the app's documents directory; nothing leaves the device.
 
@@ -38,13 +38,14 @@ flutter run
 lib/
   main.dart                    # App entry point, theme + Provider setup
   wardrobe_store.dart          # All app state + local JSON persistence
-  models.dart                  # ClothingItem / SavedOutfit / categories
+  models.dart                  # ClothingItem / kinds + types / canvas / SavedOutfit
   home_screen.dart             # Scaffold, tab switching, toast
-  outfit_tab.dart              # Outfit builder (top/bottom/shoes/layers)
-  wardrobe_tab.dart            # Wardrobe grid, grouped by category
+  outfit_tab.dart              # Outfit canvas (cards, layout editing)
+  wardrobe_tab.dart            # Wardrobe, one section per kind with type tabs
+  settings_screen.dart         # Settings: wardrobes, kinds and types, options
   collections_tab.dart         # Collections overview
   collection_detail_screen.dart # One collection's saved outfits
-  sheets.dart                  # Bottom sheets (add item, pick, tags, save)
+  sheets.dart                  # Bottom sheets (add item, pick, detail, move, save)
   widgets.dart                 # Shared UI pieces (cards, chips, dialogs)
   theme.dart                   # Colors and text styles
 ```

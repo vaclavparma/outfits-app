@@ -13,12 +13,6 @@ import 'theme.dart';
 import 'wardrobe_store.dart';
 import 'widgets.dart';
 
-const Map<WardrobeZone, String> _zoneDefaultCategory = {
-  WardrobeZone.top: 'horni',
-  WardrobeZone.bottom: 'dolni',
-  WardrobeZone.shoes: 'boty',
-};
-
 /// [title] is resolved inside the sheet's own builder (via [sheetContext]),
 /// not by the caller, so it stays correct if the locale changes while the
 /// sheet is open (e.g. switching language from the settings sheet itself).
@@ -190,23 +184,22 @@ TextStyle get _sectionLabelStyle => AppText.mono(
   color: AppColors.mutedSoft,
 );
 
-void openPickSheet(BuildContext context, WardrobeZone zone) {
-  String title(BuildContext ctx) {
-    final l10n = AppLocalizations.of(ctx)!;
-    return switch (zone) {
-      WardrobeZone.top => l10n.pickTopTitle,
-      WardrobeZone.bottom => l10n.pickBottomTitle,
-      WardrobeZone.shoes => l10n.pickShoesTitle,
-    };
-  }
-
-  _showSheet(context, title, _PickGrid(zone: zone, hostContext: context));
+/// Picks what a canvas card shows: any item of its kind, filtered by type
+/// and search, or a new one added right here.
+void openPickSheet(BuildContext context, String slotId) {
+  final kindId = context.read<WardrobeStore>().slotById(slotId)?.kindId;
+  if (kindId == null) return;
+  _showSheet(
+    context,
+    (ctx) => ctx.read<WardrobeStore>().kindName(kindId),
+    _PickGrid(slotId: slotId, hostContext: context),
+  );
 }
 
 class _PickGrid extends StatefulWidget {
-  final WardrobeZone zone;
+  final String slotId;
   final BuildContext hostContext;
-  const _PickGrid({required this.zone, required this.hostContext});
+  const _PickGrid({required this.slotId, required this.hostContext});
 
   @override
   State<_PickGrid> createState() => _PickGridState();
@@ -214,100 +207,75 @@ class _PickGrid extends StatefulWidget {
 
 class _PickGridState extends State<_PickGrid> {
   String _query = '';
+  String? _tab;
 
-  WardrobeZone get zone => widget.zone;
-  BuildContext get hostContext => widget.hostContext;
-
-  void _addNew(BuildContext context) {
+  void _addNew(BuildContext context, String kindId) {
     Navigator.of(context).pop();
+    final host = widget.hostContext;
     openAddItemSheet(
-      hostContext,
-      presetCategory: _zoneDefaultCategory[zone],
-      onAdded: (item) {
-        final store = hostContext.read<WardrobeStore>();
-        final idx = store.zoneList(zone).indexWhere((i) => i.id == item.id);
-        if (idx >= 0) store.selectIndex(zone, idx);
-      },
+      host,
+      presetKind: kindId,
+      presetType: _tab,
+      onAdded: (item) => host.read<WardrobeStore>().setSlotItem(widget.slotId, item.id),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
-    final fullList = store.zoneList(zone);
-    final current = store.at(fullList, zone);
-
-    // The top zone spans two categories (horní díl + šaty), each with its
-    // own folders — offer the union of both rather than picking one.
-    final catsInZone = fullList.map((it) => it.cat).toSet();
-    final allFolders = <String>[];
-    for (final c in catsInZone) {
-      for (final f in store.foldersFor(c)) {
-        if (!allFolders.contains(f)) allFolders.add(f);
-      }
-    }
-    final filtered = fullList
-        .where((it) => store.folderFilter == null || it.folder == store.folderFilter)
-        .where((it) => matchesSearch(it, _query, categoryLabel: categoryLabel(context, it.cat)))
+    final l10n = AppLocalizations.of(context)!;
+    final slot = store.slotById(widget.slotId);
+    if (slot == null) return const SizedBox.shrink();
+    final kind = store.kindById(slot.kindId);
+    final all = store.itemsOfKind(slot.kindId);
+    final current = store.itemInSlot(slot.id);
+    final tabs = typeTabsFor(kind, all, l10n);
+    if (!tabs.any((t) => t.key == _tab)) _tab = null;
+    final filtered = all
+        .where((it) => inTypeTab(it, _tab))
+        .where((it) => matchesSearch(it, _query, kindName: kind?.name ?? '', typeName: store.typeName(it)))
         .toList();
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: SearchField(
-            fillColor: AppColors.background,
-            onChanged: (v) => setState(() => _query = v),
-          ),
-        ),
-        if (allFolders.isNotEmpty)
+        if (all.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(bottom: 14),
-            child: Wrap(
-              spacing: 7,
-              runSpacing: 7,
-              children: [
-                for (final f in allFolders)
-                  SelectChip(
-                    label: f,
-                    active: store.folderFilter == f,
-                    onTap: () => store.toggleFolderFilter(f),
-                  ),
-              ],
+            padding: const EdgeInsets.only(bottom: 8),
+            child: SearchField(
+              fillColor: AppColors.background,
+              onChanged: (v) => setState(() => _query = v),
             ),
+          ),
+        if (tabs.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: TypeTabs(tabs: tabs, selected: _tab, onSelect: (k) => setState(() => _tab = k)),
           ),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: filtered.length + 1,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: gridColumns(context, 3),
             mainAxisSpacing: 9,
             crossAxisSpacing: 9,
             childAspectRatio: 100 / 124,
           ),
           itemBuilder: (context, i) {
             if (i == filtered.length) {
-              return AddTile(
-                label: AppLocalizations.of(context)!.add,
-                onTap: () => _addNew(context),
-              );
+              return AddTile(label: l10n.add, onTap: () => _addNew(context, slot.kindId));
             }
             final it = filtered[i];
             return GarmentCard(
               width: double.infinity,
               height: double.infinity,
-              slotLabel: shortCategoryLabel(context, it.cat).toLowerCase(),
-              caption: it.folder ?? '',
+              caption: it.name ?? store.typeName(it) ?? '',
               imagePath: it.imagePath,
-              borderColor: current?.id == it.id
-                  ? AppColors.ink
-                  : AppColors.cardBorder,
+              borderColor: current?.id == it.id ? AppColors.ink : AppColors.cardBorder,
               onTap: () {
-                final actualIndex = fullList.indexWhere((x) => x.id == it.id);
-                store.selectIndex(zone, actualIndex);
+                store.setSlotItem(slot.id, it.id);
                 Navigator.of(context).pop();
               },
             );
@@ -318,219 +286,63 @@ class _PickGridState extends State<_PickGrid> {
   }
 }
 
-void openLayerSheet(BuildContext context, {int? replaceIndex}) {
-  _showSheet(
-    context,
-    (ctx) => replaceIndex == null
-        ? AppLocalizations.of(ctx)!.addLayerTitle
-        : AppLocalizations.of(ctx)!.changeLayerTitle,
-    _LayerChoices(replaceIndex: replaceIndex),
-  );
-}
-
-class _LayerChoices extends StatefulWidget {
-  final int? replaceIndex;
-  const _LayerChoices({this.replaceIndex});
-
-  @override
-  State<_LayerChoices> createState() => _LayerChoicesState();
-}
-
-class _LayerChoicesState extends State<_LayerChoices> {
-  String _query = '';
-
-  @override
-  Widget build(BuildContext context) {
-    final replaceIndex = widget.replaceIndex;
-    final store = context.watch<WardrobeStore>();
-    final l10n = AppLocalizations.of(context)!;
-    if (replaceIndex == null && store.layers.length >= WardrobeStore.kMaxLayers) {
-      return Text(
-        l10n.layerLimitMessage(WardrobeStore.kMaxLayers),
-        style: AppText.sans(size: 12, color: AppColors.mutedTag),
-      );
-    }
-    // In replace mode, the layer being swapped stays selectable (it's not
-    // "already used" from the user's point of view — it's what's on offer).
-    // The item currently worn as the main top is excluded outright — it
-    // can't also be layered over itself (most visible with a sparse
-    // wardrobe, where it'd otherwise be the only "layer" on offer).
-    final currentTopId = store.at(store.topList, WardrobeZone.top)?.id;
-    final available = store
-        .byCat('horni')
-        .where(
-          (it) =>
-              it.id != currentTopId &&
-              (!store.layers.contains(it.id) ||
-                  (replaceIndex != null && store.layers[replaceIndex] == it.id)),
-        )
-        .toList();
-    if (available.isEmpty) {
-      return Text(
-        l10n.noMoreLayers,
-        style: AppText.sans(size: 12, color: AppColors.mutedTag),
-      );
-    }
-    final availableFolders = store.foldersFor('horni');
-    final choices = available
-        .where((it) => store.folderFilter == null || it.folder == store.folderFilter)
-        .where((it) => matchesSearch(it, _query, categoryLabel: categoryLabel(context, it.cat)))
-        .toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: SearchField(
-            fillColor: AppColors.background,
-            onChanged: (v) => setState(() => _query = v),
-          ),
-        ),
-        if (availableFolders.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Wrap(
-              spacing: 7,
-              runSpacing: 7,
-              children: [
-                for (final f in availableFolders)
-                  SelectChip(
-                    label: f,
-                    active: store.folderFilter == f,
-                    onTap: () => store.toggleFolderFilter(f),
-                  ),
-              ],
-            ),
-          ),
-        if (choices.isEmpty)
-          Text(
-            _query.trim().isEmpty ? l10n.noMoreLayers : l10n.nothingFound,
-            style: AppText.sans(size: 12, color: AppColors.mutedTag),
-          ),
-        for (final it in choices)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 7),
-            child: GestureDetector(
-              onTap: () {
-                if (replaceIndex != null) {
-                  store.setLayer(replaceIndex, it.id);
-                } else {
-                  store.addLayer(it.id);
-                }
-                Navigator.of(context).pop();
-              },
-              child: Container(
-                padding: const EdgeInsets.all(9),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.rowBorder),
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 64,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: AppColors.cardFill,
-                        border: Border.all(color: AppColors.cardBorder),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: it.imagePath == null
-                          ? const DiagonalStripes()
-                          : GarmentImage(it.imagePath!),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (it.name != null)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 4),
-                              child: Text(
-                                it.name!,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppText.sans(size: 13, color: AppColors.ink),
-                              ),
-                            ),
-                          Text(
-                            it.folder ?? l10n.noFolder,
-                            style: AppText.mono(
-                              size: 8.5,
-                              letterSpacing: 0.4,
-                              color: AppColors.mutedTag,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
+/// [presetKind] and [presetType] preselect where the new clothing goes
+/// (e.g. the wardrobe section or canvas card it was added from); both can
+/// still be changed in the form.
 void openAddItemSheet(
   BuildContext context, {
-  String? presetCategory,
-  String? presetFolder,
+  String? presetKind,
+  String? presetType,
   void Function(ClothingItem item)? onAdded,
 }) {
   _showSheet(
     context,
     (ctx) => AppLocalizations.of(ctx)!.addItemTitle,
     _AddItemForm(
-      presetCategory: presetCategory,
-      presetFolder: presetFolder,
+      presetKind: presetKind,
+      presetType: presetType,
       onAdded: onAdded,
     ),
   );
 }
 
 class _AddItemForm extends StatefulWidget {
-  final String? presetCategory;
-  final String? presetFolder;
+  final String? presetKind;
+  final String? presetType;
   final void Function(ClothingItem item)? onAdded;
 
-  const _AddItemForm({this.presetCategory, this.presetFolder, this.onAdded});
+  const _AddItemForm({this.presetKind, this.presetType, this.onAdded});
 
   @override
   State<_AddItemForm> createState() => _AddItemFormState();
 }
 
 class _AddItemFormState extends State<_AddItemForm> {
-  late String _cat;
-  String? _folder;
+  String? _kind;
+  String? _type;
   bool _busy = false;
-
-  /// Whether the category/folder are fixed by the caller (opened from
-  /// inside a specific folder) rather than chosen in this form.
-  bool get _fixedFolder => widget.presetFolder != null;
 
   @override
   void initState() {
     super.initState();
-    _cat = widget.presetCategory ?? 'boty';
-    _folder = widget.presetFolder ?? _defaultFolderFor(_cat);
+    final store = context.read<WardrobeStore>();
+    final kind = store.kindById(widget.presetKind ?? '') ?? store.kinds.firstOrNull;
+    _kind = kind?.id;
+    _type = (kind?.typeById(widget.presetType) ?? kind?.types.firstOrNull)?.id;
   }
 
-  /// Every item needs a folder, so default to whatever folder filter is
-  /// active in the wardrobe grid (if it belongs to this category), else the
-  /// first folder that exists for it, else [WardrobeStore.fallbackFolder] —
-  /// a category with no folders yet must still be addable to (otherwise a
-  /// brand-new wardrobe can never add its first item).
-  String _defaultFolderFor(String cat) {
-    final store = context.read<WardrobeStore>();
-    final folders = store.foldersFor(cat);
-    if (folders.contains(store.folderFilter)) return store.folderFilter!;
-    return folders.isNotEmpty ? folders.first : store.fallbackFolder;
+  Future<void> _newType(WardrobeStore store, String kindId) async {
+    final l10n = AppLocalizations.of(context)!;
+    final name = await promptTextDialog(
+      context,
+      title: l10n.newTypeTitle,
+      initialValue: '',
+      hintText: l10n.newTypeHint,
+      confirmLabel: l10n.create,
+    );
+    if (name == null) return;
+    final type = store.addType(kindId, name);
+    if (type != null && mounted) setState(() => _type = type.id);
   }
 
   /// Longest edge a stored photo is scaled down to (aspect ratio kept). The
@@ -539,12 +351,13 @@ class _AddItemFormState extends State<_AddItemForm> {
   static const double _maxPhotoEdge = 1600;
 
   Future<void> _pick(ImageSource source) async {
-    if (_busy || _folder == null) return;
+    final kind = _kind, type = _type;
+    if (_busy || kind == null || type == null) return;
     setState(() => _busy = true);
     try {
       final picker = ImagePicker();
       // The gallery lets you select several photos at once — handy for
-      // adding a handful of items of the same category/folder in one go.
+      // adding a handful of items of the same kind and type in one go.
       // The camera can only ever produce one photo per capture.
       final files = source == ImageSource.gallery
           ? await picker.pickMultiImage(
@@ -564,10 +377,10 @@ class _AddItemFormState extends State<_AddItemForm> {
       if (!mounted) return;
       final store = context.read<WardrobeStore>();
       final l10n = AppLocalizations.of(context)!;
-      final label = categoryLabel(context, _cat);
+      final label = store.kindName(kind);
       final result = await store.addItems(
-        _cat,
-        _folder!,
+        kind,
+        type,
         sourceImagePaths: files.map((f) => f.path).toList(),
       );
       store.flash(
@@ -588,51 +401,48 @@ class _AddItemFormState extends State<_AddItemForm> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final store = context.watch<WardrobeStore>();
-    final categories = store.visibleCategories;
-    final folders = store.foldersFor(_cat);
-    final canAdd = _folder != null;
+    final kind = store.kindById(_kind ?? '');
+    final kinds = store.kinds;
+    final canAdd = kind != null && kind.typeById(_type) != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (!_fixedFolder) ...[
-          Text(l10n.sectionCategory, style: _sectionLabelStyle),
+        Text(l10n.sectionKind, style: _sectionLabelStyle),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 7,
+          runSpacing: 7,
+          children: [
+            for (final k in kinds)
+              SelectChip(
+                label: k.name,
+                active: _kind == k.id,
+                mono: false,
+                height: 34,
+                // A type belongs to one kind, so switching kind starts
+                // on that kind's first type.
+                onTap: () => setState(() {
+                  _kind = k.id;
+                  _type = k.types.firstOrNull?.id;
+                }),
+              ),
+          ],
+        ),
+        if (kind != null) ...[
+          const SizedBox(height: 18),
+          Text(l10n.sectionType, style: _sectionLabelStyle),
           const SizedBox(height: 8),
           Wrap(
             spacing: 7,
             runSpacing: 7,
             children: [
-              for (final c in categories)
-                SelectChip(
-                  label: categoryLabel(context, c.key),
-                  active: _cat == c.key,
-                  mono: false,
-                  height: 34,
-                  // A folder belongs to one category, so switching category
-                  // picks a fresh default folder for the new one.
-                  onTap: () => setState(() {
-                    _cat = c.key;
-                    _folder = _defaultFolderFor(_cat);
-                  }),
-                ),
+              for (final t in kind.types)
+                SelectChip(label: t.name, active: _type == t.id, onTap: () => setState(() => _type = t.id)),
+              SelectChip(label: '+ ${l10n.addTypeChip}', active: false, onTap: () => _newType(store, kind.id)),
             ],
           ),
-          const SizedBox(height: 18),
-          Text(l10n.sectionFolder, style: _sectionLabelStyle),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: [
-              for (final f in folders)
-                SelectChip(
-                  label: f,
-                  active: _folder == f,
-                  onTap: () => setState(() => _folder = f),
-                ),
-            ],
-          ),
-          const SizedBox(height: 18),
         ],
+        const SizedBox(height: 18),
         Row(
           children: [
             Expanded(
@@ -700,7 +510,7 @@ class _AddItemFormState extends State<_AddItemForm> {
 }
 
 /// [browseIds] are the items shown alongside [item] where it was opened
-/// from (a folder, search results), in that order — swiping sideways in the
+/// from (a wardrobe section, search results), in that order — swiping sideways in the
 /// sheet steps through them.
 void openItemSheet(BuildContext context, ClothingItem item, {List<String>? browseIds}) {
   final browser = GlobalKey<_ItemBrowserState>();
@@ -851,7 +661,7 @@ class _ItemDetailState extends State<_ItemDetail> {
                 children: [
                   Flexible(
                     child: Text(
-                      categoryLabel(context, cur.cat),
+                      [store.kindName(cur.cat), ?store.typeName(cur)].join(' · '),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppText.sans(size: 15, color: AppColors.ink),
@@ -934,12 +744,12 @@ class _ItemDetailState extends State<_ItemDetail> {
                 filled: true,
                 textColor: Colors.white,
                 onTap: () {
-                  // A top can go in several places — ask where.
-                  if (cur.cat == 'horni') {
+                  // With several cards of its kind on the canvas, ask which.
+                  if (store.visibleSlots.where((s) => s.kindId == cur.cat).length > 1) {
                     _showSheet(
                       context,
                       (ctx) => AppLocalizations.of(ctx)!.wearWhereTitle,
-                      _WearTopChoices(item: cur),
+                      _WearChoices(item: cur),
                     );
                     return;
                   }
@@ -1339,23 +1149,23 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
 }
 
 /// Closes the sheets so the outfit tab (which the store just switched to)
-/// shows. A folder the item sheet was opened from stays open in the
-/// wardrobe tab's own stack, for when you go back there.
+/// shows.
 void _backToOutfit(BuildContext context) =>
     Navigator.of(context).popUntil((route) => route.isFirst);
 
-/// Where in the outfit a top should go: the top itself, one of the current
-/// layers (replacing it), or a new layer — each shown with what's there now.
-class _WearTopChoices extends StatelessWidget {
+/// Which of the canvas cards of an item's kind it should go on — each
+/// shown with what's there now — or a new card of that kind.
+class _WearChoices extends StatelessWidget {
   final ClothingItem item;
-  const _WearTopChoices({required this.item});
+  const _WearChoices({required this.item});
 
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
     final l10n = AppLocalizations.of(context)!;
-    final top = store.at(store.topList, WardrobeZone.top);
-    final isWorn = top?.id == item.id || store.layers.contains(item.id);
+    final slots = store.visibleSlots.where((s) => s.kindId == item.cat).toList()
+      ..sort((a, b) => a.y.compareTo(b.y));
+    final kindName = store.kindName(item.cat);
 
     Widget row({required String label, required ClothingItem? occupant, required VoidCallback onTap, bool isNew = false}) {
       return Padding(
@@ -1409,55 +1219,59 @@ class _WearTopChoices extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        row(label: l10n.wearAsTop, occupant: top, onTap: () => store.useItem(item)),
-        for (var i = 0; i < store.layers.length; i++)
+        for (final (i, s) in slots.indexed)
           row(
-            label: l10n.wearAsLayer(i + 1),
-            occupant: store.itemById(store.layers[i]),
-            onTap: () => store.wearAsLayer(item, i),
+            label: l10n.wearOnCard(kindName, i + 1),
+            occupant: store.itemInSlot(s.id),
+            onTap: () => store.useItem(item, slotId: s.id),
           ),
-        if (!isWorn && store.layers.length < WardrobeStore.kMaxLayers)
+        if (store.slotWearing(item.id) == null)
           row(
-            label: l10n.wearAsNewLayer,
+            label: l10n.wearNewCard,
             occupant: null,
             isNew: true,
-            onTap: () => store.wearAsLayer(item, store.layers.length),
+            onTap: () {
+              store.addSlot(item.cat, itemId: item.id);
+              store.setScreen(WardrobeTabKind.outfit);
+            },
           ),
       ],
     );
   }
 }
 
-/// Where an item can be moved, grouped by wardrobe: the other folders of
-/// its category here, then each other wardrobe's folders for that category
-/// — plus the item's current folder name wherever it doesn't exist yet
-/// (created on move). One tap moves it; that takes it out of the folder
-/// being viewed, so both this sheet and the item sheet under it close.
-class _MoveItem extends StatelessWidget {
+/// Where an item can be moved: another type, another kind (and a type
+/// there), or another wardrobe. Picking a type moves it right away and
+/// returns to its detail; another wardrobe takes it out of this one, so
+/// the detail closes too.
+class _MoveItem extends StatefulWidget {
   final String itemId;
   const _MoveItem({required this.itemId});
+
+  @override
+  State<_MoveItem> createState() => _MoveItemState();
+}
+
+class _MoveItemState extends State<_MoveItem> {
+  /// The kind whose types are on offer — the item's own until another is
+  /// picked.
+  String? _kind;
 
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
     final l10n = AppLocalizations.of(context)!;
-    final cur = store.itemById(itemId);
+    final cur = store.itemById(widget.itemId);
     if (cur == null) return const SizedBox.shrink();
-    // The item sheet is opened from inside the item's own folder, so only
-    // the *other* folders are offered here.
-    final otherFolders = store.foldersFor(cur.cat).where((f) => f != cur.folder).toList();
+    final kind = store.kindById(_kind ?? cur.cat) ?? store.kindById(cur.cat);
+    final kinds = store.kinds;
     final otherWardrobes = store.wardrobes.where((w) => w.id != store.activeWardrobeId).toList();
-    final currentFolder = cur.folder ?? store.fallbackFolder;
+    bool isCurrent(String typeId) => kind?.id == cur.cat && cur.typeId == typeId;
 
-    void closeBoth() => Navigator.of(context)
-      ..pop()
-      ..pop();
-
-    if (otherFolders.isEmpty && otherWardrobes.isEmpty) {
-      return Text(
-        l10n.nothingToMoveTo,
-        style: AppText.sans(size: 12.5, color: AppColors.mutedTag, height: 1.4),
-      );
+    void moveTo(String typeId) {
+      if (kind == null || isCurrent(typeId)) return;
+      store.moveItem(cur.id, kind.id, typeId);
+      Navigator.of(context).pop();
     }
 
     Widget section(String label, List<Widget> chips) => Padding(
@@ -1475,31 +1289,34 @@ class _MoveItem extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (otherFolders.isNotEmpty)
-          section(l10n.moveInThisWardrobe, [
-            for (final f in otherFolders)
-              SelectChip(
-                label: f,
-                active: false,
-                onTap: () {
-                  store.setFolder(cur.id, f);
-                  closeBoth();
-                },
-              ),
+        section(l10n.sectionKind, [
+          for (final k in kinds)
+            SelectChip(
+              label: k.name,
+              active: k.id == kind?.id,
+              mono: false,
+              height: 34,
+              onTap: () => setState(() => _kind = k.id),
+            ),
+        ]),
+        if (kind != null)
+          section(l10n.sectionType, [
+            for (final t in kind.types) SelectChip(label: t.name, active: isCurrent(t.id), onTap: () => moveTo(t.id)),
           ]),
-        for (final w in otherWardrobes)
-          section(l10n.moveInWardrobe(w.name), [
-            for (final f in [
-              ...store.foldersIn(w.id, cur.cat),
-              if (!store.foldersIn(w.id, cur.cat).contains(currentFolder)) currentFolder,
-            ])
+        if (otherWardrobes.isNotEmpty)
+          section(l10n.sectionWardrobe, [
+            for (final w in otherWardrobes)
               SelectChip(
-                label: store.foldersIn(w.id, cur.cat).contains(f) ? f : '+ $f',
+                label: w.name,
                 active: false,
+                mono: false,
+                height: 34,
                 onTap: () {
-                  store.moveItemToWardrobe(cur.id, w.id, folder: f);
-                  store.flash(l10n.toastMovedToWardrobe(w.name, f));
-                  closeBoth();
+                  store.moveItemToWardrobe(cur.id, w.id);
+                  store.flash(l10n.toastMovedToWardrobe(w.name));
+                  Navigator.of(context)
+                    ..pop()
+                    ..pop();
                 },
               ),
           ]),
@@ -1652,6 +1469,88 @@ class _InfoField extends StatelessWidget {
   }
 }
 
+/// Deletes [type] of [kind]: an empty type just goes; one with clothes
+/// (in any wardrobe) first asks which of the kind's other types they move
+/// to. A kind's last type can't be deleted.
+Future<void> deleteTypeAskingWhereTo(BuildContext context, ClothingKind kind, ClothingType type) async {
+  final store = context.read<WardrobeStore>();
+  if (kind.types.length < 2) return;
+  final count = store.typeItemCount(kind.id, type.id);
+  if (count == 0) {
+    store.deleteType(kind.id, type.id);
+    return;
+  }
+  final target = await showDialog<String>(
+    context: context,
+    builder: (_) => _MoveTypeItemsDialog(kind: kind, type: type, count: count),
+  );
+  if (target != null) store.deleteType(kind.id, type.id, moveTo: target);
+}
+
+/// Deleting a type that has clothes: pick which of the kind's other types
+/// they move to.
+class _MoveTypeItemsDialog extends StatefulWidget {
+  final ClothingKind kind;
+  final ClothingType type;
+  final int count;
+  const _MoveTypeItemsDialog({required this.kind, required this.type, required this.count});
+
+  @override
+  State<_MoveTypeItemsDialog> createState() => _MoveTypeItemsDialogState();
+}
+
+class _MoveTypeItemsDialogState extends State<_MoveTypeItemsDialog> {
+  late final _others = widget.kind.types.where((t) => t.id != widget.type.id).toList();
+  late String _target = _others.first.id;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return AlertDialog(
+      backgroundColor: AppColors.surface,
+      title: Text(l10n.deleteTypeTitle, style: AppText.sans(size: 16, color: AppColors.ink)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.deleteTypeMoveMessage(widget.type.name, l10n.itemCount(widget.count)),
+            style: AppText.sans(size: 13, color: AppColors.label, height: 1.4),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: [
+              for (final t in _others)
+                SelectChip(
+                  label: t.name,
+                  active: t.id == _target,
+                  mono: false,
+                  height: 34,
+                  onTap: () => setState(() => _target = t.id),
+                ),
+            ],
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.cancel, style: AppText.sans(size: 13, color: AppColors.muted)),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_target),
+          child: Text(
+            l10n.delete,
+            style: AppText.sans(size: 13, weight: FontWeight.w500, color: AppColors.accent),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 Future<void> _confirmDeleteItem(
   BuildContext context,
   WardrobeStore store,
@@ -1739,17 +1638,6 @@ class SettingsContent extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 22),
-        SettingsSectionLabel(l10n.sectionOther, uppercase: uppercaseLabels),
-        const SizedBox(height: 8),
-        SettingsCard(
-          child: _ToggleRow(
-            label: l10n.showDressesLabel,
-            hint: l10n.showDressesHint,
-            value: store.showDresses,
-            onChanged: store.setShowDresses,
-          ),
-        ),
       ],
     );
   }
@@ -1790,52 +1678,4 @@ class SettingsSectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       Text(uppercase ? text.toUpperCase() : text, style: _sectionLabelStyle);
-}
-
-/// A settings on/off row: label + explanatory hint on the left, switch on
-/// the right.
-class _ToggleRow extends StatelessWidget {
-  final String label;
-  final String hint;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  const _ToggleRow({
-    required this.label,
-    required this.hint,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: AppText.sans(size: 13, color: AppColors.ink)),
-              const SizedBox(height: 4),
-              Text(
-                hint,
-                style: AppText.sans(
-                  size: 11.5,
-                  color: AppColors.mutedTag,
-                  height: 1.4,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        Switch.adaptive(
-          value: value,
-          activeThumbColor: AppColors.accent,
-          onChanged: onChanged,
-        ),
-      ],
-    );
-  }
 }

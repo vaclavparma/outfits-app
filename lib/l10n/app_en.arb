@@ -13,13 +13,9 @@
   "create": "Create",
   "add": "add",
   "actionCannotBeUndone": "This action can't be undone.",
-  "noFolder": "no folder",
   "rename": "Rename",
   "unsortedName": "Unsorted",
 
-  "addTopPlaceholder": "Add a top",
-  "addBottomPlaceholder": "Add a bottom",
-  "addShoesPlaceholder": "Add shoes",
   "shuffleButton": "Shuffle",
   "saveOutfitButton": "Save outfit",
 
@@ -27,6 +23,9 @@
   "categorySaty": "Dresses",
   "categoryDolni": "Bottom",
   "categoryBoty": "Shoes",
+  "defaultTypesTop": "T-shirts, Shirts, Hoodies, Sweaters",
+  "defaultTypesBottom": "Trousers, Jeans, Skirts, Shorts",
+  "defaultTypesShoes": "Sneakers, Dress shoes, Sandals",
 
   "itemCount": "{count, plural, one{{count} item} other{{count} items}}",
   "@itemCount": {
@@ -63,23 +62,7 @@
     }
   },
 
-  "pickTopTitle": "Choose a top or dress",
-  "pickBottomTitle": "Choose a bottom",
-  "pickShoesTitle": "Choose shoes",
-
-  "addLayerTitle": "Add a layer",
-  "changeLayerTitle": "Change layer",
-  "layerLimitMessage": "{max, plural, one{You can have at most {max} extra layer.} other{You can have at most {max} extra layers.}}",
-  "@layerLimitMessage": {
-    "placeholders": {
-      "max": {"type": "int"}
-    }
-  },
-  "noMoreLayers": "No more layers to add.",
-
   "addItemTitle": "Add clothing",
-  "sectionCategory": "category",
-  "sectionFolder": "folder",
   "takePhoto": "Take photo",
   "fromGallery": "From gallery",
 
@@ -88,30 +71,8 @@
   "deleteItemTitle": "Delete this item?",
   "deleteItemMessage": "This item will be deleted.",
   "moveTitle": "Move",
-  "nothingToMoveTo": "Nowhere to move it yet — create another folder or wardrobe first.",
-  "moveInThisWardrobe": "in this wardrobe",
-  "moveInWardrobe": "in “{name}”",
-  "@moveInWardrobe": {
-    "placeholders": {
-      "name": {"type": "String"}
-    }
-  },
-  "toastMovedToWardrobe": "Moved to the “{name}” wardrobe · {folder}",
-  "@toastMovedToWardrobe": {
-    "placeholders": {
-      "name": {"type": "String"},
-      "folder": {"type": "String"}
-    }
-  },
+  "toastMovedToWardrobe": "Moved to the “{name}” wardrobe",
   "wearWhereTitle": "Where in the outfit?",
-  "wearAsTop": "Top",
-  "wearAsLayer": "Layer {n}",
-  "@wearAsLayer": {
-    "placeholders": {
-      "n": {"type": "int"}
-    }
-  },
-  "wearAsNewLayer": "New layer",
   "wornHere": "here now",
   "searchHint": "Search clothes",
   "nothingFound": "Nothing found.",
@@ -129,18 +90,6 @@
   "sectionOutfitName": "outfit name",
   "outfitNameHint": "e.g. Monday meeting",
   "sectionCollection": "collection",
-
-  "newFolderTile": "new folder",
-  "newFolderDialogTitle": "New folder",
-  "newFolderHint": "e.g. Shirts",
-  "renameFolderTitle": "Rename folder",
-  "deleteFolderTitle": "Delete folder?",
-  "deleteFolderMessage": "The folder “{folder}” will be deleted. Items in it will move to “Nezařazené”.",
-  "@deleteFolderMessage": {
-    "placeholders": {
-      "folder": {"type": "String"}
-    }
-  },
 
   "toastSavedWithPhoto": "Saved to “{category}” · photo stored in app files",
   "@toastSavedWithPhoto": {
@@ -201,9 +150,6 @@
   "sectionAppearance": "appearance",
   "themeLight": "Light",
   "themeDark": "Dark",
-  "sectionOther": "other",
-  "showDressesLabel": "Show dresses in wardrobe",
-  "showDressesHint": "Hides the dresses category in the wardrobe and when adding clothes. Dresses already in your wardrobe stay put.",
 
   "onboardingTitle": "Welcome to Outfits",
   "onboardingSubtitle": "A few things to start — you can change all of them later.",
@@ -232,5 +178,34 @@
     "placeholders": {
       "n": {"type": "int"}
     }
-  }
+  },
+  "ok": "OK",
+  "sectionKinds": "kinds and types",
+  "addTypeChip": "type",
+  "newKind": "Custom kind",
+  "newKindHint": "e.g. Hats",
+  "renameKindTitle": "Rename kind",
+  "deleteKindTitle": "Delete kind?",
+  "deleteKindMessage": "The kind “{name}” and its types will be deleted.",
+  "kindNotEmptyTitle": "Kind isn’t empty",
+  "kindNotEmptyMessage": "“{name}” still has {items} (counting every wardrobe). Move them to another kind or delete them first.",
+  "newTypeTitle": "New type",
+  "newTypeHint": "e.g. Shirts",
+  "renameTypeTitle": "Rename type",
+  "deleteTypeTitle": "Delete type?",
+  "kindsHint": "Kinds are the cards on the main page; types sort clothes within a kind. Drag the handle to reorder.",
+  "sectionKind": "kind",
+  "sectionType": "type",
+  "sectionWardrobe": "wardrobe",
+  "wearOnCard": "{kind} {n}",
+  "wearNewCard": "New card",
+  "all": "All",
+  "addClothes": "Add",
+  "canvasEmpty": "Nothing on the canvas yet.\nAdd cards with the buttons below — hold one to move it, pinch to resize it.",
+  "otherTypeName": "Other",
+  "defaultTypesDress": "Summer, Formal",
+  "deleteTypeMoveMessage": "“{name}” has {items}. Where should they go?",
+  "dropToRemove": "Drop here to remove",
+  "reorder": "Reorder",
+  "newTypeTile": "new type"
 }

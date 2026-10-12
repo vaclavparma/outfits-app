@@ -13,13 +13,9 @@
   "create": "Vytvořit",
   "add": "přidat",
   "actionCannotBeUndone": "Tuto akci nelze vrátit.",
-  "noFolder": "bez složky",
   "rename": "Přejmenovat",
   "unsortedName": "Nezařazené",
 
-  "addTopPlaceholder": "Přidej top",
-  "addBottomPlaceholder": "Přidej spodek",
-  "addShoesPlaceholder": "Přidej boty",
   "shuffleButton": "Zamíchat",
   "saveOutfitButton": "Uložit outfit",
 
@@ -27,6 +23,10 @@
   "categorySaty": "Šaty",
   "categoryDolni": "Dolní díl",
   "categoryBoty": "Boty",
+  "defaultTypesTop": "Trička, Košile, Mikiny, Svetry",
+  "@defaultTypesTop": {"description": "Comma-separated types a fresh install starts with under tops."},
+  "defaultTypesBottom": "Kalhoty, Džíny, Sukně, Kraťasy",
+  "defaultTypesShoes": "Tenisky, Polobotky, Sandály",
 
   "itemCount": "{count, plural, one{{count} kus} few{{count} kusy} other{{count} kusů}}",
   "@itemCount": {
@@ -63,23 +63,7 @@
     }
   },
 
-  "pickTopTitle": "Vyber top nebo šaty",
-  "pickBottomTitle": "Vyber spodek",
-  "pickShoesTitle": "Vyber boty",
-
-  "addLayerTitle": "Přidat vrstvu",
-  "changeLayerTitle": "Vyměnit vrstvu",
-  "layerLimitMessage": "{max, plural, one{Můžeš mít nejvýš {max} vrstvu navíc.} few{Můžeš mít nejvýš {max} vrstvy navíc.} other{Můžeš mít nejvýš {max} vrstev navíc.}}",
-  "@layerLimitMessage": {
-    "placeholders": {
-      "max": {"type": "int"}
-    }
-  },
-  "noMoreLayers": "Žádné další vrstvy k přidání.",
-
   "addItemTitle": "Přidat oblečení",
-  "sectionCategory": "kategorie",
-  "sectionFolder": "složka",
   "takePhoto": "Vyfotit",
   "fromGallery": "Z galerie",
 
@@ -88,30 +72,9 @@
   "deleteItemTitle": "Smazat oblečení?",
   "deleteItemMessage": "Oblečení bude smazáno.",
   "moveTitle": "Přesunout",
-  "nothingToMoveTo": "Není kam přesunout — nejdřív založ další složku nebo šatník.",
-  "moveInThisWardrobe": "v tomto šatníku",
-  "moveInWardrobe": "v šatníku „{name}“",
-  "@moveInWardrobe": {
-    "placeholders": {
-      "name": {"type": "String"}
-    }
-  },
-  "toastMovedToWardrobe": "Přesunuto do šatníku „{name}“ · složka {folder}",
-  "@toastMovedToWardrobe": {
-    "placeholders": {
-      "name": {"type": "String"},
-      "folder": {"type": "String"}
-    }
-  },
+  "toastMovedToWardrobe": "Přesunuto do šatníku „{name}“",
+  "@toastMovedToWardrobe": {"placeholders": {"name": {"type": "String"}}},
   "wearWhereTitle": "Kam do outfitu?",
-  "wearAsTop": "Top",
-  "wearAsLayer": "Vrstva {n}",
-  "@wearAsLayer": {
-    "placeholders": {
-      "n": {"type": "int"}
-    }
-  },
-  "wearAsNewLayer": "Nová vrstva",
   "wornHere": "teď tady",
   "searchHint": "Hledat oblečení",
   "nothingFound": "Nic nenalezeno.",
@@ -129,18 +92,6 @@
   "sectionOutfitName": "název outfitu",
   "outfitNameHint": "např. Pondělní porada",
   "sectionCollection": "kolekce",
-
-  "newFolderTile": "nová složka",
-  "newFolderDialogTitle": "Nová složka",
-  "newFolderHint": "např. Košile",
-  "renameFolderTitle": "Přejmenovat složku",
-  "deleteFolderTitle": "Smazat složku?",
-  "deleteFolderMessage": "Složka „{folder}“ bude smazána. Oblečení v ní se přesune do složky „Nezařazené“.",
-  "@deleteFolderMessage": {
-    "placeholders": {
-      "folder": {"type": "String"}
-    }
-  },
 
   "toastSavedWithPhoto": "Uloženo do „{category}“ · fotka v souborech apky",
   "@toastSavedWithPhoto": {
@@ -201,9 +152,6 @@
   "sectionAppearance": "vzhled",
   "themeLight": "Světlý",
   "themeDark": "Tmavý",
-  "sectionOther": "ostatní",
-  "showDressesLabel": "Zobrazovat šaty v šatníku",
-  "showDressesHint": "Skryje kategorii šatů v šatníku a při přidávání oblečení. Šaty, které už máš v šatníku, zůstanou beze změny.",
 
   "onboardingTitle": "Vítej v Šatníku",
   "onboardingSubtitle": "Pár věcí na začátek — všechno půjde později změnit.",
@@ -232,5 +180,38 @@
     "placeholders": {
       "n": {"type": "int"}
     }
-  }
+  },
+  "ok": "OK",
+  "sectionKinds": "druhy a typy",
+  "addTypeChip": "typ",
+  "newKind": "Vlastní druh",
+  "newKindHint": "např. Čepice",
+  "renameKindTitle": "Přejmenovat druh",
+  "deleteKindTitle": "Smazat druh?",
+  "deleteKindMessage": "Druh „{name}“ i s jeho typy bude smazán.",
+  "@deleteKindMessage": {"placeholders": {"name": {"type": "String"}}},
+  "kindNotEmptyTitle": "Druh není prázdný",
+  "kindNotEmptyMessage": "V druhu „{name}“ je ještě {items} (počítají se všechny šatníky). Nejdřív je přesuň do jiného druhu nebo smaž.",
+  "@kindNotEmptyMessage": {"placeholders": {"name": {"type": "String"}, "items": {"type": "String"}}},
+  "newTypeTitle": "Nový typ",
+  "newTypeHint": "např. Košile",
+  "renameTypeTitle": "Přejmenovat typ",
+  "deleteTypeTitle": "Smazat typ?",
+  "kindsHint": "Druhy jsou karty na hlavní stránce, typy třídí oblečení uvnitř druhu. Pořadí změníš přetažením za úchyt.",
+  "sectionKind": "druh",
+  "sectionType": "typ",
+  "sectionWardrobe": "šatník",
+  "wearOnCard": "{kind} {n}",
+  "@wearOnCard": {"placeholders": {"kind": {"type": "String"}, "n": {"type": "int"}}},
+  "wearNewCard": "Nová karta",
+  "all": "Vše",
+  "addClothes": "Přidat",
+  "canvasEmpty": "Na plátně zatím nic není.\nPřidej karty tlačítky dole — podržením je pak přesuneš, dvěma prsty změníš velikost.",
+  "otherTypeName": "Ostatní",
+  "defaultTypesDress": "Letní, Společenské",
+  "deleteTypeMoveMessage": "V typu „{name}“ je {items}. Kam je přesunout?",
+  "@deleteTypeMoveMessage": {"placeholders": {"name": {"type": "String"}, "items": {"type": "String"}}},
+  "dropToRemove": "Pusť sem pro odebrání",
+  "reorder": "Změnit pořadí",
+  "newTypeTile": "nový typ"
 }
