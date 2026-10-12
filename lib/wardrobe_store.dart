@@ -218,10 +218,17 @@ class WardrobeStore extends ChangeNotifier {
     cols = c.cols;
     saved = c.saved;
     knownFolders = c.knownFolders;
-    idx = {for (final z in WardrobeZone.values) z: 0};
     layers = [];
     folderFilter = null;
     _bucketOrphanedItems();
+    // Open on a random outfit, as if Shuffle had just been pressed — with
+    // any pinned garment already in its slot, since that's what Shuffle
+    // keeps (otherwise a pin would sit on an item that isn't even showing).
+    idx = {
+      for (final z in WardrobeZone.values)
+        z: max(0, zoneList(z).indexWhere((it) => it.pinned)),
+    };
+    _shuffleSelection();
   }
 
   /// A brand-new wardrobe opens on the Wardrobe tab — there's nothing to
@@ -405,6 +412,11 @@ class WardrobeStore extends ChangeNotifier {
   /// the same garment can't end up worn as the top and layered over itself,
   /// or as two layers at once.
   void shuffle() {
+    _shuffleSelection();
+    notifyListeners();
+  }
+
+  void _shuffleSelection() {
     final rng = Random();
     final newIdx = {...idx};
     final botPinned = at(botList, WardrobeZone.bottom)?.pinned ?? false;
@@ -458,7 +470,6 @@ class WardrobeStore extends ChangeNotifier {
             id, // no unpinned alternative available — leave it as-is
       ];
     }
-    notifyListeners();
   }
 
   void addLayer(String itemId) {
