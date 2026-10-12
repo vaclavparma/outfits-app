@@ -590,12 +590,6 @@ abstract class AppLocalizations {
   /// **'Uloženo do „{category}“ · fotka v souborech apky'**
   String toastSavedWithPhoto(String category);
 
-  /// No description provided for @toastSavedNoPhoto.
-  ///
-  /// In cs, this message translates to:
-  /// **'Uloženo do „{category}“'**
-  String toastSavedNoPhoto(String category);
-
   /// No description provided for @toastSavedPhotoFailed.
   ///
   /// In cs, this message translates to:

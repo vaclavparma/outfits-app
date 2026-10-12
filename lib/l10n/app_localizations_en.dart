@@ -295,11 +295,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String toastSavedNoPhoto(String category) {
-    return 'Saved to “$category”';
-  }
-
-  @override
   String toastSavedPhotoFailed(String category) {
     return 'Saved to “$category” · couldn\'t save the photo';
   }

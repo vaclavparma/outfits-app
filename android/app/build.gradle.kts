@@ -46,8 +46,10 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = false
-            isShrinkResources = false
+            // R8: drops unused Java/Kotlin code and resources (most of the
+            // dex size otherwise). Flutter and the plugins ship their keep rules.
+            isMinifyEnabled = true
+            isShrinkResources = true
         }
     }
 }

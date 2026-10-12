@@ -148,12 +148,6 @@
       "category": {"type": "String"}
     }
   },
-  "toastSavedNoPhoto": "Saved to “{category}”",
-  "@toastSavedNoPhoto": {
-    "placeholders": {
-      "category": {"type": "String"}
-    }
-  },
   "toastSavedPhotoFailed": "Saved to “{category}” · couldn't save the photo",
   "@toastSavedPhotoFailed": {
     "placeholders": {

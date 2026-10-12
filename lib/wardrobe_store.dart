@@ -18,16 +18,12 @@ import 'models.dart';
 /// persistence to disk.
 class WardrobeStore extends ChangeNotifier {
   static const _fileName = 'satnik_v1.json';
-
-  /// A copy of the state file taken right before it's first rewritten in
-  /// the multi-wardrobe format — insurance against a botched migration.
-  static const _legacyBackupFileName = 'satnik_v1.pre-wardrobes.json';
   static const kMaxLayers = 2;
 
   /// Every item belongs to a folder, mirroring how every saved outfit
   /// belongs to a collection. This is the catch-all a category's items land
-  /// in if they don't have one yet (fresh migration, or a folder that got
-  /// deleted out from under them) — never left as `null`. Localized at the
+  /// in when none was picked (e.g. the first item of a category) or its
+  /// folder was deleted — never left as `null`. Localized at the
   /// moment it's created (matching [localeCode], or the device locale when
   /// that's unset) since it's stored as a plain folder name from then on,
   /// just like any user-created one — it doesn't retroactively re-translate
@@ -148,8 +144,8 @@ class WardrobeStore extends ChangeNotifier {
   }
 
   Future<void> _loadFrom(Map<String, dynamic> data) async {
-    // Settings first — the legacy migration below names the wardrobe it
-    // creates in the user's language.
+    // Settings first — a default wardrobe created below is named in the
+    // user's language.
     try {
       localeCode = data['localeCode'] as String?;
     } catch (_) {}
@@ -185,14 +181,7 @@ class WardrobeStore extends ChangeNotifier {
     }
 
     if (parsed.isEmpty) {
-      // Data from before multiple wardrobes existed: everything sits at the
-      // top level of the file. It becomes the first (and only) wardrobe.
-      // The original file is kept as a backup before it's ever overwritten
-      // in the new format.
-      await _backupLegacyFile();
-      final w = Wardrobe(id: _newWardrobeId(), name: _l10n.defaultWardrobeName);
-      parsed.add(w);
-      _stash[w.id] = _WardrobeContent.fromJson(data, docsPath);
+      parsed.add(Wardrobe(id: _newWardrobeId(), name: _l10n.defaultWardrobeName));
     }
 
     wardrobes = parsed;
@@ -200,16 +189,6 @@ class WardrobeStore extends ChangeNotifier {
     _activate(
       parsed.any((w) => w.id == savedActive) ? savedActive as String : parsed.first.id,
     );
-  }
-
-  Future<void> _backupLegacyFile() async {
-    try {
-      final file = await _localFile();
-      final backup = File(p.join(file.parent.path, _legacyBackupFileName));
-      if (!await backup.exists()) await file.copy(backup.path);
-    } catch (_) {
-      // Best-effort — the migration itself doesn't depend on it.
-    }
   }
 
   String _newWardrobeId() => 'w-${DateTime.now().microsecondsSinceEpoch}';
@@ -234,7 +213,6 @@ class WardrobeStore extends ChangeNotifier {
     knownFolders = c.knownFolders;
     layers = [];
     folderFilter = null;
-    _bucketOrphanedItems();
     // Open on a random outfit, as if Shuffle had just been pressed — with
     // any pinned garment already in its slot, since that's what Shuffle
     // keeps (otherwise a pin would sit on an item that isn't even showing).
@@ -253,28 +231,6 @@ class WardrobeStore extends ChangeNotifier {
   /// runs after every load path, not just the fresh-install one).
   void _applyFirstLaunchScreen() {
     if (items.isEmpty) screen = WardrobeTabKind.wardrobe;
-  }
-
-  /// Every item must have a folder. Files anything that doesn't (freshly
-  /// migrated items, or items whose folder was since deleted) into
-  /// [fallbackFolder] for its category, creating that folder if needed.
-  void _bucketOrphanedItems() {
-    final orphanCats = items
-        .where((i) => i.folder == null)
-        .map((i) => i.cat)
-        .toSet();
-    if (orphanCats.isEmpty) return;
-    items = items
-        .map((i) => i.folder == null ? (i..folder = fallbackFolder) : i)
-        .toList();
-    final updated = {...knownFolders};
-    for (final cat in orphanCats) {
-      final current = updated[cat] ?? const [];
-      if (!current.contains(fallbackFolder)) {
-        updated[cat] = [...current, fallbackFolder];
-      }
-    }
-    knownFolders = updated;
   }
 
   Future<File> _localFile() async {
@@ -332,12 +288,19 @@ class WardrobeStore extends ChangeNotifier {
     });
   }
 
+  /// Id lookup, indexed — collections resolve every item of every outfit
+  /// on each rebuild. [items] is only ever replaced, never changed in
+  /// place, so a new list instance is what invalidates the index.
   ClothingItem? itemById(String id) {
-    for (final i in items) {
-      if (i.id == id) return i;
+    if (!identical(_indexedItems, items)) {
+      _itemIndex = {for (final i in items) i.id: i};
+      _indexedItems = items;
     }
-    return null;
+    return _itemIndex[id];
   }
+
+  List<ClothingItem>? _indexedItems;
+  Map<String, ClothingItem> _itemIndex = const {};
 
   List<ClothingItem> byCat(String cat) =>
       items.where((i) => i.cat == cat).toList();
@@ -601,9 +564,14 @@ class WardrobeStore extends ChangeNotifier {
     if (size != null) it.size = clean(size);
     if (price != null) it.price = clean(price);
     if (note != null) it.note = clean(note);
-    notifyListeners();
+    // Called on every keystroke; the detail sheet keeps its own text, so the
+    // rest of the app (all three tabs stay alive) is told once typing pauses,
+    // together with the save — not rebuilt per character.
     _persistTimer?.cancel();
-    _persistTimer = Timer(const Duration(milliseconds: 600), _persist);
+    _persistTimer = Timer(const Duration(milliseconds: 600), () {
+      notifyListeners();
+      _persist();
+    });
   }
 
   Timer? _persistTimer;
@@ -1121,9 +1089,7 @@ String _resolveImagePath(String stored, String docsPath) {
   return p.join(docsPath, stored.substring(i));
 }
 
-/// Everything that belongs to one wardrobe. Serialized with the same keys
-/// the whole state file used before multiple wardrobes existed, so the
-/// legacy top-level data parses with the very same code.
+/// Everything that belongs to one wardrobe, as stored in the state file.
 class _WardrobeContent {
   List<ClothingItem> items;
   List<String> cols;

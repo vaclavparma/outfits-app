@@ -58,7 +58,7 @@ class _AboutContent extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Image.asset(
-                'assets/icon/app_icon.png',
+                'assets/icon/app_icon_small.png',
                 width: 64,
                 height: 64,
               ),

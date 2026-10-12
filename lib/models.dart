@@ -19,16 +19,6 @@ const List<ClothingCategory> kCategories = [
   ClothingCategory('boty'),
 ];
 
-/// Maps a category key from before the "horní/dolní díl" merge to its
-/// current equivalent, so old items and saved outfits (which stored the old
-/// keys) keep working after this migration. Anything not in the old set —
-/// including already-current keys — passes through unchanged.
-String _migrateCatKey(String key) => switch (key) {
-  'tricka' || 'bundy' => 'horni',
-  'kalhoty' || 'sukne' => 'dolni',
-  _ => key,
-};
-
 String categoryLabel(BuildContext context, String key) {
   final l10n = AppLocalizations.of(context)!;
   return switch (key) {
@@ -130,10 +120,7 @@ class ClothingItem {
 
   factory ClothingItem.fromJson(Map<String, dynamic> json) => ClothingItem(
     id: json['id'] as String,
-    cat: _migrateCatKey(json['cat'] as String),
-    // Tags (this item's old, freeform, multi-select organization) were
-    // dropped in favor of a single folder per item — deliberately not
-    // migrated, so `folder` starts unset even for pre-existing items.
+    cat: json['cat'] as String,
     folder: json['folder'] as String?,
     imagePath: json['imagePath'] as String?,
     pinned: json['pinned'] as bool? ?? false,
@@ -154,16 +141,10 @@ class SavedOutfit {
   final List<String> catKeys;
   final List<String> itemIds;
 
-  /// A pre-formatted summary string from before [catKeys] existed. Only
-  /// ever set when loading old saved data that predates this field; new
-  /// outfits always carry [catKeys] instead and leave this null.
-  final String? legacyMeta;
-
   SavedOutfit({
     required this.name,
     required this.catKeys,
     required this.itemIds,
-    this.legacyMeta,
   });
 
   Map<String, dynamic> toJson() => {
@@ -174,14 +155,12 @@ class SavedOutfit {
 
   factory SavedOutfit.fromJson(Map<String, dynamic> json) => SavedOutfit(
     name: json['name'] as String,
-    catKeys: (json['catKeys'] as List<dynamic>?)
-            ?.map((e) => _migrateCatKey(e as String))
-            .toList() ??
-        const [],
+    catKeys: (json['catKeys'] as List<dynamic>? ?? [])
+        .map((e) => e as String)
+        .toList(),
     itemIds: (json['itemIds'] as List<dynamic>? ?? [])
         .map((e) => e as String)
         .toList(),
-    legacyMeta: json['catKeys'] == null ? json['meta'] as String? : null,
   );
 }
 

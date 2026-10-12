@@ -31,10 +31,6 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
-  flutter_launcher_icons: ^0.14.4
   image_picker: ^1.1.2
   path_provider: ^2.1.5
   path: ^1.9.0
@@ -45,8 +41,6 @@ dependencies:
     sdk: flutter
   intl: ^0.20.2
   reorderable_grid_view: ^2.2.8
-  flutter_secure_storage: ^10.3.4
-  image: ^4.10.1
 
 dev_dependencies:
   flutter_test:
@@ -59,6 +53,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
   flutter_native_splash: ^2.4.4
+  flutter_launcher_icons: ^0.14.4
 
 flutter_native_splash:
   color: "#faf8f5"
@@ -82,7 +77,9 @@ flutter:
   generate: true
 
   assets:
-    - assets/icon/app_icon.png
+    # In-app copy (onboarding, about); the full-size app_icon.png is only
+    # the source for the launcher icons and splash screen generators.
+    - assets/icon/app_icon_small.png
 
   # Bundled locally (not fetched via google_fonts at runtime) so the app
   # works fully offline — see lib/theme.dart.
@@ -101,5 +98,3 @@ flutter:
       fonts:
         - asset: assets/fonts/IBMPlexMono-Regular.ttf
           weight: 400
-        - asset: assets/fonts/IBMPlexMono-Medium.ttf
-          weight: 500

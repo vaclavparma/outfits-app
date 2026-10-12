@@ -148,12 +148,6 @@
       "category": {"type": "String"}
     }
   },
-  "toastSavedNoPhoto": "Uloženo do „{category}“",
-  "@toastSavedNoPhoto": {
-    "placeholders": {
-      "category": {"type": "String"}
-    }
-  },
   "toastSavedPhotoFailed": "Uloženo do „{category}“ · fotku se nepodařilo uložit",
   "@toastSavedPhotoFailed": {
     "placeholders": {

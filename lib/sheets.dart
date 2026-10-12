@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 
 import 'l10n/app_localizations.dart';
 import 'models.dart';
-import 'photo_shrink.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
 import 'widgets.dart';
@@ -533,7 +532,7 @@ class _AddItemFormState extends State<_AddItemForm> {
   /// Longest edge a stored photo is scaled down to (aspect ratio kept). The
   /// biggest it's ever shown is the item detail, ~1200×660 px on the largest
   /// iPhone — full camera resolution (up to 8K) is just wasted storage.
-  static const double _maxPhotoEdge = kMaxPhotoEdge * 1.0;
+  static const double _maxPhotoEdge = 1600;
 
   Future<void> _pick(ImageSource source) async {
     if (_busy || _folder == null) return;

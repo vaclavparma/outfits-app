@@ -298,11 +298,6 @@ class AppLocalizationsCs extends AppLocalizations {
   }
 
   @override
-  String toastSavedNoPhoto(String category) {
-    return 'Uloženo do „$category“';
-  }
-
-  @override
   String toastSavedPhotoFailed(String category) {
     return 'Uloženo do „$category“ · fotku se nepodařilo uložit';
   }

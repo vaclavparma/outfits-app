@@ -31,6 +31,8 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
+# Dart symbols for de-obfuscating crash reports (see build-and-upload.sh)
+/debug-info/
 /coverage/
 
 # Symbolication related

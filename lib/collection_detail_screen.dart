@@ -248,11 +248,9 @@ class _OutfitCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          outfit.catKeys.isNotEmpty
-                              ? outfit.catKeys
-                                    .map((k) => shortCategoryLabel(context, k))
-                                    .join(' · ')
-                              : (outfit.legacyMeta ?? ''),
+                          outfit.catKeys
+                              .map((k) => shortCategoryLabel(context, k))
+                              .join(' · '),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppText.mono(

@@ -54,10 +54,24 @@ lib/
 The launcher icon and splash screen are generated from
 `assets/icon/app_icon.png` via [`flutter_launcher_icons`](https://pub.dev/packages/flutter_launcher_icons) and [`flutter_native_splash`](https://pub.dev/packages/flutter_native_splash).
 
-After replacing that file, regenerate both:
+After replacing that file, regenerate both, then the small in-app copy
+(onboarding, About) and shrink the generated splash images — the generator
+writes full 32-bit PNGs, while the illustration fits a 256-color palette
+(~85% smaller, visually identical). Needs Python with Pillow.
 ```bash
 dart run flutter_launcher_icons
 dart run flutter_native_splash:create
+python3 - <<'EOF'
+from PIL import Image
+import glob
+Image.open('assets/icon/app_icon.png').convert('RGBA').resize((192, 192), Image.LANCZOS) \
+    .save('assets/icon/app_icon_small.png')
+for f in glob.glob('android/app/src/main/res/drawable*/*splash.png') \
+        + glob.glob('ios/Runner/Assets.xcassets/LaunchImage.imageset/*.png') \
+        + ['assets/icon/app_icon_small.png']:
+    Image.open(f).convert('RGBA').quantize(256, method=Image.Quantize.FASTOCTREE,
+        dither=Image.Dither.NONE).save(f, optimize=True)
+EOF
 ```
 
 ### Build and distribution

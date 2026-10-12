@@ -38,11 +38,17 @@ flutter clean
 echo "📦 Fetching dependencies..."
 flutter pub get
 
+# Smaller app: Dart debug info goes to a side folder and symbol names are
+# shortened. Keep that folder — `flutter symbolize -i <stack trace>
+# -d debug-info/<version>` needs it to make crash reports readable.
+SYMBOLS_DIR="debug-info/${VERSION_NAME}+${NEW_BUILD}"
+SIZE_FLAGS=(--obfuscate --split-debug-info="$SYMBOLS_DIR")
+
 echo "🏗️  Building IPA archive (${VERSION_NAME}+${NEW_BUILD})..."
-flutter build ipa --release
+flutter build ipa --release "${SIZE_FLAGS[@]}"
 
 echo "🏗️  Building App Bundle (${VERSION_NAME}+${NEW_BUILD})..."
-flutter build appbundle --release
+flutter build appbundle --release "${SIZE_FLAGS[@]}"
 
 # 5. Upload to Google Play Store
 echo "🚀 Uploading to Google Play Store..."

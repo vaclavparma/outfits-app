@@ -43,7 +43,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: Image.asset('assets/icon/app_icon.png', width: 56, height: 56),
+                child: Image.asset('assets/icon/app_icon_small.png', width: 56, height: 56),
               ),
               const SizedBox(height: 18),
               Text(
