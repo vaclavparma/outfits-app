@@ -14,7 +14,8 @@ import 'widgets.dart';
 /// trailing tile in each category creates a new folder there. While
 /// searching, the folders give way to a flat grid of matching items.
 class WardrobeTab extends StatefulWidget {
-  final void Function(ClothingItem item) onOpenItem;
+  /// [browseIds]: the results it was picked from, in order, to swipe through.
+  final void Function(ClothingItem item, List<String> browseIds) onOpenItem;
 
   const WardrobeTab({super.key, required this.onOpenItem});
 
@@ -83,7 +84,7 @@ class _WardrobeTabState extends State<WardrobeTab> {
                           ).toLowerCase(),
                           caption: it.name ?? it.folder ?? '',
                           imagePath: it.imagePath,
-                          onTap: () => widget.onOpenItem(it),
+                          onTap: () => widget.onOpenItem(it, [for (final x in results) x.id]),
                         ),
                     ],
                   ),

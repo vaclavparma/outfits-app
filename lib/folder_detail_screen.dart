@@ -165,7 +165,11 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                           width: double.infinity,
                           height: double.infinity,
                           imagePath: it.imagePath,
-                          onTap: () => openItemSheet(context, it),
+                          onTap: () => openItemSheet(
+                            context,
+                            it,
+                            browseIds: [for (final x in items) x.id],
+                          ),
                         ),
                     ],
                   ),

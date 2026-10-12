@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
 import 'about_sheet.dart';
@@ -20,6 +21,44 @@ final Map<WardrobeTabKind, GlobalKey<NavigatorState>> _tabNavigatorKeys = {
   for (final kind in WardrobeTabKind.values) kind: GlobalKey<NavigatorState>(),
 };
 
+/// How many screens are open on top of each tab's root. Swiping between
+/// tabs only works while the visible tab is at its root — inside a folder a
+/// sideways swipe is iOS "back" instead.
+final Map<WardrobeTabKind, ValueNotifier<int>> _tabDepth = {
+  for (final kind in WardrobeTabKind.values) kind: ValueNotifier(0),
+};
+
+final Map<WardrobeTabKind, NavigatorObserver> _tabObservers = {
+  for (final kind in WardrobeTabKind.values) kind: _DepthObserver(_tabDepth[kind]!),
+};
+
+class _DepthObserver extends NavigatorObserver {
+  final ValueNotifier<int> depth;
+  _DepthObserver(this.depth);
+
+  void _bump(int delta) {
+    void apply() => depth.value = (depth.value + delta).clamp(0, 1 << 20);
+    // Navigation can happen mid-build (e.g. a screen popping itself);
+    // listeners rebuild widgets, so wait for the frame to finish then.
+    if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      SchedulerBinding.instance.addPostFrameCallback((_) => apply());
+    } else {
+      apply();
+    }
+  }
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    if (previousRoute != null) _bump(1); // not the tab's own root page
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) => _bump(-1);
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) => _bump(-1);
+}
+
 /// Closes any folder/collection screen open in [kind]'s tab.
 void _popTabToRoot(WardrobeTabKind kind) =>
     _tabNavigatorKeys[kind]!.currentState?.popUntil((route) => route.isFirst);
@@ -33,6 +72,35 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String? _wardrobeId;
+  late int _page = context.read<WardrobeStore>().screen.index;
+  late final PageController _pages = PageController(initialPage: _page);
+
+  /// Set while a tab tap (or the store, e.g. "use in outfit") is driving
+  /// the page — the pages it slides past mustn't become the current tab.
+  bool _animating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fresh navigators below start at their roots; a previous HomeScreen's
+    // screens were torn down without "pop" notifications.
+    for (final depth in _tabDepth.values) {
+      depth.value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _pages.dispose();
+    super.dispose();
+  }
+
+  Future<void> _slideTo(int page) async {
+    if (!_pages.hasClients) return;
+    _animating = true;
+    await _pages.animateToPage(page, duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
+    _animating = false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +117,12 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     _wardrobeId = store.activeWardrobeId;
 
+    // The tab changed from outside the pager (bottom bar, store) — follow.
+    if (store.screen.index != _page) {
+      _page = store.screen.index;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _slideTo(_page));
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -57,11 +131,24 @@ class _HomeScreenState extends State<HomeScreen> {
             Column(
               children: [
                 Expanded(
-                  child: Stack(
-                    children: [
-                      for (final kind in WardrobeTabKind.values)
-                        _TabNavigator(kind: kind, active: kind == store.screen),
-                    ],
+                  child: ListenableBuilder(
+                    listenable: _tabDepth[store.screen]!,
+                    builder: (context, _) => PageView(
+                      controller: _pages,
+                      physics: _tabDepth[store.screen]!.value == 0
+                          ? const PageScrollPhysics()
+                          : const NeverScrollableScrollPhysics(),
+                      onPageChanged: (i) {
+                        if (_animating) return;
+                        _page = i;
+                        FocusManager.instance.primaryFocus?.unfocus();
+                        store.setScreen(WardrobeTabKind.values[i]);
+                      },
+                      children: [
+                        for (final kind in WardrobeTabKind.values)
+                          _TabNavigator(kind: kind, active: kind == store.screen),
+                      ],
+                    ),
                   ),
                 ),
                 _BottomTabs(
@@ -90,43 +177,41 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-/// A tab's own navigator, kept alive (and fading in/out) while another tab
-/// is showing so its stack survives the switch. Inactive tabs don't take
-/// taps, back gestures, animations or accessibility focus.
-class _TabNavigator extends StatelessWidget {
+/// A tab's own navigator, one page of the tab pager — kept alive while
+/// scrolled away so its stack (an open folder…) survives. Only the current
+/// tab handles the back button, runs animations and is read out by
+/// screen readers.
+class _TabNavigator extends StatefulWidget {
   final WardrobeTabKind kind;
   final bool active;
 
   const _TabNavigator({required this.kind, required this.active});
 
   @override
+  State<_TabNavigator> createState() => _TabNavigatorState();
+}
+
+class _TabNavigatorState extends State<_TabNavigator> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
-    final key = _tabNavigatorKeys[kind]!;
+    super.build(context);
+    final key = _tabNavigatorKeys[widget.kind]!;
     return ExcludeSemantics(
-      excluding: !active,
-      child: IgnorePointer(
-        ignoring: !active,
-        child: AnimatedOpacity(
-          opacity: active ? 1 : 0,
-          duration: const Duration(milliseconds: 220),
-          curve: active ? Curves.easeOut : Curves.easeIn,
-          child: AnimatedSlide(
-            offset: active ? Offset.zero : const Offset(0, 0.02),
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOut,
-            child: TickerMode(
-              enabled: active,
-              // Routes Android's back button to this tab's navigator first,
-              // so it closes an open folder instead of the app.
-              child: NavigatorPopHandler<Object?>(
-                enabled: active,
-                onPopWithResult: (_) => key.currentState?.maybePop(),
-                child: Navigator(
-                  key: key,
-                  onGenerateRoute: (_) => MaterialPageRoute(builder: (_) => _TabRoot(kind: kind)),
-                ),
-              ),
-            ),
+      excluding: !widget.active,
+      child: TickerMode(
+        enabled: widget.active,
+        // Routes Android's back button to this tab's navigator first,
+        // so it closes an open folder instead of the app.
+        child: NavigatorPopHandler<Object?>(
+          enabled: widget.active,
+          onPopWithResult: (_) => key.currentState?.maybePop(),
+          child: Navigator(
+            key: key,
+            observers: [_tabObservers[widget.kind]!],
+            onGenerateRoute: (_) => MaterialPageRoute(builder: (_) => _TabRoot(kind: widget.kind)),
           ),
         ),
       ),
@@ -192,7 +277,8 @@ class _TabRoot extends StatelessWidget {
                 onOpenSave: () => openSaveOutfitSheet(context),
               ),
               WardrobeTabKind.wardrobe => WardrobeTab(
-                onOpenItem: (item) => openItemSheet(context, item),
+                onOpenItem: (item, browseIds) =>
+                    openItemSheet(context, item, browseIds: browseIds),
               ),
               WardrobeTabKind.collections => const CollectionsTab(),
             },

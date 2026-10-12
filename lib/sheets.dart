@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -26,6 +27,7 @@ Future<T?> _showSheet<T>(
   String Function(BuildContext) title,
   Widget content, {
   double maxHeightFactor = 0.85,
+  ValueChanged<int>? onSwipe,
 }) {
   return showModalBottomSheet<T>(
     context: context,
@@ -46,7 +48,9 @@ Future<T?> _showSheet<T>(
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(sheetContext).size.height * maxHeightFactor,
           ),
-          child: Container(
+          child: _SheetSwipe(
+            onSwipe: onSwipe,
+            child: Container(
             // Full width even when the content is narrow (a few chips, a
             // one-line message) — otherwise the sheet shrinks to fit it.
             width: double.infinity,
@@ -76,10 +80,70 @@ Future<T?> _showSheet<T>(
               ),
             ),
           ),
+          ),
         ),
       );
     },
   );
+}
+
+/// Turns a quick sideways flick anywhere on a sheet — header, photo, text
+/// fields, buttons — into [onSwipe] with the finger's direction: +1 for a
+/// flick to the right, -1 to the left.
+///
+/// Reads raw pointer events instead of entering the gesture arena: text
+/// fields claim horizontal drags for themselves (scrolling, and on Android
+/// drag-selection), so a regular drag recognizer only ever won over the
+/// photo. A flick must be fast (a long-press cursor drag isn't) and mostly
+/// sideways (scrolling the sheet isn't).
+class _SheetSwipe extends StatefulWidget {
+  final ValueChanged<int>? onSwipe;
+  final Widget child;
+  const _SheetSwipe({required this.onSwipe, required this.child});
+
+  @override
+  State<_SheetSwipe> createState() => _SheetSwipeState();
+}
+
+class _SheetSwipeState extends State<_SheetSwipe> {
+  static const _minDistance = 35.0;
+  static const _maxDuration = Duration(milliseconds: 600);
+
+  int _pointers = 0;
+  Offset? _start;
+  Duration? _startTime;
+
+  @override
+  Widget build(BuildContext context) {
+    final onSwipe = widget.onSwipe;
+    if (onSwipe == null) return widget.child;
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (e) {
+        _pointers++;
+        // A second finger means a pinch or similar, not a swipe.
+        _start = _pointers == 1 ? e.position : null;
+        _startTime = e.timeStamp;
+      },
+      onPointerCancel: (_) {
+        _pointers = (_pointers - 1).clamp(0, 10);
+        _start = null;
+      },
+      onPointerUp: (e) {
+        _pointers = (_pointers - 1).clamp(0, 10);
+        final start = _start, startTime = _startTime;
+        _start = null;
+        if (start == null || startTime == null) return;
+        final d = e.position - start;
+        if (e.timeStamp - startTime <= _maxDuration &&
+            d.dx.abs() >= _minDistance &&
+            d.dx.abs() > d.dy.abs() * 1.5) {
+          onSwipe(d.dx > 0 ? 1 : -1);
+        }
+      },
+      child: widget.child,
+    );
+  }
 }
 
 /// The "×" in a sheet header. Opaque 40×40 target, pulled right so the
@@ -632,19 +696,101 @@ class _AddItemFormState extends State<_AddItemForm> {
   }
 }
 
-void openItemSheet(BuildContext context, ClothingItem item) {
+/// [browseIds] are the items shown alongside [item] where it was opened
+/// from (a folder, search results), in that order — swiping sideways in the
+/// sheet steps through them.
+void openItemSheet(BuildContext context, ClothingItem item, {List<String>? browseIds}) {
+  final browser = GlobalKey<_ItemBrowserState>();
   _showSheet(
     context,
     (ctx) => AppLocalizations.of(ctx)!.itemDetailTitle,
-    _ItemDetail(itemId: item.id),
+    _ItemBrowser(key: browser, initialId: item.id, ids: browseIds ?? [item.id]),
     // Photo + five detail fields + actions: needs more room than most sheets.
     maxHeightFactor: 0.92,
+    // The whole sheet is the swipe area, header included.
+    onSwipe: (finger) => browser.currentState?.swipe(finger),
   );
+}
+
+/// Steps through [ids] (see [step]) — driven by a swipe anywhere on the
+/// sheet. Stops at either end.
+class _ItemBrowser extends StatefulWidget {
+  final String initialId;
+  final List<String> ids;
+  const _ItemBrowser({super.key, required this.initialId, required this.ids});
+
+  @override
+  State<_ItemBrowser> createState() => _ItemBrowserState();
+}
+
+class _ItemBrowserState extends State<_ItemBrowser> {
+  late String _currentId = widget.initialId;
+  /// Which way the content slides: the finger's direction (+1 right).
+  int _slide = 1;
+
+  /// Items can't be added while browsing, but one could be deleted or moved.
+  List<String> _liveIds(WardrobeStore store) =>
+      widget.ids.where((id) => store.itemById(id) != null).toList();
+
+  /// A flick with the finger moving left (-1) goes to the next item, right
+  /// (+1) to the previous one — like flipping pages or photos. The content
+  /// slides along with the finger.
+  void swipe(int finger) {
+    final delta = -finger;
+    final ids = _liveIds(context.read<WardrobeStore>());
+    final index = ids.indexOf(_currentId);
+    final next = index + delta;
+    if (index < 0 || next < 0 || next >= ids.length) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    HapticFeedback.selectionClick();
+    setState(() {
+      _slide = finger;
+      _currentId = ids[next];
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ids = _liveIds(context.watch<WardrobeStore>());
+    final index = ids.indexOf(_currentId);
+
+    return AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        layoutBuilder: (current, previous) => Stack(
+          alignment: Alignment.topCenter,
+          children: [...previous, ?current],
+        ),
+        // Content moves with the finger: the old item leaves the way the
+        // finger went, the new one follows in from the opposite side.
+        transitionBuilder: (child, animation) {
+          final incoming = child.key == ValueKey(_currentId);
+          final dx = (incoming ? -_slide : _slide) * 0.25;
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween(begin: Offset(dx, 0), end: Offset.zero).animate(animation),
+              child: child,
+            ),
+          );
+        },
+        child: _ItemDetail(
+          key: ValueKey(_currentId),
+          itemId: _currentId,
+          position: ids.length > 1 && index >= 0 ? (index: index + 1, count: ids.length) : null,
+        ),
+    );
+  }
 }
 
 class _ItemDetail extends StatefulWidget {
   final String itemId;
-  const _ItemDetail({required this.itemId});
+
+  /// 1-based place among the items being browsed, if there's more than one.
+  final ({int index, int count})? position;
+
+  const _ItemDetail({super.key, required this.itemId, this.position});
 
   @override
   State<_ItemDetail> createState() => _ItemDetailState();
@@ -693,11 +839,22 @@ class _ItemDetailState extends State<_ItemDetail> {
           imagePath: cur.imagePath,
         ),
         const SizedBox(height: 8),
-        Text(
-          categoryLabel(context, cur.cat),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppText.sans(size: 15, color: AppColors.ink),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                categoryLabel(context, cur.cat),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.sans(size: 15, color: AppColors.ink),
+              ),
+            ),
+            if (widget.position case final pos?)
+              Text(
+                '${pos.index} / ${pos.count}',
+                style: AppText.mono(size: 10, letterSpacing: 0.8, color: AppColors.mutedSoft),
+              ),
+          ],
         ),
         const SizedBox(height: 14),
         _InfoField(
@@ -1198,6 +1355,10 @@ class _InfoField extends StatelessWidget {
             textCapitalization: TextCapitalization.sentences,
             minLines: multiline ? 2 : 1,
             maxLines: multiline ? 5 : 1,
+            // A one-line field would otherwise claim every sideways drag to
+            // scroll its text — swallowing the swipe to the next item. It
+            // still scrolls itself to the caret while typing.
+            scrollPhysics: multiline ? null : const NeverScrollableScrollPhysics(),
             keyboardType: multiline ? TextInputType.multiline : TextInputType.text,
             decoration: InputDecoration(
               hintText: hint,
