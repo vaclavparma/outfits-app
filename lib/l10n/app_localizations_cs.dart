@@ -373,6 +373,9 @@ class AppLocalizationsCs extends AppLocalizations {
   String get themeDark => 'Tmavý';
 
   @override
+  String get sectionOther => 'ostatní';
+
+  @override
   String get showDressesLabel => 'Zobrazovat šaty v šatníku';
 
   @override

@@ -369,6 +369,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeDark => 'Dark';
 
   @override
+  String get sectionOther => 'other';
+
+  @override
   String get showDressesLabel => 'Show dresses in wardrobe';
 
   @override

@@ -1515,6 +1515,29 @@ class SettingsContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(l10n.sectionAppearance, style: _sectionLabelStyle),
+        const SizedBox(height: 8),
+        _SettingsCard(
+          child: Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: [
+              for (final (code, label) in [
+                (null, l10n.languageSystemOption),
+                ('light', l10n.themeLight),
+                ('dark', l10n.themeDark),
+              ])
+                SelectChip(
+                  label: label,
+                  active: store.themeModeCode == code,
+                  mono: false,
+                  height: 34,
+                  onTap: () => store.setThemeMode(code),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
         Text(l10n.sectionLanguage, style: _sectionLabelStyle),
         const SizedBox(height: 8),
         _SettingsCard(
@@ -1550,29 +1573,8 @@ class SettingsContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 22),
-        Text(l10n.sectionAppearance, style: _sectionLabelStyle),
+        Text(l10n.sectionOther, style: _sectionLabelStyle),
         const SizedBox(height: 8),
-        _SettingsCard(
-          child: Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: [
-              for (final (code, label) in [
-                (null, l10n.languageSystemOption),
-                ('light', l10n.themeLight),
-                ('dark', l10n.themeDark),
-              ])
-                SelectChip(
-                  label: label,
-                  active: store.themeModeCode == code,
-                  mono: false,
-                  height: 34,
-                  onTap: () => store.setThemeMode(code),
-                ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 22),
         _SettingsCard(
           child: _ToggleRow(
             label: l10n.showDressesLabel,

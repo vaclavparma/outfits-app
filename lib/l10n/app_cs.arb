@@ -208,6 +208,7 @@
   "sectionAppearance": "vzhled",
   "themeLight": "Světlý",
   "themeDark": "Tmavý",
+  "sectionOther": "ostatní",
   "showDressesLabel": "Zobrazovat šaty v šatníku",
   "showDressesHint": "Skryje kategorii šatů v šatníku a při přidávání oblečení. Šaty, které už máš v šatníku, zůstanou beze změny.",
 

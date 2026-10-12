@@ -698,6 +698,12 @@ abstract class AppLocalizations {
   /// **'Tmavý'**
   String get themeDark;
 
+  /// No description provided for @sectionOther.
+  ///
+  /// In cs, this message translates to:
+  /// **'ostatní'**
+  String get sectionOther;
+
   /// No description provided for @showDressesLabel.
   ///
   /// In cs, this message translates to:

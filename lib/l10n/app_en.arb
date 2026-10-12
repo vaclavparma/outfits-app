@@ -208,6 +208,7 @@
   "sectionAppearance": "appearance",
   "themeLight": "Light",
   "themeDark": "Dark",
+  "sectionOther": "other",
   "showDressesLabel": "Show dresses in wardrobe",
   "showDressesHint": "Hides the dresses category in the wardrobe and when adding clothes. Dresses already in your wardrobe stay put.",
 
