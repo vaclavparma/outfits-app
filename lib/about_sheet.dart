@@ -27,8 +27,8 @@ void openAboutSheet(BuildContext context) {
       return SizedBox(
         width: double.infinity,
         child: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(26),
               topRight: Radius.circular(26),
@@ -153,7 +153,7 @@ class _LinkRow extends StatelessWidget {
                 style: AppText.sans(size: 13, color: AppColors.label),
               ),
             ),
-            const Icon(
+            Icon(
               Icons.arrow_outward,
               size: 14,
               color: AppColors.mutedSoft,

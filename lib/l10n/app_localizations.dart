@@ -680,6 +680,24 @@ abstract class AppLocalizations {
   /// **'Podle systému'**
   String get languageSystemOption;
 
+  /// No description provided for @sectionAppearance.
+  ///
+  /// In cs, this message translates to:
+  /// **'vzhled'**
+  String get sectionAppearance;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In cs, this message translates to:
+  /// **'Světlý'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tmavý'**
+  String get themeDark;
+
   /// No description provided for @showDressesLabel.
   ///
   /// In cs, this message translates to:

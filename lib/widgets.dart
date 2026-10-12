@@ -61,15 +61,18 @@ class DiagonalStripes extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.expand(child: CustomPaint(painter: _StripePainter()));
+    return SizedBox.expand(child: CustomPaint(painter: _StripePainter(AppColors.ink.withValues(alpha: 0.05))));
   }
 }
 
 class _StripePainter extends CustomPainter {
+  final Color color;
+  _StripePainter(this.color);
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.ink.withValues(alpha: 0.05)
+      ..color = color
       ..strokeWidth = 6;
     const spacing = 11.0;
     final diag = size.width + size.height;
@@ -78,8 +81,9 @@ class _StripePainter extends CustomPainter {
     }
   }
 
+  // Repaints on a light/dark switch; otherwise the stripes never change.
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(_StripePainter oldDelegate) => oldDelegate.color != color;
 }
 
 /// A garment photo, decoded at roughly the size it's actually displayed at
@@ -122,7 +126,7 @@ class GarmentCard extends StatelessWidget {
   final String? imagePath;
   final VoidCallback? onTap;
   final void Function(int direction)? onSwipe;
-  final Color borderColor;
+  final Color? borderColor;
   final List<BoxShadow>? shadow;
   final Alignment captionAlign;
 
@@ -137,7 +141,7 @@ class GarmentCard extends StatelessWidget {
     this.imagePath,
     this.onTap,
     this.onSwipe,
-    this.borderColor = AppColors.cardBorder,
+    this.borderColor,
     this.shadow,
     this.captionAlign = Alignment.bottomLeft,
   });
@@ -151,7 +155,7 @@ class GarmentCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.cardFill,
         borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: borderColor ?? AppColors.cardBorder),
         boxShadow: shadow,
       ),
       clipBehavior: Clip.antiAlias,
@@ -262,7 +266,7 @@ class SelectChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = active ? AppColors.accentDark : Colors.white;
+    final bg = active ? AppColors.accentDark : AppColors.surface;
     final border = active ? AppColors.accentDark : AppColors.chipBorderIdle;
     final color = active ? Colors.white : AppColors.chipTextIdle;
     return GestureDetector(
@@ -301,7 +305,7 @@ class AppBackButton extends StatelessWidget {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => Navigator.of(context).pop(),
-      child: const SizedBox(
+      child: SizedBox(
         width: 48,
         height: 48,
         child: Icon(Icons.arrow_back_ios_new, size: 18, color: AppColors.ink),
@@ -315,7 +319,7 @@ class RoundIconButton extends StatelessWidget {
   final Widget child;
   final VoidCallback? onTap;
   final double size;
-  final Color background;
+  final Color? background;
   final Color? borderColor;
 
   const RoundIconButton({
@@ -323,7 +327,7 @@ class RoundIconButton extends StatelessWidget {
     required this.child,
     this.onTap,
     this.size = 40,
-    this.background = AppColors.ink,
+    this.background,
     this.borderColor,
   });
 
@@ -335,7 +339,7 @@ class RoundIconButton extends StatelessWidget {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: background,
+          color: background ?? AppColors.ink,
           shape: BoxShape.circle,
           border: borderColor != null ? Border.all(color: borderColor!) : null,
         ),
@@ -384,9 +388,9 @@ class AddTile extends StatelessWidget {
 /// change via [onChanged], with a clear button once something's typed.
 class SearchField extends StatefulWidget {
   final ValueChanged<String> onChanged;
-  final Color fillColor;
+  final Color? fillColor;
 
-  const SearchField({super.key, required this.onChanged, this.fillColor = Colors.white});
+  const SearchField({super.key, required this.onChanged, this.fillColor});
 
   @override
   State<SearchField> createState() => _SearchFieldState();
@@ -410,7 +414,7 @@ class _SearchFieldState extends State<SearchField> {
   Widget build(BuildContext context) {
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: AppColors.cardBorder),
+      borderSide: BorderSide(color: AppColors.cardBorder),
     );
     return TextField(
       controller: _controller,
@@ -420,18 +424,18 @@ class _SearchFieldState extends State<SearchField> {
       decoration: InputDecoration(
         hintText: AppLocalizations.of(context)!.searchHint,
         hintStyle: AppText.sans(size: 14, color: AppColors.mutedTag),
-        prefixIcon: const Icon(Icons.search, size: 19, color: AppColors.mutedSoft),
+        prefixIcon: Icon(Icons.search, size: 19, color: AppColors.mutedSoft),
         suffixIcon: _controller.text.isEmpty
             ? null
             : IconButton(
-                icon: const Icon(Icons.close, size: 17, color: AppColors.mutedSoft),
+                icon: Icon(Icons.close, size: 17, color: AppColors.mutedSoft),
                 onPressed: () {
                   _controller.clear();
                   _changed('');
                 },
               ),
         filled: true,
-        fillColor: widget.fillColor,
+        fillColor: widget.fillColor ?? AppColors.surface,
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(vertical: 11),
         border: border,
@@ -478,7 +482,7 @@ Future<bool> confirmDialog(
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       title: Text(title, style: AppText.sans(size: 16, color: AppColors.ink)),
       content: Text(message, style: AppText.sans(size: 13, color: AppColors.label, height: 1.4)),
       actions: [
@@ -542,7 +546,7 @@ class _TextPromptDialogState extends State<_TextPromptDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.surface,
       title: Text(widget.title, style: AppText.sans(size: 16, color: AppColors.ink)),
       content: TextField(
         controller: _controller,

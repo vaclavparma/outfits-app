@@ -164,7 +164,7 @@ class _FolderCard extends StatelessWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           border: Border.all(color: AppColors.rowBorder),
           borderRadius: BorderRadius.circular(16),
         ),
@@ -177,7 +177,7 @@ class _FolderCard extends StatelessWidget {
                   ? Container(
                       color: AppColors.cardFill,
                       alignment: Alignment.center,
-                      child: const Icon(
+                      child: Icon(
                         Icons.checkroom_outlined,
                         size: 28,
                         color: AppColors.mutedSoft,

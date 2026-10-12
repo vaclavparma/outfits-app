@@ -60,17 +60,17 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                         ),
                       ),
                       PopupMenuButton<String>(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.more_vert,
                           size: 20,
                           color: AppColors.ink,
                         ),
-                        color: Colors.white,
+                        color: AppColors.surface,
                         elevation: 3,
                         shadowColor: const Color(0x1F000000),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
-                          side: const BorderSide(color: AppColors.rowBorder),
+                          side: BorderSide(color: AppColors.rowBorder),
                         ),
                         padding: EdgeInsets.zero,
                         onSelected: (action) =>
@@ -81,7 +81,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                             height: 44,
                             child: Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.edit_outlined,
                                   size: 17,
                                   color: AppColors.mutedSoft,
@@ -102,7 +102,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                             height: 44,
                             child: Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.delete_outline,
                                   size: 17,
                                   color: AppColors.accent,
@@ -222,7 +222,7 @@ class _OutfitCard extends StatelessWidget {
       onTap: () => store.loadOutfit(outfit),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           border: Border.all(color: AppColors.rowBorder),
           borderRadius: BorderRadius.circular(16),
         ),
@@ -266,7 +266,7 @@ class _OutfitCard extends StatelessWidget {
                   ),
                   RoundIconButton(
                     size: 22,
-                    background: Colors.white,
+                    background: AppColors.surface,
                     borderColor: AppColors.removeButtonBorder,
                     onTap: () => _confirmDeleteOutfit(
                       context,
@@ -275,7 +275,7 @@ class _OutfitCard extends StatelessWidget {
                       index,
                       outfit.name,
                     ),
-                    child: const Text(
+                    child: Text(
                       '×',
                       style: TextStyle(
                         fontSize: 14,

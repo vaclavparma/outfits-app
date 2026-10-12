@@ -69,17 +69,17 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                         ),
                       ),
                       PopupMenuButton<String>(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.more_vert,
                           size: 20,
                           color: AppColors.ink,
                         ),
-                        color: Colors.white,
+                        color: AppColors.surface,
                         elevation: 3,
                         shadowColor: const Color(0x1F000000),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
-                          side: const BorderSide(color: AppColors.rowBorder),
+                          side: BorderSide(color: AppColors.rowBorder),
                         ),
                         padding: EdgeInsets.zero,
                         onSelected: (action) =>
@@ -90,7 +90,7 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                             height: 44,
                             child: Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.edit_outlined,
                                   size: 17,
                                   color: AppColors.mutedSoft,
@@ -111,7 +111,7 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                             height: 44,
                             child: Row(
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.delete_outline,
                                   size: 17,
                                   color: AppColors.accent,

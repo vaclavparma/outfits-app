@@ -282,10 +282,10 @@ class _LayerCard extends StatelessWidget {
           right: -8,
           child: RoundIconButton(
             size: 26,
-            background: Colors.white,
+            background: AppColors.surface,
             borderColor: AppColors.removeButtonBorder,
             onTap: () => store.removeLayer(index),
-            child: const Text('×', style: TextStyle(fontSize: 15, color: AppColors.muted, height: 1)),
+            child: Text('×', style: TextStyle(fontSize: 15, color: AppColors.muted, height: 1)),
           ),
         ),
         if (it != null)
@@ -331,7 +331,7 @@ class _PinButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return RoundIconButton(
       size: 26,
-      background: Colors.white,
+      background: AppColors.surface,
       borderColor: AppColors.removeButtonBorder,
       onTap: onTap,
       child: Icon(

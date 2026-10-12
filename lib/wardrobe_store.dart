@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:ui' show Locale, PlatformDispatcher;
 
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -89,6 +90,16 @@ class WardrobeStore extends ChangeNotifier {
   /// code like `'cs'` or `'en'` picked in settings.
   String? localeCode;
 
+  /// `null` follows the system's light/dark setting; otherwise `'light'` or
+  /// `'dark'` picked in settings (or onboarding).
+  String? themeModeCode;
+
+  ThemeMode get themeMode => switch (themeModeCode) {
+    'light' => ThemeMode.light,
+    'dark' => ThemeMode.dark,
+    _ => ThemeMode.system,
+  };
+
   /// Whether the "dresses" category shows up in the wardrobe and when
   /// adding clothes. Turning it off doesn't apply retroactively — dresses
   /// already in the wardrobe stay put and still work in the outfit builder.
@@ -141,6 +152,9 @@ class WardrobeStore extends ChangeNotifier {
     // creates in the user's language.
     try {
       localeCode = data['localeCode'] as String?;
+    } catch (_) {}
+    try {
+      themeModeCode = data['themeMode'] as String?;
     } catch (_) {}
     try {
       showDresses = data['showDresses'] as bool? ?? true;
@@ -289,6 +303,7 @@ class WardrobeStore extends ChangeNotifier {
         ],
         'activeWardrobeId': activeWardrobeId,
         'localeCode': localeCode,
+        'themeMode': themeModeCode,
         'showDresses': showDresses,
         'onboardingDone': onboardingDone,
       };
@@ -970,6 +985,12 @@ class WardrobeStore extends ChangeNotifier {
 
   void setLocale(String? code) {
     localeCode = code;
+    notifyListeners();
+    _persist();
+  }
+
+  void setThemeMode(String? code) {
+    themeModeCode = code;
     notifyListeners();
     _persist();
   }

@@ -360,6 +360,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageSystemOption => 'System default';
 
   @override
+  String get sectionAppearance => 'appearance';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
+
+  @override
   String get showDressesLabel => 'Show dresses in wardrobe';
 
   @override

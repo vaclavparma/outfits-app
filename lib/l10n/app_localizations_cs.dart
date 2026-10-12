@@ -364,6 +364,15 @@ class AppLocalizationsCs extends AppLocalizations {
   String get languageSystemOption => 'Podle systému';
 
   @override
+  String get sectionAppearance => 'vzhled';
+
+  @override
+  String get themeLight => 'Světlý';
+
+  @override
+  String get themeDark => 'Tmavý';
+
+  @override
   String get showDressesLabel => 'Zobrazovat šaty v šatníku';
 
   @override

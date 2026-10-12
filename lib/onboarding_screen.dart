@@ -70,15 +70,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           hintText: l10n.defaultWardrobeName,
                           hintStyle: AppText.sans(size: 14, color: AppColors.mutedTag),
                           filled: true,
-                          fillColor: Colors.white,
+                          fillColor: AppColors.surface,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 14),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
-                            borderSide: const BorderSide(color: AppColors.cardBorder),
+                            borderSide: BorderSide(color: AppColors.cardBorder),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(14),
-                            borderSide: const BorderSide(color: AppColors.cardBorder),
+                            borderSide: BorderSide(color: AppColors.cardBorder),
                           ),
                         ),
                         style: AppText.sans(size: 14, color: AppColors.ink),

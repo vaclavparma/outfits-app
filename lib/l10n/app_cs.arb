@@ -205,6 +205,9 @@
   "settingsTitle": "Nastavení",
   "sectionLanguage": "jazyk",
   "languageSystemOption": "Podle systému",
+  "sectionAppearance": "vzhled",
+  "themeLight": "Světlý",
+  "themeDark": "Tmavý",
   "showDressesLabel": "Zobrazovat šaty v šatníku",
   "showDressesHint": "Skryje kategorii šatů v šatníku a při přidávání oblečení. Šaty, které už máš v šatníku, zůstanou beze změny.",
 

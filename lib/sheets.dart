@@ -50,9 +50,9 @@ Future<T?> _showSheet<T>(
             // Full width even when the content is narrow (a few chips, a
             // one-line message) — otherwise the sheet shrinks to fit it.
             width: double.infinity,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(26),
                 topRight: Radius.circular(26),
               ),
@@ -97,7 +97,7 @@ class _SheetCloseButton extends StatelessWidget {
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () => Navigator.of(context).pop(),
-          child: const SizedBox(
+          child: SizedBox(
             width: 40,
             height: 40,
             child: Icon(Icons.close, size: 22, color: AppColors.muted),
@@ -108,7 +108,7 @@ class _SheetCloseButton extends StatelessWidget {
   }
 }
 
-final TextStyle _sheetTitleStyle = AppText.sans(
+TextStyle get _sheetTitleStyle => AppText.sans(
   size: 20,
   weight: FontWeight.w300,
   color: AppColors.ink,
@@ -117,7 +117,7 @@ final TextStyle _sheetTitleStyle = AppText.sans(
 
 /// Small uppercase-mono label above a form field/section within a sheet
 /// (e.g. "kategorie", "tagy", "kolekce").
-final TextStyle _sectionLabelStyle = AppText.mono(
+TextStyle get _sectionLabelStyle => AppText.mono(
   size: 9.5,
   letterSpacing: 1.3,
   color: AppColors.mutedSoft,
@@ -842,7 +842,7 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
             contentPadding: const EdgeInsets.symmetric(horizontal: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(color: AppColors.cardBorder),
+              borderSide: BorderSide(color: AppColors.cardBorder),
             ),
           ),
           style: AppText.sans(size: 14, color: AppColors.ink),
@@ -1180,7 +1180,7 @@ class _InfoField extends StatelessWidget {
   Widget build(BuildContext context) {
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: const BorderSide(color: AppColors.cardBorder),
+      borderSide: BorderSide(color: AppColors.cardBorder),
     );
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -1280,12 +1280,12 @@ class _ManageWardrobes extends StatelessWidget {
                   ),
                   IconButton(
                     onPressed: () => _rename(context, store, w),
-                    icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.mutedSoft),
+                    icon: Icon(Icons.edit_outlined, size: 18, color: AppColors.mutedSoft),
                   ),
                   if (canDelete)
                     IconButton(
                       onPressed: () => _delete(context, store, w),
-                      icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.accent),
+                      icon: Icon(Icons.delete_outline, size: 18, color: AppColors.accent),
                     ),
                 ],
               ),
@@ -1385,6 +1385,29 @@ class SettingsContent extends StatelessWidget {
                 height: 34,
                 onTap: () => store.setLocale('en'),
               ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
+        Text(l10n.sectionAppearance, style: _sectionLabelStyle),
+        const SizedBox(height: 8),
+        _SettingsCard(
+          child: Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: [
+              for (final (code, label) in [
+                (null, l10n.languageSystemOption),
+                ('light', l10n.themeLight),
+                ('dark', l10n.themeDark),
+              ])
+                SelectChip(
+                  label: label,
+                  active: store.themeModeCode == code,
+                  mono: false,
+                  height: 34,
+                  onTap: () => store.setThemeMode(code),
+                ),
             ],
           ),
         ),

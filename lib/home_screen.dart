@@ -159,7 +159,7 @@ class _TabRoot extends StatelessWidget {
                 const SizedBox(width: 12),
                 GestureDetector(
                   onTap: () => openSettingsSheet(context),
-                  child: const Padding(
+                  child: Padding(
                     padding: EdgeInsets.all(4),
                     child: Icon(
                       Icons.settings_outlined,
@@ -171,7 +171,7 @@ class _TabRoot extends StatelessWidget {
                 const SizedBox(width: 4),
                 GestureDetector(
                   onTap: () => openAboutSheet(context),
-                  child: const Padding(
+                  child: Padding(
                     padding: EdgeInsets.all(4),
                     child: Icon(
                       Icons.info_outline,
@@ -217,12 +217,12 @@ class _WardrobeSwitcher extends StatelessWidget {
 
     return PopupMenuButton<Object>(
       position: PopupMenuPosition.under,
-      color: Colors.white,
+      color: AppColors.surface,
       elevation: 3,
       shadowColor: const Color(0x1F000000),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.rowBorder),
+        side: BorderSide(color: AppColors.rowBorder),
       ),
       onSelected: (value) => _onSelected(context, store, value),
       itemBuilder: (context) => [
@@ -255,7 +255,7 @@ class _WardrobeSwitcher extends StatelessWidget {
           height: 44,
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.edit_outlined,
                 size: 17,
                 color: AppColors.mutedSoft,
@@ -287,7 +287,7 @@ class _WardrobeSwitcher extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 2),
-            const Icon(
+            Icon(
               Icons.keyboard_arrow_down,
               size: 20,
               color: AppColors.mutedSoft,
@@ -317,7 +317,7 @@ class _Toast extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.rowBorder),
         boxShadow: const [
@@ -335,7 +335,7 @@ class _Toast extends StatelessWidget {
             width: 6,
             height: 6,
             margin: const EdgeInsets.only(right: 10),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.accent,
               shape: BoxShape.circle,
             ),
@@ -371,7 +371,7 @@ class _BottomTabs extends StatelessWidget {
       (WardrobeTabKind.collections, l10n.tabCollections),
     ];
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(top: BorderSide(color: AppColors.hairline)),
       ),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
