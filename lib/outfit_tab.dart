@@ -79,7 +79,8 @@ class OutfitTab extends StatelessWidget {
         return Column(
           children: [
             Expanded(
-              child: Center(
+              child: _ScaleUpToFit(
+                child: Center(
                 child: SingleChildScrollView(
                   physics: const NeverScrollableScrollPhysics(),
                   child: Column(
@@ -124,6 +125,7 @@ class OutfitTab extends StatelessWidget {
                     ],
                   ),
                 ),
+              ),
               ),
             ),
             Padding(
@@ -386,6 +388,50 @@ class _PeekingStack extends StatelessWidget {
           Positioned(left: 0, top: 0, child: front),
         ],
       ),
+    );
+  }
+}
+
+/// Enlarges the outfit composition on big screens (iPad) so it fills the
+/// space instead of sitting phone-sized in the middle — up to 1.6×, and
+/// never so much that it would stop fitting. On a phone the factor is 1.
+/// Photos are decoded for the enlarged size, so they stay sharp. On very
+/// narrow screens (320 pt: iPhone SE 1st gen, iPad Split View) it shrinks
+/// instead, so two layers side by side still fit.
+class _ScaleUpToFit extends StatelessWidget {
+  /// The composition's largest natural size (two layers is the widest, a
+  /// plain top + bottom + shoes the tallest), plus room for the cards'
+  /// rotation and offsets.
+  static const _naturalWidth = 400.0;
+  static const _naturalHeight = 550.0;
+  static const _maxScale = 1.6;
+
+  /// Two layers next to the top need ~340 pt.
+  static const _minWidth = 350.0;
+
+  final Widget child;
+  const _ScaleUpToFit({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < _minWidth) {
+          return FittedBox(fit: BoxFit.scaleDown, child: child);
+        }
+        final scale = math
+            .min(constraints.maxWidth / _naturalWidth, constraints.maxHeight / _naturalHeight)
+            .clamp(1.0, _maxScale);
+        if (scale == 1.0) return child;
+        final media = MediaQuery.of(context);
+        return Transform.scale(
+          scale: scale,
+          child: MediaQuery(
+            data: media.copyWith(devicePixelRatio: media.devicePixelRatio * scale),
+            child: child,
+          ),
+        );
+      },
     );
   }
 }

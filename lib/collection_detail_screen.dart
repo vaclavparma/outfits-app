@@ -141,7 +141,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
                         )
                       : ReorderableGridView.count(
                           padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                          crossAxisCount: 2,
+                          crossAxisCount: gridColumns(context, 2),
                           mainAxisSpacing: 14,
                           crossAxisSpacing: 14,
                           childAspectRatio: 0.8,

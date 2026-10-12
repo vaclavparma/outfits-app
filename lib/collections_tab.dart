@@ -22,7 +22,7 @@ class CollectionsTab extends StatelessWidget {
 
     return ReorderableGridView.count(
       padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
-      crossAxisCount: 2,
+      crossAxisCount: gridColumns(context, 2),
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
       childAspectRatio: 0.82,

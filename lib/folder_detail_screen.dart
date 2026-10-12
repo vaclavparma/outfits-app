@@ -135,7 +135,7 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                 Expanded(
                   child: ReorderableGridView.count(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                    crossAxisCount: 3,
+                    crossAxisCount: gridColumns(context, 3),
                     mainAxisSpacing: 9,
                     crossAxisSpacing: 9,
                     childAspectRatio: 100 / 124,

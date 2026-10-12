@@ -802,3 +802,33 @@ class _PhotoViewerState extends State<_PhotoViewer> with SingleTickerProviderSta
     );
   }
 }
+
+/// The widest the app's content gets. On a phone everything is narrower
+/// than this; on an iPad the content sits in a centered column this wide,
+/// with the background running edge to edge.
+const kMaxContentWidth = 720.0;
+
+/// Centers [child] in a column at most [maxWidth] wide (full width when
+/// the screen is narrower), top-aligned.
+class ContentWidth extends StatelessWidget {
+  final Widget child;
+  final double maxWidth;
+  const ContentWidth({super.key, required this.child, this.maxWidth = kMaxContentWidth});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) => Align(
+        alignment: Alignment.topCenter,
+        child: SizedBox(width: math.min(constraints.maxWidth, maxWidth), child: child),
+      ),
+    );
+  }
+}
+
+/// Grid columns for content laid out at [phone] columns on a phone — one
+/// more once the content column is wide (iPad), so tiles don't balloon.
+int gridColumns(BuildContext context, int phone) {
+  final width = math.min(MediaQuery.sizeOf(context).width, kMaxContentWidth);
+  return width >= 600 ? phone + 1 : phone;
+}

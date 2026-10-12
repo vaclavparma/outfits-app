@@ -5,6 +5,7 @@ import 'l10n/app_localizations.dart';
 import 'sheets.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
+import 'widgets.dart';
 
 /// One-time screen shown before [HomeScreen] until [WardrobeStore.completeOnboarding]
 /// is called — lets the user name their wardrobe, pick a language and
@@ -33,7 +34,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
+      body: ContentWidth(
+        child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
           child: Column(
@@ -109,6 +111,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

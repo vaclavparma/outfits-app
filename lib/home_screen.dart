@@ -11,6 +11,7 @@ import 'sheets.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
 import 'wardrobe_tab.dart';
+import 'widgets.dart';
 
 /// One navigator per tab for everything above the bottom tab bar: the tab
 /// itself plus folder/collection screens pushed from it. They open *under*
@@ -168,7 +169,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 left: 20,
                 right: 20,
                 top: 2,
-                child: _Toast(message: store.toast),
+                child: ContentWidth(
+                  maxWidth: kMaxContentWidth - 40,
+                  child: _Toast(message: store.toast),
+                ),
               ),
           ],
         ),
@@ -208,10 +212,15 @@ class _TabNavigatorState extends State<_TabNavigator> with AutomaticKeepAliveCli
         child: NavigatorPopHandler<Object?>(
           enabled: widget.active,
           onPopWithResult: (_) => key.currentState?.maybePop(),
-          child: Navigator(
-            key: key,
-            observers: [_tabObservers[widget.kind]!],
-            onGenerateRoute: (_) => MaterialPageRoute(builder: (_) => _TabRoot(kind: widget.kind)),
+          // On an iPad the tab (and screens opened from it) sits in a
+          // centered column; the page itself stays full width so swiping
+          // between tabs works from the margins too.
+          child: ContentWidth(
+            child: Navigator(
+              key: key,
+              observers: [_tabObservers[widget.kind]!],
+              onGenerateRoute: (_) => MaterialPageRoute(builder: (_) => _TabRoot(kind: widget.kind)),
+            ),
           ),
         ),
       ),
@@ -461,7 +470,9 @@ class _BottomTabs extends StatelessWidget {
         border: Border(top: BorderSide(color: AppColors.hairline)),
       ),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-      child: Row(
+      child: ContentWidth(
+        maxWidth: kMaxContentWidth - 40,
+        child: Row(
         children: [
           for (final (kind, label) in tabs)
             Expanded(
@@ -499,6 +510,7 @@ class _BottomTabs extends StatelessWidget {
               ),
             ),
         ],
+      ),
       ),
     );
   }

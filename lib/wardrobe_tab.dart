@@ -69,7 +69,7 @@ class _WardrobeTabState extends State<WardrobeTab> {
                     ),
                   )
                 : SliverGrid.count(
-                    crossAxisCount: 3,
+                    crossAxisCount: gridColumns(context, 3),
                     mainAxisSpacing: 9,
                     crossAxisSpacing: 9,
                     childAspectRatio: 100 / 124,
@@ -112,7 +112,7 @@ class _WardrobeTabState extends State<WardrobeTab> {
                       child: ReorderableGridView.count(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        crossAxisCount: 2,
+                        crossAxisCount: gridColumns(context, 2),
                         mainAxisSpacing: 12,
                         crossAxisSpacing: 12,
                         childAspectRatio: 0.82,
