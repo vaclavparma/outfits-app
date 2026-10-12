@@ -18,7 +18,12 @@ class SatnikApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => WardrobeStore()..load(),
+      create: (_) {
+        final store = WardrobeStore();
+        // Colors for items that don't have them yet, in the background.
+        store.load().then((_) => store.detectMissingColors());
+        return store;
+      },
       child: Consumer<WardrobeStore>(
         builder: (context, store, _) {
           // Depends on the system setting too, so this reruns when it flips

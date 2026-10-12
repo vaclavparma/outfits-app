@@ -223,5 +223,17 @@
     "placeholders": {
       "name": {"type": "String"}
     }
+  },
+  "colorsTitle": "Colors",
+  "colorsEdit": "Edit colors",
+  "colorsHint": "Choose a color below the photo, then tap the spot on the photo to take it from.",
+  "colorsRedetect": "Detect again automatically",
+  "colorAdd": "Add color",
+  "colorRemove": "Remove color",
+  "colorSlot": "Color {n}",
+  "@colorSlot": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
   }
 }

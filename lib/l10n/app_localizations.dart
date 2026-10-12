@@ -781,6 +781,48 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Šatník „{name}“ bude smazán, včetně všeho oblečení, fotek, kolekcí a outfitů v něm.'**
   String deleteWardrobeMessage(String name);
+
+  /// No description provided for @colorsTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Barvy'**
+  String get colorsTitle;
+
+  /// No description provided for @colorsEdit.
+  ///
+  /// In cs, this message translates to:
+  /// **'Upravit barvy'**
+  String get colorsEdit;
+
+  /// No description provided for @colorsHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'Vyber barvu pod fotkou a pak klepni na místo na fotce, odkud ji má převzít.'**
+  String get colorsHint;
+
+  /// No description provided for @colorsRedetect.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zjistit znovu automaticky'**
+  String get colorsRedetect;
+
+  /// No description provided for @colorAdd.
+  ///
+  /// In cs, this message translates to:
+  /// **'Přidat barvu'**
+  String get colorAdd;
+
+  /// No description provided for @colorRemove.
+  ///
+  /// In cs, this message translates to:
+  /// **'Odebrat barvu'**
+  String get colorRemove;
+
+  /// No description provided for @colorSlot.
+  ///
+  /// In cs, this message translates to:
+  /// **'Barva {n}'**
+  String colorSlot(int n);
 }
 
 class _AppLocalizationsDelegate

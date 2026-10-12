@@ -415,4 +415,28 @@ class AppLocalizationsCs extends AppLocalizations {
   String deleteWardrobeMessage(String name) {
     return 'Šatník „$name“ bude smazán, včetně všeho oblečení, fotek, kolekcí a outfitů v něm.';
   }
+
+  @override
+  String get colorsTitle => 'Barvy';
+
+  @override
+  String get colorsEdit => 'Upravit barvy';
+
+  @override
+  String get colorsHint =>
+      'Vyber barvu pod fotkou a pak klepni na místo na fotce, odkud ji má převzít.';
+
+  @override
+  String get colorsRedetect => 'Zjistit znovu automaticky';
+
+  @override
+  String get colorAdd => 'Přidat barvu';
+
+  @override
+  String get colorRemove => 'Odebrat barvu';
+
+  @override
+  String colorSlot(int n) {
+    return 'Barva $n';
+  }
 }

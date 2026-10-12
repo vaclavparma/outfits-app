@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'color_detect.dart';
 import 'l10n/app_localizations.dart';
 import 'models.dart';
 
@@ -535,6 +536,9 @@ class WardrobeStore extends ChangeNotifier {
     }
     notifyListeners();
     await _persist();
+    for (final it in newItems) {
+      unawaited(ensureColors(it.id));
+    }
     return (items: newItems, photoFailures: photoFailures);
   }
 
@@ -575,6 +579,67 @@ class WardrobeStore extends ChangeNotifier {
   }
 
   Timer? _persistTimer;
+
+  final Set<String> _detectingColors = {};
+
+  /// Detects a newly added item's colors from its photo.
+  Future<void> ensureColors(String id) async {
+    final it = itemById(id);
+    if (it == null) return;
+    if (await _detect(it)) await _persist();
+  }
+
+  /// Background pass after startup: detects colors for every item, in every
+  /// wardrobe, that doesn't have them yet (e.g. added before detection
+  /// existed). One photo at a time, so it never competes much with the UI;
+  /// a pass cut short by closing the app just continues next time.
+  Future<void> detectMissingColors() async {
+    final pending = [
+      for (final it in items) it,
+      for (final c in _stash.values) ...c.items,
+    ].where((it) => it.colors == null && it.imagePath != null).toList();
+    var done = 0;
+    for (final it in pending) {
+      if (await _detect(it) && ++done % 10 == 0) await _persist();
+    }
+    if (done % 10 != 0) await _persist();
+  }
+
+  /// Sets [it]'s colors from its photo if it has none yet; true if it did.
+  /// [it] may sit in another wardrobe, or be moved/deleted meanwhile — it's
+  /// the same object either way, so setting the field is still right.
+  Future<bool> _detect(ClothingItem it) async {
+    final path = it.imagePath;
+    if (path == null || it.colors != null || !_detectingColors.add(it.id)) return false;
+    try {
+      final colors = await detectGarmentColors(path);
+      // The user may have picked colors by hand meanwhile — theirs win.
+      if (it.colors != null) return false;
+      it.colors = colors;
+      if (identical(itemById(it.id), it)) notifyListeners();
+      return true;
+    } finally {
+      _detectingColors.remove(it.id);
+    }
+  }
+
+  /// The user's correction of an item's colors (1–3).
+  void setItemColors(String id, List<int> colors) {
+    final it = itemById(id);
+    if (it == null) return;
+    it.colors = List.unmodifiable(colors);
+    notifyListeners();
+    _persist();
+  }
+
+  /// Throws away the item's colors and detects them again from the photo.
+  Future<void> redetectColors(String id) async {
+    final it = itemById(id);
+    if (it == null || it.imagePath == null) return;
+    it.colors = null;
+    notifyListeners();
+    if (await _detect(it)) await _persist();
+  }
 
   void togglePinned(String id) {
     items = items

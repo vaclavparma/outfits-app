@@ -92,6 +92,11 @@ class ClothingItem {
   String? price;
   String? note;
 
+  /// The garment's main colors (1–3, most prominent first) as ARGB ints,
+  /// detected from the photo — `null` until detected, empty if nothing
+  /// could be read from it.
+  List<int>? colors;
+
   ClothingItem({
     required this.id,
     required this.cat,
@@ -103,6 +108,7 @@ class ClothingItem {
     this.size,
     this.price,
     this.note,
+    this.colors,
   });
 
   Map<String, dynamic> toJson() => {
@@ -116,6 +122,7 @@ class ClothingItem {
     'size': size,
     'price': price,
     'note': note,
+    'colors': colors,
   };
 
   factory ClothingItem.fromJson(Map<String, dynamic> json) => ClothingItem(
@@ -129,6 +136,7 @@ class ClothingItem {
     size: json['size'] as String?,
     price: json['price'] as String?,
     note: json['note'] as String?,
+    colors: (json['colors'] as List<dynamic>?)?.map((e) => e as int).toList(),
   );
 }
 

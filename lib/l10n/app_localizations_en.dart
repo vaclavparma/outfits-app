@@ -411,4 +411,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String deleteWardrobeMessage(String name) {
     return 'The wardrobe “$name” will be deleted, along with all its clothes, photos, collections and outfits.';
   }
+
+  @override
+  String get colorsTitle => 'Colors';
+
+  @override
+  String get colorsEdit => 'Edit colors';
+
+  @override
+  String get colorsHint =>
+      'Choose a color below the photo, then tap the spot on the photo to take it from.';
+
+  @override
+  String get colorsRedetect => 'Detect again automatically';
+
+  @override
+  String get colorAdd => 'Add color';
+
+  @override
+  String get colorRemove => 'Remove color';
+
+  @override
+  String colorSlot(int n) {
+    return 'Color $n';
+  }
 }

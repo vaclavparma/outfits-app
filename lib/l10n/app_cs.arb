@@ -223,5 +223,17 @@
     "placeholders": {
       "name": {"type": "String"}
     }
+  },
+  "colorsTitle": "Barvy",
+  "colorsEdit": "Upravit barvy",
+  "colorsHint": "Vyber barvu pod fotkou a pak klepni na místo na fotce, odkud ji má převzít.",
+  "colorsRedetect": "Zjistit znovu automaticky",
+  "colorAdd": "Přidat barvu",
+  "colorRemove": "Odebrat barvu",
+  "colorSlot": "Barva {n}",
+  "@colorSlot": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
   }
 }

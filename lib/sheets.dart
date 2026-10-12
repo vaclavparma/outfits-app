@@ -1,3 +1,7 @@
+import 'dart:io';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -843,11 +847,33 @@ class _ItemDetailState extends State<_ItemDetail> {
         Row(
           children: [
             Expanded(
-              child: Text(
-                categoryLabel(context, cur.cat),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppText.sans(size: 15, color: AppColors.ink),
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      categoryLabel(context, cur.cat),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.sans(size: 15, color: AppColors.ink),
+                    ),
+                  ),
+                  // Colors detected from the photo; tap to correct them.
+                  // Hidden until detection (a background pass after
+                  // startup) has run, rather than flashing an empty bar.
+                  if (cur.imagePath != null && cur.colors != null)
+                    Semantics(
+                      button: true,
+                      label: l10n.colorsEdit,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => _openColorEditor(context, cur.id),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                          child: ColorBar(colors: cur.colors!),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
             if (widget.position case final pos?)
@@ -947,6 +973,253 @@ class _ItemDetailState extends State<_ItemDetail> {
               onTap: () => _confirmDeleteItem(context, store, cur),
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+void _openColorEditor(BuildContext context, String itemId) {
+  _showSheet(
+    context,
+    (ctx) => AppLocalizations.of(ctx)!.colorsTitle,
+    _ColorEditor(itemId: itemId),
+    maxHeightFactor: 0.92,
+  );
+}
+
+/// Corrects an item's colors by picking them from its photo: choose a slot
+/// (1–3) below the photo, then tap the spot on the photo to take its color.
+/// Every change is saved right away, like the item's other details.
+class _ColorEditor extends StatefulWidget {
+  final String itemId;
+  const _ColorEditor({required this.itemId});
+
+  @override
+  State<_ColorEditor> createState() => _ColorEditorState();
+}
+
+class _ColorEditorState extends State<_ColorEditor> {
+  static const _photoHeight = 300.0;
+
+  /// Decoded at a modest size — enough to pick from, cheap to hold.
+  static const _sampleSide = 600;
+
+  int _selected = 0;
+  ({ByteData pixels, int width, int height})? _sample;
+  Offset? _marker;
+
+  @override
+  void initState() {
+    super.initState();
+    _decode();
+  }
+
+  Future<void> _decode() async {
+    final path = context.read<WardrobeStore>().itemById(widget.itemId)?.imagePath;
+    if (path == null) return;
+    try {
+      final bytes = await File(path).readAsBytes();
+      final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+      final descriptor = await ui.ImageDescriptor.encoded(buffer);
+      final landscape = descriptor.width >= descriptor.height;
+      final codec = await descriptor.instantiateCodec(
+        targetWidth: landscape ? _sampleSide : null,
+        targetHeight: landscape ? null : _sampleSide,
+      );
+      final image = (await codec.getNextFrame()).image;
+      final pixels = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      final w = image.width, h = image.height;
+      image.dispose();
+      codec.dispose();
+      descriptor.dispose();
+      buffer.dispose();
+      if (pixels != null && mounted) setState(() => _sample = (pixels: pixels, width: w, height: h));
+    } catch (_) {
+      // Unreadable photo: nothing to pick from; the rest still works.
+    }
+  }
+
+  /// Average of a small square around the pixel, so fabric texture and
+  /// JPEG noise don't decide the color.
+  int _colorAt(int px, int py) {
+    final s = _sample!;
+    var r = 0, g = 0, b = 0, n = 0;
+    for (var y = math.max(0, py - 2); y <= math.min(s.height - 1, py + 2); y++) {
+      for (var x = math.max(0, px - 2); x <= math.min(s.width - 1, px + 2); x++) {
+        final o = (y * s.width + x) * 4;
+        r += s.pixels.getUint8(o);
+        g += s.pixels.getUint8(o + 1);
+        b += s.pixels.getUint8(o + 2);
+        n++;
+      }
+    }
+    return 0xFF000000 | (r ~/ n) << 16 | (g ~/ n) << 8 | (b ~/ n);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final item = store.itemById(widget.itemId);
+    if (item == null || item.imagePath == null) return const SizedBox.shrink();
+    final colors = item.colors ?? const <int>[];
+    final selected = colors.isEmpty ? 0 : _selected.clamp(0, colors.length - 1);
+
+    void setSlot(int color) {
+      final next = [...colors];
+      if (next.isEmpty) {
+        next.add(color);
+      } else {
+        next[selected] = color;
+      }
+      store.setItemColors(item.id, next);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.colorsHint, style: AppText.sans(size: 12.5, color: AppColors.mutedTag, height: 1.4)),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: _photoHeight,
+          width: double.infinity,
+          child: LayoutBuilder(
+            builder: (context, box) {
+              final sample = _sample;
+              // Where the photo actually sits inside the box (BoxFit.contain).
+              Rect? photoRect;
+              if (sample != null) {
+                final scale = math.min(box.maxWidth / sample.width, box.maxHeight / sample.height);
+                final w = sample.width * scale, h = sample.height * scale;
+                photoRect = Rect.fromLTWH((box.maxWidth - w) / 2, (box.maxHeight - h) / 2, w, h);
+              }
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: GestureDetector(
+                  onTapDown: (d) {
+                    final r = photoRect;
+                    if (r == null || !r.contains(d.localPosition)) return;
+                    final px = ((d.localPosition.dx - r.left) / r.width * sample!.width).floor();
+                    final py = ((d.localPosition.dy - r.top) / r.height * sample.height).floor();
+                    HapticFeedback.selectionClick();
+                    setState(() => _marker = d.localPosition);
+                    setSlot(_colorAt(px, py));
+                  },
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: ColoredBox(
+                          color: Colors.white,
+                          child: Image.file(File(item.imagePath!), fit: BoxFit.contain),
+                        ),
+                      ),
+                      if (_marker case final m? when colors.isNotEmpty)
+                        Positioned(
+                          left: m.dx - 14,
+                          top: m.dy - 14,
+                          child: IgnorePointer(
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: Color(colors[selected]),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 3),
+                                boxShadow: const [BoxShadow(color: Color(0x55000000), blurRadius: 6)],
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            for (final (i, c) in colors.indexed) ...[
+              Semantics(
+                button: true,
+                selected: i == selected,
+                label: l10n.colorSlot(i + 1),
+                child: GestureDetector(
+                  onTap: () => setState(() {
+                    _selected = i;
+                    _marker = null;
+                  }),
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Color(c),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: i == selected ? AppColors.accent : AppColors.cardBorder,
+                        width: i == selected ? 3 : 1,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+            ],
+            if (colors.length < 3)
+              Semantics(
+                button: true,
+                label: l10n.colorAdd,
+                child: GestureDetector(
+                  onTap: () {
+                    // A new slot starts as a copy of the selected color; a tap
+                    // on the photo then sets it.
+                    final next = [...colors, colors.isEmpty ? 0xFFBDBDBD : colors[selected]];
+                    store.setItemColors(item.id, next);
+                    setState(() {
+                      _selected = next.length - 1;
+                      _marker = null;
+                    });
+                  },
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.dashedBorder),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(Icons.add, size: 20, color: AppColors.mutedSoft),
+                  ),
+                ),
+              ),
+            const Spacer(),
+            if (colors.length > 1)
+              IconButton(
+                tooltip: l10n.colorRemove,
+                onPressed: () {
+                  store.setItemColors(item.id, [...colors]..removeAt(selected));
+                  setState(() {
+                    _selected = math.max(0, selected - 1);
+                    _marker = null;
+                  });
+                },
+                icon: Icon(Icons.delete_outline, size: 20, color: AppColors.muted),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        TextButton.icon(
+          onPressed: () {
+            setState(() {
+              _selected = 0;
+              _marker = null;
+            });
+            store.redetectColors(item.id);
+          },
+          icon: Icon(Icons.auto_awesome_outlined, size: 18, color: AppColors.accent),
+          label: Text(l10n.colorsRedetect, style: AppText.sans(size: 13, color: AppColors.accent)),
         ),
       ],
     );

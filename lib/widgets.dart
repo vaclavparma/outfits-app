@@ -832,3 +832,38 @@ int gridColumns(BuildContext context, int phone) {
   final width = math.min(MediaQuery.sizeOf(context).width, kMaxContentWidth);
   return width >= 600 ? phone + 1 : phone;
 }
+
+/// A small rounded bar split into the garment's colors (1–3 equal parts) —
+/// the item detail's color summary. [height] sets the size; the width
+/// follows. Empty [colors] show as a neutral placeholder.
+class ColorBar extends StatelessWidget {
+  final List<int> colors;
+  final double height;
+  const ColorBar({super.key, required this.colors, this.height = 16});
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(height * 0.3);
+    return Container(
+      width: height * 2.6,
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        border: Border.all(color: AppColors.cardBorder),
+        color: AppColors.cardFill,
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        // stretch: a ColoredBox without a child takes the smallest height
+        // it's allowed — 0 in a Row that only loosely bounds the height.
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final c in colors) Expanded(child: ColoredBox(color: Color(c))),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
