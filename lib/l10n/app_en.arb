@@ -186,8 +186,6 @@
   },
 
   "aboutTagline": "A wardrobe for planning outfits",
-  "aboutGithub": "Source code on GitHub",
-  "aboutSupport": "Support development — Buy Me a Coffee",
   "aboutVersionLine": "v{version} ({buildNumber}) · Václav Parma",
   "@aboutVersionLine": {
     "placeholders": {
@@ -196,6 +194,7 @@
     }
   },
 
+  "sectionWardrobes": "wardrobes",
   "settingsTitle": "Settings",
   "sectionLanguage": "language",
   "languageSystemOption": "System default",
@@ -213,8 +212,6 @@
   "defaultWardrobeName": "My wardrobe",
   "sectionWardrobeName": "wardrobe name",
   "newWardrobe": "New wardrobe",
-  "newWardrobeTile": "new wardrobe",
-  "editWardrobes": "Edit wardrobes",
   "newWardrobeHint": "e.g. Cottage",
   "renameWardrobeTitle": "Rename wardrobe",
   "deleteWardrobeTitle": "Delete wardrobe?",

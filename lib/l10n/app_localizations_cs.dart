@@ -339,15 +339,12 @@ class AppLocalizationsCs extends AppLocalizations {
   String get aboutTagline => 'Šatník pro plánování outfitů';
 
   @override
-  String get aboutGithub => 'Zdrojový kód na GitHubu';
-
-  @override
-  String get aboutSupport => 'Podpoř vývoj — Buy Me a Coffee';
-
-  @override
   String aboutVersionLine(String version, String buildNumber) {
     return 'v$version ($buildNumber) · Václav Parma';
   }
+
+  @override
+  String get sectionWardrobes => 'šatníky';
 
   @override
   String get settingsTitle => 'Nastavení';
@@ -395,12 +392,6 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get newWardrobe => 'Nový šatník';
-
-  @override
-  String get newWardrobeTile => 'nový šatník';
-
-  @override
-  String get editWardrobes => 'Upravit šatníky';
 
   @override
   String get newWardrobeHint => 'např. Chata';

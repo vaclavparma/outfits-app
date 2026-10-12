@@ -54,6 +54,10 @@ class WardrobeStore extends ChangeNotifier {
   String activeWardrobeId = '';
   final Map<String, _WardrobeContent> _stash = {};
 
+  /// How many items [wardrobeId] holds — the active one or a stashed one.
+  int itemCountIn(String wardrobeId) =>
+      wardrobeId == activeWardrobeId ? items.length : _stash[wardrobeId]?.items.length ?? 0;
+
   Wardrobe get activeWardrobe =>
       wardrobes.firstWhere((w) => w.id == activeWardrobeId);
 

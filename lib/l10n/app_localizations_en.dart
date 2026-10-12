@@ -335,15 +335,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutTagline => 'A wardrobe for planning outfits';
 
   @override
-  String get aboutGithub => 'Source code on GitHub';
-
-  @override
-  String get aboutSupport => 'Support development — Buy Me a Coffee';
-
-  @override
   String aboutVersionLine(String version, String buildNumber) {
     return 'v$version ($buildNumber) · Václav Parma';
   }
+
+  @override
+  String get sectionWardrobes => 'wardrobes';
 
   @override
   String get settingsTitle => 'Settings';
@@ -391,12 +388,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get newWardrobe => 'New wardrobe';
-
-  @override
-  String get newWardrobeTile => 'new wardrobe';
-
-  @override
-  String get editWardrobes => 'Edit wardrobes';
 
   @override
   String get newWardrobeHint => 'e.g. Cottage';

@@ -638,23 +638,17 @@ abstract class AppLocalizations {
   /// **'Šatník pro plánování outfitů'**
   String get aboutTagline;
 
-  /// No description provided for @aboutGithub.
-  ///
-  /// In cs, this message translates to:
-  /// **'Zdrojový kód na GitHubu'**
-  String get aboutGithub;
-
-  /// No description provided for @aboutSupport.
-  ///
-  /// In cs, this message translates to:
-  /// **'Podpoř vývoj — Buy Me a Coffee'**
-  String get aboutSupport;
-
   /// No description provided for @aboutVersionLine.
   ///
   /// In cs, this message translates to:
   /// **'v{version} ({buildNumber}) · Václav Parma'**
   String aboutVersionLine(String version, String buildNumber);
+
+  /// No description provided for @sectionWardrobes.
+  ///
+  /// In cs, this message translates to:
+  /// **'šatníky'**
+  String get sectionWardrobes;
 
   /// No description provided for @settingsTitle.
   ///
@@ -745,18 +739,6 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Nový šatník'**
   String get newWardrobe;
-
-  /// No description provided for @newWardrobeTile.
-  ///
-  /// In cs, this message translates to:
-  /// **'nový šatník'**
-  String get newWardrobeTile;
-
-  /// No description provided for @editWardrobes.
-  ///
-  /// In cs, this message translates to:
-  /// **'Upravit šatníky'**
-  String get editWardrobes;
 
   /// No description provided for @newWardrobeHint.
   ///
