@@ -833,10 +833,12 @@ class _ItemDetailState extends State<_ItemDetail> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // A short hold opens the photo full screen, as on the outfit tab.
         GarmentCard(
           width: double.infinity,
           height: 220,
           imagePath: cur.imagePath,
+          zoomable: true,
         ),
         const SizedBox(height: 8),
         Row(

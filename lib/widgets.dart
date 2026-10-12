@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
@@ -126,6 +127,9 @@ class GarmentCard extends StatelessWidget {
   final String? imagePath;
   final VoidCallback? onTap;
   final void Function(int direction)? onSwipe;
+
+  /// A short hold opens the photo full screen (see [openPhotoViewer]).
+  final bool zoomable;
   final Color? borderColor;
   final List<BoxShadow>? shadow;
   final Alignment captionAlign;
@@ -141,6 +145,7 @@ class GarmentCard extends StatelessWidget {
     this.imagePath,
     this.onTap,
     this.onSwipe,
+    this.zoomable = false,
     this.borderColor,
     this.shadow,
     this.captionAlign = Alignment.bottomLeft,
@@ -233,7 +238,7 @@ class GarmentCard extends StatelessWidget {
       card = Transform.rotate(angle: rotationDeg * math.pi / 180, child: card);
     }
 
-    return GestureDetector(
+    final gestures = GestureDetector(
       onTap: onTap,
       onHorizontalDragEnd: onSwipe == null
           ? null
@@ -242,6 +247,20 @@ class GarmentCard extends StatelessWidget {
               if (v.abs() > 120) onSwipe!(v < 0 ? 1 : -1);
             },
       child: card,
+    );
+    final path = imagePath;
+    if (!zoomable || path == null) return gestures;
+    return RawGestureDetector(
+      gestures: {
+        LongPressGestureRecognizer: GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
+          () => LongPressGestureRecognizer(duration: photoHoldDuration),
+          (r) => r.onLongPress = () {
+            HapticFeedback.mediumImpact();
+            openPhotoViewer(context, path);
+          },
+        ),
+      },
+      child: gestures,
     );
   }
 }
@@ -631,5 +650,155 @@ class OutfitCollage extends StatelessWidget {
   Widget _tile(ClothingItem it) {
     final path = it.imagePath;
     return Container(color: AppColors.cardFill, child: path == null ? const DiagonalStripes() : GarmentImage(path));
+  }
+}
+
+/// How long to hold a garment photo before it opens full screen — shorter
+/// than the system long-press (500 ms) so it feels like a quick peek.
+const photoHoldDuration = Duration(milliseconds: 300);
+
+/// Opens [path] full screen over everything (sheets included): pinch or
+/// double-tap to zoom, × / back / a downward flick to close.
+void openPhotoViewer(BuildContext context, String path) {
+  Navigator.of(context, rootNavigator: true).push(
+    PageRouteBuilder<void>(
+      opaque: false,
+      barrierColor: Colors.black,
+      transitionDuration: const Duration(milliseconds: 200),
+      reverseTransitionDuration: const Duration(milliseconds: 160),
+      pageBuilder: (_, _, _) => _PhotoViewer(path: path),
+      transitionsBuilder: (_, animation, _, child) => FadeTransition(opacity: animation, child: child),
+    ),
+  );
+}
+
+class _PhotoViewer extends StatefulWidget {
+  final String path;
+  const _PhotoViewer({required this.path});
+
+  @override
+  State<_PhotoViewer> createState() => _PhotoViewerState();
+}
+
+class _PhotoViewerState extends State<_PhotoViewer> with SingleTickerProviderStateMixin {
+  static const _doubleTapScale = 2.5;
+
+  final _transform = TransformationController();
+  late final AnimationController _zoomAnim = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 220),
+  )..addListener(() => _transform.value = _zoomTween!.evaluate(CurvedAnimation(parent: _zoomAnim, curve: Curves.easeOut)));
+  Matrix4Tween? _zoomTween;
+  Offset? _doubleTapAt;
+
+  // Flick-down-to-close, only while not zoomed in (then a drag pans).
+  Offset? _dragStart;
+  Duration? _dragStartTime;
+  int _pointers = 0;
+
+  bool get _zoomed => _transform.value.getMaxScaleOnAxis() > 1.01;
+
+  @override
+  void dispose() {
+    _zoomAnim.dispose();
+    _transform.dispose();
+    super.dispose();
+  }
+
+  void _animateTo(Matrix4 target) {
+    _zoomTween = Matrix4Tween(begin: _transform.value.clone(), end: target);
+    _zoomAnim.forward(from: 0);
+  }
+
+  void _onDoubleTap() {
+    if (_zoomed) {
+      _animateTo(Matrix4.identity());
+      return;
+    }
+    // Zoom in around the tapped point.
+    final p = _doubleTapAt ?? Offset.zero;
+    _animateTo(
+      Matrix4.identity()
+        ..translateByDouble(-p.dx * (_doubleTapScale - 1), -p.dy * (_doubleTapScale - 1), 0, 1)
+        ..scaleByDouble(_doubleTapScale, _doubleTapScale, 1, 1),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Material(
+        color: Colors.black,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Listener(
+                onPointerDown: (e) {
+                  _pointers++;
+                  _dragStart = _pointers == 1 && !_zoomed ? e.position : null;
+                  _dragStartTime = e.timeStamp;
+                },
+                onPointerCancel: (_) {
+                  _pointers = math.max(0, _pointers - 1);
+                  _dragStart = null;
+                },
+                onPointerUp: (e) {
+                  _pointers = math.max(0, _pointers - 1);
+                  final start = _dragStart, t0 = _dragStartTime;
+                  _dragStart = null;
+                  if (start == null || t0 == null || _zoomed) return;
+                  final d = e.position - start;
+                  if (d.dy > 90 && d.dy > d.dx.abs() * 1.5 && e.timeStamp - t0 < const Duration(milliseconds: 500)) {
+                    Navigator.of(context).pop();
+                  }
+                },
+                child: GestureDetector(
+                  onDoubleTapDown: (d) => _doubleTapAt = d.localPosition,
+                  onDoubleTap: _onDoubleTap,
+                  child: InteractiveViewer(
+                    transformationController: _transform,
+                    minScale: 1,
+                    maxScale: 5,
+                    child: SizedBox.expand(
+                      child: Image.file(
+                        File(widget.path),
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 0,
+              right: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Semantics(
+                    button: true,
+                    label: l10n.close,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), shape: BoxShape.circle),
+                        alignment: Alignment.center,
+                        child: const Icon(Icons.close, size: 22, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
