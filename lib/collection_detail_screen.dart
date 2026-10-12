@@ -217,10 +217,9 @@ class _OutfitCard extends StatelessWidget {
         .whereType<ClothingItem>()
         .toList();
     return GestureDetector(
-      onTap: () {
-        store.loadOutfit(outfit);
-        Navigator.of(context).pop();
-      },
+      // Switches to the outfit tab; this collection stays open in its own
+      // tab, for when you come back.
+      onTap: () => store.loadOutfit(outfit),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,

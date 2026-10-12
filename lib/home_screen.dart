@@ -11,22 +11,43 @@ import 'theme.dart';
 import 'wardrobe_store.dart';
 import 'wardrobe_tab.dart';
 
-/// Navigator for everything above the bottom tab bar: the tabs themselves,
-/// plus folder/collection screens pushed from them — so those open *under*
-/// a bar that stays put, instead of covering it. Sheets and dialogs still
-/// go on the root navigator and cover the bar as before.
-final homeNavigatorKey = GlobalKey<NavigatorState>();
+/// One navigator per tab for everything above the bottom tab bar: the tab
+/// itself plus folder/collection screens pushed from it. They open *under*
+/// a bar that stays put, and each tab keeps its own stack — leave a folder
+/// for another tab and coming back lands you in that folder again. Sheets
+/// and dialogs go on the root navigator and cover the bar.
+final Map<WardrobeTabKind, GlobalKey<NavigatorState>> _tabNavigatorKeys = {
+  for (final kind in WardrobeTabKind.values) kind: GlobalKey<NavigatorState>(),
+};
 
-/// Closes any folder/collection screen open above the tabs.
-void popToHomeTabs() =>
-    homeNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+/// Closes any folder/collection screen open in [kind]'s tab.
+void _popTabToRoot(WardrobeTabKind kind) =>
+    _tabNavigatorKeys[kind]!.currentState?.popUntil((route) => route.isFirst);
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String? _wardrobeId;
 
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
+
+    // A folder/collection kept open in another tab belongs to the wardrobe
+    // it was opened in — drop them all when the wardrobe changes.
+    if (_wardrobeId != null && _wardrobeId != store.activeWardrobeId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        for (final kind in WardrobeTabKind.values) {
+          _popTabToRoot(kind);
+        }
+      });
+    }
+    _wardrobeId = store.activeWardrobeId;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -36,22 +57,20 @@ class HomeScreen extends StatelessWidget {
             Column(
               children: [
                 Expanded(
-                  // Routes Android's back button to the nested navigator
-                  // first, so it closes an open folder instead of the app.
-                  child: NavigatorPopHandler<Object?>(
-                    onPopWithResult: (_) =>
-                        homeNavigatorKey.currentState?.maybePop(),
-                    child: Navigator(
-                      key: homeNavigatorKey,
-                      onGenerateRoute: (_) =>
-                          MaterialPageRoute(builder: (_) => const _TabsPage()),
-                    ),
+                  child: Stack(
+                    children: [
+                      for (final kind in WardrobeTabKind.values)
+                        _TabNavigator(kind: kind, active: kind == store.screen),
+                    ],
                   ),
                 ),
                 _BottomTabs(
                   current: store.screen,
                   onSelect: (kind) {
-                    popToHomeTabs();
+                    // Tapping the tab you're on goes back to its start
+                    // (iOS convention); another tab resumes where it was.
+                    if (kind == store.screen) _popTabToRoot(kind);
+                    FocusManager.instance.primaryFocus?.unfocus();
                     store.setScreen(kind);
                   },
                 ),
@@ -71,15 +90,58 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-/// The header (wardrobe switcher, settings, about) and the active tab — the
-/// root page of [homeNavigatorKey]'s navigator.
-class _TabsPage extends StatelessWidget {
-  const _TabsPage();
+/// A tab's own navigator, kept alive (and fading in/out) while another tab
+/// is showing so its stack survives the switch. Inactive tabs don't take
+/// taps, back gestures, animations or accessibility focus.
+class _TabNavigator extends StatelessWidget {
+  final WardrobeTabKind kind;
+  final bool active;
+
+  const _TabNavigator({required this.kind, required this.active});
 
   @override
   Widget build(BuildContext context) {
-    final store = context.watch<WardrobeStore>();
+    final key = _tabNavigatorKeys[kind]!;
+    return ExcludeSemantics(
+      excluding: !active,
+      child: IgnorePointer(
+        ignoring: !active,
+        child: AnimatedOpacity(
+          opacity: active ? 1 : 0,
+          duration: const Duration(milliseconds: 220),
+          curve: active ? Curves.easeOut : Curves.easeIn,
+          child: AnimatedSlide(
+            offset: active ? Offset.zero : const Offset(0, 0.02),
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOut,
+            child: TickerMode(
+              enabled: active,
+              // Routes Android's back button to this tab's navigator first,
+              // so it closes an open folder instead of the app.
+              child: NavigatorPopHandler<Object?>(
+                enabled: active,
+                onPopWithResult: (_) => key.currentState?.maybePop(),
+                child: Navigator(
+                  key: key,
+                  onGenerateRoute: (_) => MaterialPageRoute(builder: (_) => _TabRoot(kind: kind)),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
+/// The header (wardrobe switcher, settings, about) and one tab's content —
+/// the root page of that tab's navigator.
+class _TabRoot extends StatelessWidget {
+  final WardrobeTabKind kind;
+  const _TabRoot({required this.kind});
+
+  @override
+  Widget build(BuildContext context) {
     return ColoredBox(
       color: AppColors.background,
       child: Column(
@@ -122,36 +184,18 @@ class _TabsPage extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 220),
-              switchInCurve: Curves.easeOut,
-              switchOutCurve: Curves.easeIn,
-              transitionBuilder: (child, animation) => FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, 0.02),
-                    end: Offset.zero,
-                  ).animate(animation),
-                  child: child,
-                ),
+            child: switch (kind) {
+              WardrobeTabKind.outfit => OutfitTab(
+                onPick: (zone) => openPickSheet(context, zone),
+                onOpenLayers: ({replaceIndex}) =>
+                    openLayerSheet(context, replaceIndex: replaceIndex),
+                onOpenSave: () => openSaveOutfitSheet(context),
               ),
-              child: KeyedSubtree(
-                key: ValueKey(store.screen),
-                child: switch (store.screen) {
-                  WardrobeTabKind.outfit => OutfitTab(
-                    onPick: (zone) => openPickSheet(context, zone),
-                    onOpenLayers: ({replaceIndex}) =>
-                        openLayerSheet(context, replaceIndex: replaceIndex),
-                    onOpenSave: () => openSaveOutfitSheet(context),
-                  ),
-                  WardrobeTabKind.wardrobe => WardrobeTab(
-                    onOpenItem: (item) => openItemSheet(context, item),
-                  ),
-                  WardrobeTabKind.collections => const CollectionsTab(),
-                },
+              WardrobeTabKind.wardrobe => WardrobeTab(
+                onOpenItem: (item) => openItemSheet(context, item),
               ),
-            ),
+              WardrobeTabKind.collections => const CollectionsTab(),
+            },
           ),
         ],
       ),

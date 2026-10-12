@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
-import 'home_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'models.dart';
 import 'photo_shrink.dart';
@@ -908,12 +907,11 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
   }
 }
 
-/// Back to the home screen (on the outfit tab), not just out of the sheet —
-/// the item sheet is usually opened from a folder screen pushed on top.
-void _backToOutfit(BuildContext context) {
-  Navigator.of(context).popUntil((route) => route.isFirst);
-  popToHomeTabs();
-}
+/// Closes the sheets so the outfit tab (which the store just switched to)
+/// shows. A folder the item sheet was opened from stays open in the
+/// wardrobe tab's own stack, for when you go back there.
+void _backToOutfit(BuildContext context) =>
+    Navigator.of(context).popUntil((route) => route.isFirst);
 
 /// Where in the outfit a top should go: the top itself, one of the current
 /// layers (replacing it), or a new layer — each shown with what's there now.
