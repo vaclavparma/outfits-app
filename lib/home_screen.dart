@@ -468,10 +468,16 @@ class _BottomTabs extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final tabs = [
-      (WardrobeTabKind.outfit, l10n.tabOutfit),
-      (WardrobeTabKind.wardrobe, l10n.tabWardrobe),
-      (WardrobeTabKind.collections, l10n.tabCollections),
-      (WardrobeTabKind.diary, l10n.tabDiary),
+      for (final kind in WardrobeTabKind.values)
+        (
+          kind,
+          switch (kind) {
+            WardrobeTabKind.outfit => l10n.tabOutfit,
+            WardrobeTabKind.collections => l10n.tabCollections,
+            WardrobeTabKind.diary => l10n.tabDiary,
+            WardrobeTabKind.wardrobe => l10n.tabWardrobe,
+          },
+        ),
     ];
     return Container(
       decoration: BoxDecoration(

@@ -370,4 +370,5 @@ class DiaryEntry {
   static String _two(int n) => n.toString().padLeft(2, '0');
 }
 
-enum WardrobeTabKind { outfit, wardrobe, collections, diary }
+/// The tabs, in the order they sit in the bottom bar (and swipe between).
+enum WardrobeTabKind { outfit, collections, diary, wardrobe }
