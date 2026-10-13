@@ -3,7 +3,6 @@
 
   "tabOutfit": "Outfit",
   "tabWardrobe": "Šatník",
-  "tabCollections": "Kolekce",
 
   "cancel": "Zrušit",
   "save": "Uložit",
@@ -35,10 +34,6 @@
     }
   },
 
-  "newCollectionTile": "nová kolekce",
-  "newCollectionDialogTitle": "Nová kolekce",
-  "newCollectionHint": "např. Práce",
-
   "outfitCount": "{count, plural, one{{count} outfit} few{{count} outfity} other{{count} outfitů}}",
   "@outfitCount": {
     "placeholders": {
@@ -46,22 +41,7 @@
     }
   },
 
-  "collectionEmptyHint": "Zatím prázdné. Ulož outfit a vyber tuto kolekci.",
-  "renameCollectionTitle": "Přejmenovat kolekci",
-  "deleteCollectionTitle": "Smazat kolekci?",
-  "deleteCollectionMessage": "Kolekce „{name}“ a vše v ní bude smazáno.",
-  "@deleteCollectionMessage": {
-    "placeholders": {
-      "name": {"type": "String"}
-    }
-  },
   "deleteOutfitTitle": "Smazat outfit?",
-  "deleteOutfitMessage": "„{name}“ bude smazán.",
-  "@deleteOutfitMessage": {
-    "placeholders": {
-      "name": {"type": "String"}
-    }
-  },
 
   "addItemTitle": "Přidat oblečení",
   "takePhoto": "Vyfotit",
@@ -84,10 +64,6 @@
   "sectionNote": "poznámka",
   "noteHint": "např. prát na 30 °C",
 
-  "sectionOutfitName": "název outfitu",
-  "outfitNameHint": "např. Pondělní porada",
-  "sectionCollection": "kolekce",
-
   "toastSavedWithPhoto": "Uloženo do „{category}“ · fotka v souborech apky",
   "@toastSavedWithPhoto": {
     "placeholders": {
@@ -108,28 +84,7 @@
     }
   },
   "outfitAlreadySavedTitle": "Outfit už je uložený",
-  "outfitAlreadySavedMessage": "Tahle kombinace je už uložená jako „{name}“ v {wardrobe} / {col}. Uložit ji i tak?",
-  "@outfitAlreadySavedMessage": {
-    "placeholders": {
-      "name": {"type": "String"},
-      "wardrobe": {"type": "String"},
-      "col": {"type": "String"}
-    }
-  },
   "saveAnyway": "Uložit i tak",
-  "toastOutfitSaved": "„{name}“ uloženo do kolekce {col}",
-  "@toastOutfitSaved": {
-    "placeholders": {
-      "name": {"type": "String"},
-      "col": {"type": "String"}
-    }
-  },
-  "defaultOutfitName": "Outfit {n}",
-  "@defaultOutfitName": {
-    "placeholders": {
-      "n": {"type": "int"}
-    }
-  },
 
   "aboutTagline": "Šatník pro plánování outfitů",
   "aboutVersionLine": "v{version} ({buildNumber}) · Václav Parma",
@@ -218,7 +173,6 @@
   "diaryFromSaved": "Z uložených",
   "diaryCanvasEmpty": "Na plátně zatím není žádné oblečení.",
   "diaryPickSavedTitle": "Uložené outfity",
-  "diaryNoSaved": "Zatím nemáš žádné uložené outfity. Ulož si nějaký na hlavní stránce.",
   "diaryRemoveEntry": "Odebrat z deníku",
   "statsDaysLogged": "{count, plural, one{den zapsán tento měsíc} few{dny zapsány tento měsíc} other{dní zapsáno tento měsíc}}",
   "@statsDaysLogged": {"placeholders": {"count": {"type": "int"}}},
@@ -264,5 +218,21 @@
   "reminderHint": "Připomene ti zapsat outfit — jen když ten den ještě nemáš nic zapsané.",
   "reminderTime": "Čas",
   "reminderDeniedTitle": "Notifikace jsou vypnuté",
-  "reminderDeniedMessage": "Aby upomínka mohla přijít, povol aplikaci notifikace v Nastavení telefonu."
+  "reminderDeniedMessage": "Aby upomínka mohla přijít, povol aplikaci notifikace v Nastavení telefonu.",
+  "tabOutfits": "Sbírka",
+  "searchOutfitsHint": "Hledat podle oblečení",
+  "filterFavorites": "Oblíbené",
+  "filterOftenWorn": "Často nošené",
+  "favorite": "Oblíbený",
+  "toastOutfitSavedPlain": "Outfit uložen",
+  "outfitAlreadySavedHere": "Tuhle kombinaci už máš mezi outfity. Uložit i tak?",
+  "outfitAlreadySavedIn": "Tuhle kombinaci už máš uloženou v šatníku „{wardrobe}“. Uložit i tak?",
+  "@outfitAlreadySavedIn": {"placeholders": {"wardrobe": {"type": "String"}}},
+  "deleteOutfitPlain": "Outfit bude smazán.",
+  "outfitsEmpty": "Zatím nemáš žádné uložené outfity. Poskládej si nějaký na hlavní stránce a ulož ho.",
+  "outfitUsualWeekday": "{weekday, select, 1{nejčastěji v pondělí} 2{nejčastěji v úterý} 3{nejčastěji ve středu} 4{nejčastěji ve čtvrtek} 5{nejčastěji v pátek} 6{nejčastěji v sobotu} 7{nejčastěji v neděli} other{}}",
+  "@outfitUsualWeekday": {"placeholders": {"weekday": {"type": "String"}}},
+  "wearToday": "Nosím dnes",
+  "outfitWornToday": "Dnes zapsáno",
+  "editOnCanvas": "Upravit na plátně"
 }

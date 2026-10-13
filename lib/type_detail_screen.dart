@@ -8,8 +8,8 @@ import 'wardrobe_store.dart';
 import 'widgets.dart';
 
 /// Full-screen (pushed) view of one type's clothing in the active
-/// wardrobe — like a folder: renaming/deleting the type lives in the header
-/// menu, and the trailing tile in the grid adds clothing to it.
+/// wardrobe — like a folder; the trailing tile in the grid adds clothing to
+/// it. Types are renamed and deleted in settings.
 class TypeDetailScreen extends StatelessWidget {
   final String kindId;
   final String typeId;
@@ -60,35 +60,8 @@ class TypeDetailScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      PopupMenuButton<String>(
-                        icon: Icon(Icons.more_vert, size: 20, color: AppColors.ink),
-                        color: AppColors.surface,
-                        elevation: 3,
-                        shadowColor: const Color(0x1F000000),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(color: AppColors.rowBorder),
-                        ),
-                        onSelected: (action) async {
-                          if (action == 'rename') {
-                            final name = await promptTextDialog(
-                              context,
-                              title: l10n.renameTypeTitle,
-                              initialValue: type.name,
-                              confirmLabel: l10n.save,
-                            );
-                            if (name != null) store.renameType(kindId, typeId, name);
-                          } else if (context.mounted) {
-                            await deleteTypeAskingWhereTo(context, kind, type);
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          _menuItem('rename', Icons.edit_outlined, l10n.rename, AppColors.ink),
-                          // Every item needs a type, so the last one stays.
-                          if (kind.types.length > 1)
-                            _menuItem('delete', Icons.delete_outline, l10n.delete, AppColors.danger),
-                        ],
-                      ),
+                      // Balances the back button so the title stays centered.
+                      const SizedBox(width: 48),
                     ],
                   ),
                 ),
@@ -118,20 +91,6 @@ class TypeDetailScreen extends StatelessWidget {
             );
           },
         ),
-      ),
-    );
-  }
-
-  PopupMenuItem<String> _menuItem(String value, IconData icon, String label, Color color) {
-    return PopupMenuItem(
-      value: value,
-      height: 44,
-      child: Row(
-        children: [
-          Icon(icon, size: 17, color: color == AppColors.ink ? AppColors.mutedSoft : color),
-          const SizedBox(width: 10),
-          Text(label, style: AppText.sans(size: 13.5, color: color)),
-        ],
       ),
     );
   }

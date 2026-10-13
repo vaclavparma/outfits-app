@@ -4,54 +4,10 @@ import 'dart:math' as math;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 
 import 'l10n/app_localizations.dart';
 import 'models.dart';
 import 'theme.dart';
-
-/// How long a press has to hold before a reorderable grid tile picks up —
-/// shorter than the package's ~500ms default (`kLongPressTimeout`) so
-/// reordering feels responsive rather than sluggish.
-const gridDragStartDelay = Duration(milliseconds: 250);
-
-/// Fires the instant a drag actually starts, giving the pickup a tactile
-/// cue (to go with the visual pop in [roundedDragFeedback]) so it's obvious
-/// the tile is now free to move.
-void onGridDragStart(int _) => HapticFeedback.mediumImpact();
-
-/// Drag feedback for a [ReorderableGridView]/[ReorderableSliverGridView] cell
-/// that itself has rounded corners. The package's own default just wraps the
-/// dragged widget in an opaque, square-cornered [Material] — which pokes
-/// sharp white corners out from behind a rounded card the moment it lifts.
-/// This drops that fill (only the card's own already-rounded content shows)
-/// and deepens the shadow for a "lifted" feel.
-///
-/// Takes a screenshot of the tile instead of re-mounting the live widget in
-/// the drag overlay: our cards (e.g. `_CollectionCard`) rebuild off
-/// `context.watch`, and the package's own docs/examples call out re-mounting
-/// such a widget fresh in the overlay as unreliable — it showed up here as a
-/// second, half-rendered "ghost" copy layered behind the real drag proxy.
-/// A screenshot is just a static bitmap, so there's nothing left to rebuild.
-/// Trade-off: the package captures + PNG-encodes that bitmap *before*
-/// hiding the original tile and showing this overlay, so there's an
-/// unavoidable one-frame-ish flicker right at pickup — not something this
-/// builder controls, since it only renders what's already inside the
-/// overlay once the package decides to show it.
-DragWidgetBuilderV2 roundedDragFeedback(double radius) => DragWidgetBuilderV2(
-  isScreenshotDragWidget: true,
-  builder: (index, child, screenshot) => Transform.scale(
-    scale: 1.05,
-    child: Material(
-      color: Colors.transparent,
-      elevation: 6,
-      shadowColor: Colors.black.withValues(alpha: 0.35),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
-      clipBehavior: Clip.antiAlias,
-      child: screenshot == null ? child : Image(image: screenshot, fit: BoxFit.cover),
-    ),
-  ),
-);
 
 /// Diagonal hatch pattern used as a placeholder for garments without a photo,
 /// matching the `repeating-linear-gradient(135deg, ...)` texture in the
@@ -313,7 +269,7 @@ class SelectChip extends StatelessWidget {
   }
 }
 
-/// Back arrow for the pushed type/collection screens. Opaque and sized to
+/// Back arrow for pushed screens (a type, settings, an item). Opaque and sized to
 /// a full 48×48 target — a plain GestureDetector only reacts to taps on the
 /// icon's own pixels, which made it easy to miss.
 class AppBackButton extends StatelessWidget {
@@ -370,7 +326,7 @@ class RoundIconButton extends StatelessWidget {
 }
 
 /// Dashed-border "+" tile used as the trailing cell in a grid (or list) to
-/// add a new item — a garment, a type, a collection...
+/// add a new item — a garment, a type...
 class AddTile extends StatelessWidget {
   final VoidCallback onTap;
   final String label;
@@ -409,7 +365,10 @@ class SearchField extends StatefulWidget {
   final ValueChanged<String> onChanged;
   final Color? fillColor;
 
-  const SearchField({super.key, required this.onChanged, this.fillColor});
+  /// Defaults to "search clothes".
+  final String? hint;
+
+  const SearchField({super.key, required this.onChanged, this.fillColor, this.hint});
 
   @override
   State<SearchField> createState() => _SearchFieldState();
@@ -441,7 +400,7 @@ class _SearchFieldState extends State<SearchField> {
       textInputAction: TextInputAction.search,
       style: AppText.sans(size: 14, color: AppColors.ink),
       decoration: InputDecoration(
-        hintText: AppLocalizations.of(context)!.searchHint,
+        hintText: widget.hint ?? AppLocalizations.of(context)!.searchHint,
         hintStyle: AppText.sans(size: 14, color: AppColors.mutedTag),
         prefixIcon: Icon(Icons.search, size: 19, color: AppColors.mutedSoft),
         suffixIcon: _controller.text.isEmpty
@@ -464,33 +423,8 @@ class _SearchFieldState extends State<SearchField> {
   }
 }
 
-/// Section header used above wardrobe grids and collection lists.
-class SectionHeader extends StatelessWidget {
-  final String title;
-  final String? trailing;
-
-  const SectionHeader({super.key, required this.title, this.trailing});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 9),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: AppText.sans(size: 13, color: AppColors.ink)),
-          if (trailing != null)
-            Text(trailing!, style: AppText.mono(size: 9, letterSpacing: 1, color: AppColors.mutedSoft)),
-        ],
-      ),
-    );
-  }
-}
-
 /// Shared "are you sure" dialog for destructive actions (deleting a
-/// collection, tag, item, outfit...). Returns true only if the user
+/// type, item, outfit...). Returns true only if the user
 /// confirmed.
 Future<bool> confirmDialog(
   BuildContext context, {
@@ -989,7 +923,7 @@ class OutfitPreview extends StatelessWidget {
           }(),
         ),
     ];
-    if (cards.isEmpty) return ColoredBox(color: AppColors.background);
+    if (cards.isEmpty) return const SizedBox.expand();
     // Room around the cards for their tilt and shadow.
     final bounds = cards.map((c) => c.rect).reduce((a, b) => a.expandToInclude(b)).inflate(18);
 
@@ -997,36 +931,35 @@ class OutfitPreview extends StatelessWidget {
       builder: (context, constraints) {
         final scale = math.min(constraints.maxWidth / bounds.width, constraints.maxHeight / bounds.height);
         final media = MediaQuery.of(context);
-        return ColoredBox(
-          color: AppColors.background,
-          child: ClipRect(
-            child: Center(
-              child: FittedBox(
-                child: MediaQuery(
-                  data: media.copyWith(devicePixelRatio: media.devicePixelRatio * scale),
-                  child: SizedBox(
-                    width: bounds.width,
-                    height: bounds.height,
-                    child: Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        for (final c in cards)
-                          Positioned.fromRect(
-                            rect: c.rect.shift(-bounds.topLeft),
-                            child: GarmentCard(
-                              width: c.rect.width,
-                              height: c.rect.height,
-                              rotationDeg: CanvasGeometry.tilt(c.slot.id),
-                              imagePath: c.slot.itemId == null ? null : itemById(c.slot.itemId!)?.imagePath,
-                              // Without a photo, its name says what it is.
-                              name: c.slot.itemId == null || itemById(c.slot.itemId!)?.imagePath != null
-                                  ? null
-                                  : itemById(c.slot.itemId!)?.name,
-                              shadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 2))],
-                            ),
+        // Transparent: the card it sits in draws the background (and its
+        // border, which a fill here would paint over).
+        return ClipRect(
+          child: Center(
+            child: FittedBox(
+              child: MediaQuery(
+                data: media.copyWith(devicePixelRatio: media.devicePixelRatio * scale),
+                child: SizedBox(
+                  width: bounds.width,
+                  height: bounds.height,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      for (final c in cards)
+                        Positioned.fromRect(
+                          rect: c.rect.shift(-bounds.topLeft),
+                          child: GarmentCard(
+                            width: c.rect.width,
+                            height: c.rect.height,
+                            rotationDeg: CanvasGeometry.tilt(c.slot.id),
+                            imagePath: c.slot.itemId == null ? null : itemById(c.slot.itemId!)?.imagePath,
+                            // Without a photo, its name says what it is.
+                            name: c.slot.itemId == null || itemById(c.slot.itemId!)?.imagePath != null
+                                ? null
+                                : itemById(c.slot.itemId!)?.name,
+                            shadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 2))],
                           ),
-                      ],
-                    ),
+                        ),
+                    ],
                   ),
                 ),
               ),

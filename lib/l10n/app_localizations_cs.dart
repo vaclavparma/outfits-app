@@ -15,9 +15,6 @@ class AppLocalizationsCs extends AppLocalizations {
   String get tabWardrobe => 'Šatník';
 
   @override
-  String get tabCollections => 'Kolekce';
-
-  @override
   String get cancel => 'Zrušit';
 
   @override
@@ -87,15 +84,6 @@ class AppLocalizationsCs extends AppLocalizations {
   }
 
   @override
-  String get newCollectionTile => 'nová kolekce';
-
-  @override
-  String get newCollectionDialogTitle => 'Nová kolekce';
-
-  @override
-  String get newCollectionHint => 'např. Práce';
-
-  @override
   String outfitCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -108,27 +96,7 @@ class AppLocalizationsCs extends AppLocalizations {
   }
 
   @override
-  String get collectionEmptyHint =>
-      'Zatím prázdné. Ulož outfit a vyber tuto kolekci.';
-
-  @override
-  String get renameCollectionTitle => 'Přejmenovat kolekci';
-
-  @override
-  String get deleteCollectionTitle => 'Smazat kolekci?';
-
-  @override
-  String deleteCollectionMessage(String name) {
-    return 'Kolekce „$name“ a vše v ní bude smazáno.';
-  }
-
-  @override
   String get deleteOutfitTitle => 'Smazat outfit?';
-
-  @override
-  String deleteOutfitMessage(String name) {
-    return '„$name“ bude smazán.';
-  }
 
   @override
   String get addItemTitle => 'Přidat oblečení';
@@ -187,15 +155,6 @@ class AppLocalizationsCs extends AppLocalizations {
   String get noteHint => 'např. prát na 30 °C';
 
   @override
-  String get sectionOutfitName => 'název outfitu';
-
-  @override
-  String get outfitNameHint => 'např. Pondělní porada';
-
-  @override
-  String get sectionCollection => 'kolekce';
-
-  @override
   String toastSavedWithPhoto(String category) {
     return 'Uloženo do „$category“ · fotka v souborech apky';
   }
@@ -221,22 +180,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get outfitAlreadySavedTitle => 'Outfit už je uložený';
 
   @override
-  String outfitAlreadySavedMessage(String name, String wardrobe, String col) {
-    return 'Tahle kombinace je už uložená jako „$name“ v $wardrobe / $col. Uložit ji i tak?';
-  }
-
-  @override
   String get saveAnyway => 'Uložit i tak';
-
-  @override
-  String toastOutfitSaved(String name, String col) {
-    return '„$name“ uloženo do kolekce $col';
-  }
-
-  @override
-  String defaultOutfitName(int n) {
-    return 'Outfit $n';
-  }
 
   @override
   String get aboutTagline => 'Šatník pro plánování outfitů';
@@ -456,10 +400,6 @@ class AppLocalizationsCs extends AppLocalizations {
   String get diaryPickSavedTitle => 'Uložené outfity';
 
   @override
-  String get diaryNoSaved =>
-      'Zatím nemáš žádné uložené outfity. Ulož si nějaký na hlavní stránce.';
-
-  @override
   String get diaryRemoveEntry => 'Odebrat z deníku';
 
   @override
@@ -615,4 +555,62 @@ class AppLocalizationsCs extends AppLocalizations {
   @override
   String get reminderDeniedMessage =>
       'Aby upomínka mohla přijít, povol aplikaci notifikace v Nastavení telefonu.';
+
+  @override
+  String get tabOutfits => 'Sbírka';
+
+  @override
+  String get searchOutfitsHint => 'Hledat podle oblečení';
+
+  @override
+  String get filterFavorites => 'Oblíbené';
+
+  @override
+  String get filterOftenWorn => 'Často nošené';
+
+  @override
+  String get favorite => 'Oblíbený';
+
+  @override
+  String get toastOutfitSavedPlain => 'Outfit uložen';
+
+  @override
+  String get outfitAlreadySavedHere =>
+      'Tuhle kombinaci už máš mezi outfity. Uložit i tak?';
+
+  @override
+  String outfitAlreadySavedIn(String wardrobe) {
+    return 'Tuhle kombinaci už máš uloženou v šatníku „$wardrobe“. Uložit i tak?';
+  }
+
+  @override
+  String get deleteOutfitPlain => 'Outfit bude smazán.';
+
+  @override
+  String get outfitsEmpty =>
+      'Zatím nemáš žádné uložené outfity. Poskládej si nějaký na hlavní stránce a ulož ho.';
+
+  @override
+  String outfitUsualWeekday(String weekday) {
+    String _temp0 = intl.Intl.selectLogic(weekday, {
+      '1': 'nejčastěji v pondělí',
+      '2': 'nejčastěji v úterý',
+      '3': 'nejčastěji ve středu',
+      '4': 'nejčastěji ve čtvrtek',
+      '5': 'nejčastěji v pátek',
+      '6': 'nejčastěji v sobotu',
+      '7': 'nejčastěji v neděli',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get wearToday => 'Nosím dnes';
+
+  @override
+  String get outfitWornToday => 'Dnes zapsáno';
+
+  @override
+  String get editOnCanvas => 'Upravit na plátně';
 }

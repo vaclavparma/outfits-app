@@ -15,9 +15,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabWardrobe => 'Wardrobe';
 
   @override
-  String get tabCollections => 'Collections';
-
-  @override
   String get cancel => 'Cancel';
 
   @override
@@ -86,15 +83,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get newCollectionTile => 'new collection';
-
-  @override
-  String get newCollectionDialogTitle => 'New collection';
-
-  @override
-  String get newCollectionHint => 'e.g. Work';
-
-  @override
   String outfitCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -106,27 +94,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get collectionEmptyHint =>
-      'Nothing here yet. Save an outfit and pick this collection.';
-
-  @override
-  String get renameCollectionTitle => 'Rename collection';
-
-  @override
-  String get deleteCollectionTitle => 'Delete collection?';
-
-  @override
-  String deleteCollectionMessage(String name) {
-    return 'The collection “$name” and everything in it will be deleted.';
-  }
-
-  @override
   String get deleteOutfitTitle => 'Delete outfit?';
-
-  @override
-  String deleteOutfitMessage(String name) {
-    return '“$name” will be deleted.';
-  }
 
   @override
   String get addItemTitle => 'Add clothing';
@@ -185,15 +153,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noteHint => 'e.g. wash at 30 °C';
 
   @override
-  String get sectionOutfitName => 'outfit name';
-
-  @override
-  String get outfitNameHint => 'e.g. Monday meeting';
-
-  @override
-  String get sectionCollection => 'collection';
-
-  @override
   String toastSavedWithPhoto(String category) {
     return 'Saved to “$category” · photo stored in app files';
   }
@@ -218,22 +177,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get outfitAlreadySavedTitle => 'Outfit already saved';
 
   @override
-  String outfitAlreadySavedMessage(String name, String wardrobe, String col) {
-    return 'This combination is already saved as “$name” in $wardrobe / $col. Save it anyway?';
-  }
-
-  @override
   String get saveAnyway => 'Save anyway';
-
-  @override
-  String toastOutfitSaved(String name, String col) {
-    return '“$name” saved to the $col collection';
-  }
-
-  @override
-  String defaultOutfitName(int n) {
-    return 'Outfit $n';
-  }
 
   @override
   String get aboutTagline => 'A wardrobe for planning outfits';
@@ -452,10 +396,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diaryPickSavedTitle => 'Saved outfits';
 
   @override
-  String get diaryNoSaved =>
-      'You have no saved outfits yet. Save one on the main page.';
-
-  @override
   String get diaryRemoveEntry => 'Remove from diary';
 
   @override
@@ -610,4 +550,62 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get reminderDeniedMessage =>
       'To get the reminder, allow notifications for the app in your phone\'s Settings.';
+
+  @override
+  String get tabOutfits => 'Collection';
+
+  @override
+  String get searchOutfitsHint => 'Search by clothes';
+
+  @override
+  String get filterFavorites => 'Favorites';
+
+  @override
+  String get filterOftenWorn => 'Worn often';
+
+  @override
+  String get favorite => 'Favorite';
+
+  @override
+  String get toastOutfitSavedPlain => 'Outfit saved';
+
+  @override
+  String get outfitAlreadySavedHere =>
+      'You already have this combination among your outfits. Save it anyway?';
+
+  @override
+  String outfitAlreadySavedIn(String wardrobe) {
+    return 'You already have this combination saved in the “$wardrobe” wardrobe. Save it anyway?';
+  }
+
+  @override
+  String get deleteOutfitPlain => 'The outfit will be deleted.';
+
+  @override
+  String get outfitsEmpty =>
+      'No saved outfits yet. Put one together on the main page and save it.';
+
+  @override
+  String outfitUsualWeekday(String weekday) {
+    String _temp0 = intl.Intl.selectLogic(weekday, {
+      '1': 'mostly on Mondays',
+      '2': 'mostly on Tuesdays',
+      '3': 'mostly on Wednesdays',
+      '4': 'mostly on Thursdays',
+      '5': 'mostly on Fridays',
+      '6': 'mostly on Saturdays',
+      '7': 'mostly on Sundays',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get wearToday => 'Wearing it today';
+
+  @override
+  String get outfitWornToday => 'Logged today';
+
+  @override
+  String get editOnCanvas => 'Edit on canvas';
 }

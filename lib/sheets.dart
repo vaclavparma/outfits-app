@@ -840,7 +840,6 @@ class _ItemWearStats extends StatelessWidget {
     final ago = last == null ? null : today.difference(last).inDays;
     final perWear = count == 0 ? null : pricePerWear(item.price, count, locale);
     final worn = store.daysWornIn(item.id, now);
-    final days = DateUtils.getDaysInMonth(now.year, now.month);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -868,25 +867,39 @@ class _ItemWearStats extends StatelessWidget {
         const SizedBox(height: 14),
         Text(DateFormat.LLLL(locale).format(now).toUpperCase(), style: _sectionLabelStyle),
         const SizedBox(height: 6),
-        Row(
-          children: [
-            for (var d = 1; d <= days; d++)
-              Expanded(
-                child: Container(
-                  height: 14,
-                  margin: EdgeInsets.only(left: d == 1 ? 0 : 2.5),
-                  decoration: BoxDecoration(
-                    color: worn.contains(d)
-                        ? AppColors.accent
-                        : d > now.day
-                        ? AppColors.cardFill.withValues(alpha: 0.5)
-                        : AppColors.cardBorder,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
+        _MonthStrip(worn: worn),
+      ],
+    );
+  }
+}
+
+/// The current month, a square per day: days in [worn] (day numbers)
+/// filled, the rest of the month still to come dimmed.
+class _MonthStrip extends StatelessWidget {
+  final Set<int> worn;
+  const _MonthStrip({required this.worn});
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final days = DateUtils.getDaysInMonth(now.year, now.month);
+    return Row(
+      children: [
+        for (var d = 1; d <= days; d++)
+          Expanded(
+            child: Container(
+              height: 14,
+              margin: EdgeInsets.only(left: d == 1 ? 0 : 2.5),
+              decoration: BoxDecoration(
+                color: worn.contains(d)
+                    ? AppColors.accent
+                    : d > now.day
+                    ? AppColors.cardFill.withValues(alpha: 0.5)
+                    : AppColors.cardBorder,
+                borderRadius: BorderRadius.circular(3),
               ),
-          ],
-        ),
+            ),
+          ),
       ],
     );
   }
@@ -1200,116 +1213,23 @@ class _ColorEditorState extends State<_ColorEditor> {
   }
 }
 
-void openSaveOutfitSheet(BuildContext context) {
-  _showSheet(
-    context,
-    (ctx) => AppLocalizations.of(ctx)!.saveOutfitButton,
-    const _SaveOutfitForm(),
-  );
-}
-
-class _SaveOutfitForm extends StatefulWidget {
-  const _SaveOutfitForm();
-
-  @override
-  State<_SaveOutfitForm> createState() => _SaveOutfitFormState();
-}
-
-class _SaveOutfitFormState extends State<_SaveOutfitForm> {
-  final _nameController = TextEditingController();
-  String? _selectedCol;
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final store = context.watch<WardrobeStore>();
-    final l10n = AppLocalizations.of(context)!;
-    final hasCols = store.cols.isNotEmpty;
-    _selectedCol ??= hasCols ? store.cols.first : null;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(l10n.sectionOutfitName, style: _sectionLabelStyle),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _nameController,
-          decoration: InputDecoration(
-            hintText: l10n.outfitNameHint,
-            hintStyle: AppText.sans(size: 14, color: AppColors.mutedTag),
-            filled: true,
-            fillColor: AppColors.background,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: AppColors.cardBorder),
-            ),
-          ),
-          style: AppText.sans(size: 14, color: AppColors.ink),
-        ),
-        const SizedBox(height: 18),
-        Text(l10n.sectionCollection, style: _sectionLabelStyle),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 7,
-          runSpacing: 7,
-          children: [
-            for (final c in store.cols)
-              SelectChip(
-                label: c,
-                active: _selectedCol == c,
-                mono: false,
-                height: 34,
-                onTap: () => setState(() => _selectedCol = c),
-              ),
-          ],
-        ),
-        const SizedBox(height: 18),
-        GestureDetector(
-          onTap: () async {
-            final existing = store.findSavedCopyOfCurrentOutfit();
-            if (existing != null) {
-              final saveAnyway = await confirmDialog(
-                context,
-                title: l10n.outfitAlreadySavedTitle,
-                message: l10n.outfitAlreadySavedMessage(existing.name, existing.wardrobe, existing.col),
-                confirmLabel: l10n.saveAnyway,
-              );
-              if (!saveAnyway || !context.mounted) return;
-            }
-            final result = await store.saveOutfit(
-              rawName: _nameController.text,
-              targetCol: _selectedCol ?? '',
-              defaultName: l10n.defaultOutfitName,
-            );
-            store.flash(l10n.toastOutfitSaved(result.name, result.col));
-            if (context.mounted) Navigator.of(context).pop();
-          },
-          child: Container(
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.accent,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              l10n.save,
-              style: AppText.sans(
-                size: 13,
-                weight: FontWeight.w500,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-      ],
+/// Saves what's on the canvas — after a confirmation if exactly these
+/// clothes are already saved (here or in another wardrobe).
+Future<void> saveCurrentOutfit(BuildContext context) async {
+  final store = context.read<WardrobeStore>();
+  final l10n = AppLocalizations.of(context)!;
+  final existing = store.findSavedCopyOfCurrentOutfit();
+  if (existing != null) {
+    final saveAnyway = await confirmDialog(
+      context,
+      title: l10n.outfitAlreadySavedTitle,
+      message: existing.here ? l10n.outfitAlreadySavedHere : l10n.outfitAlreadySavedIn(existing.wardrobe),
+      confirmLabel: l10n.saveAnyway,
     );
+    if (!saveAnyway) return;
   }
+  await store.saveOutfit();
+  store.flash(l10n.toastOutfitSavedPlain);
 }
 
 /// Closes the sheets so the outfit tab (which the store just switched to)
@@ -1897,7 +1817,7 @@ class _DiaryDay extends StatelessWidget {
   }
 }
 
-/// Every saved outfit, by collection — tap one to write it down for [day].
+/// Every saved outfit, newest first — tap one to write it down for [day].
 /// [closeBoth] also closes the sheet this one was opened from, with a toast
 /// saying where it was logged.
 class _PickSavedOutfit extends StatelessWidget {
@@ -1909,66 +1829,39 @@ class _PickSavedOutfit extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
     final l10n = AppLocalizations.of(context)!;
-    final cols = [
-      for (final c in store.cols)
-        if ((store.saved[c] ?? const []).isNotEmpty) c,
-    ];
-    if (cols.isEmpty) {
-      return Text(l10n.diaryNoSaved, style: AppText.sans(size: 13, color: AppColors.mutedTag, height: 1.4));
+    final outfits = store.outfits.reversed.toList();
+    if (outfits.isEmpty) {
+      return Text(l10n.outfitsEmpty, style: AppText.sans(size: 13, color: AppColors.mutedTag, height: 1.4));
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      crossAxisCount: gridColumns(context, 3),
+      mainAxisSpacing: 9,
+      crossAxisSpacing: 9,
+      childAspectRatio: 0.8,
       children: [
-        for (final c in cols) ...[
-          Text(c.toUpperCase(), style: _sectionLabelStyle),
-          const SizedBox(height: 8),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: EdgeInsets.zero,
-            crossAxisCount: gridColumns(context, 3),
-            mainAxisSpacing: 9,
-            crossAxisSpacing: 9,
-            childAspectRatio: 0.72,
-            children: [
-              for (final o in store.saved[c]!)
-                GestureDetector(
-                  onTap: () {
-                    store.logSavedOutfit(day, o);
-                    final nav = Navigator.of(context)..pop();
-                    if (closeBoth) {
-                      nav.pop();
-                      store.flash(l10n.toastLogged(_diaryDayTitle(context, day)));
-                    }
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      border: Border.all(color: AppColors.rowBorder),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(child: OutfitPreview(slots: o.slots, itemById: store.itemById)),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(9, 6, 9, 8),
-                          child: Text(
-                            o.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppText.sans(size: 12, color: AppColors.ink),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
+        for (final o in outfits)
+          GestureDetector(
+            onTap: () {
+              store.logSavedOutfit(day, o);
+              final nav = Navigator.of(context)..pop();
+              if (closeBoth) {
+                nav.pop();
+                store.flash(l10n.toastLogged(_diaryDayTitle(context, day)));
+              }
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                border: Border.all(color: AppColors.rowBorder),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: OutfitPreview(slots: o.slots, itemById: store.itemById),
+            ),
           ),
-          const SizedBox(height: 18),
-        ],
       ],
     );
   }
@@ -2075,6 +1968,153 @@ class _LogOutfitState extends State<_LogOutfit> {
                   maxHeightFactor: 0.92,
                 ),
               ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// A saved outfit up close: how much it's been worn, what's in it, its
+/// layout, and wearing it today, editing it on the canvas or deleting it.
+void openOutfitDetail(BuildContext context, SavedOutfit outfit) {
+  // No title: the outfit speaks for itself, the stats are in the sheet.
+  _showSheet(context, (_) => '', _OutfitDetail(outfitId: outfit.id), maxHeightFactor: 0.92);
+}
+
+class _OutfitDetail extends StatelessWidget {
+  final String outfitId;
+  const _OutfitDetail({required this.outfitId});
+
+  /// The weekday it's worn on most, if one clearly stands out (at least
+  /// twice, and more than any other) — 1 = Monday.
+  static int? _usualWeekday(Set<DateTime> days) {
+    if (days.length < 3) return null;
+    final counts = <int, int>{};
+    for (final d in days) {
+      counts.update(d.weekday, (n) => n + 1, ifAbsent: () => 1);
+    }
+    final ranked = counts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    if (ranked.first.value < 2 || (ranked.length > 1 && ranked[1].value == ranked.first.value)) return null;
+    return ranked.first.key;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final outfit = store.outfits.where((o) => o.id == outfitId).firstOrNull;
+    if (outfit == null) return const SizedBox.shrink();
+    final now = DateTime.now();
+    final today = DateUtils.dateOnly(now);
+    final days = store.outfitWearDays(outfit);
+    final last = days.isEmpty ? null : days.reduce((a, b) => a.isAfter(b) ? a : b);
+    final thisMonth = {for (final d in days) if (d.year == now.year && d.month == now.month) d.day};
+    final weekday = _usualWeekday(days);
+    final wornToday = days.contains(today);
+    final pieces = [
+      for (final id in outfit.itemIds)
+        if (store.itemById(id) case final it?) store.displayName(it).toLowerCase(),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (pieces.isNotEmpty)
+          Text(pieces.join(' · '), style: AppText.mono(size: 10, letterSpacing: 0.3, color: AppColors.mutedTag, height: 1.4)),
+        const SizedBox(height: 12),
+        Container(
+          height: 340,
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            border: Border.all(color: AppColors.rowBorder),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: OutfitPreview(slots: outfit.slots, itemById: store.itemById),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(DateFormat.LLLL(Localizations.localeOf(context).toString()).format(now).toUpperCase(), style: _sectionLabelStyle),
+            const SizedBox(width: 12),
+            if (weekday != null)
+              Expanded(
+                child: Text(
+                  l10n.outfitUsualWeekday(weekday.toString()),
+                  textAlign: TextAlign.right,
+                  style: AppText.mono(size: 9.5, letterSpacing: 0.3, color: AppColors.mutedTag),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        _MonthStrip(worn: thisMonth),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(child: _WearTile(value: l10n.timesWorn(days.length), label: l10n.itemWornLabel)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _WearTile(
+                value: switch (last == null ? null : today.difference(last).inDays) {
+                  null => l10n.statsNever,
+                  0 => l10n.itemLastToday,
+                  1 => l10n.itemLastYesterday,
+                  final n => l10n.statsDaysAgo(n),
+                },
+                label: l10n.itemLastWornLabel,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: _DetailAction(
+                label: wornToday ? l10n.outfitWornToday : l10n.wearToday,
+                filled: !wornToday,
+                textColor: wornToday ? AppColors.mutedSoft : Colors.white,
+                onTap: () {
+                  if (wornToday) return;
+                  store.logSavedOutfit(today, outfit);
+                  store.flash(l10n.toastLogged(_diaryDayTitle(context, today)));
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              flex: 3,
+              child: _DetailAction(
+                label: l10n.editOnCanvas,
+                textColor: AppColors.ink,
+                onTap: () {
+                  store.loadOutfit(outfit);
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
+            const SizedBox(width: 9),
+            _DetailIconAction(
+              icon: Icons.delete_outline,
+              label: l10n.delete,
+              onTap: () async {
+                final confirmed = await confirmDialog(
+                  context,
+                  title: l10n.deleteOutfitTitle,
+                  message: l10n.deleteOutfitPlain,
+                  confirmLabel: l10n.delete,
+                );
+                if (!confirmed || !context.mounted) return;
+                Navigator.of(context).pop();
+                await store.deleteOutfit(outfit.id);
+              },
             ),
           ],
         ),

@@ -1,6 +1,6 @@
 # Outfits
 
-A local-first wardrobe app for planning outfits: photograph what you own, mix tops, bottoms, shoes and layers into an outfit, and save the combinations you like into collections for later. Everything lives on your device — there's no account, no backend and no network access.
+A local-first wardrobe app for planning outfits: photograph what you own, mix tops, bottoms, shoes and layers into an outfit, save the combinations you like, and keep a diary of what you wore. Everything lives on your device — there's no account, no backend and no network access.
 
 [Google Play](https://play.google.com/store/apps/details?id=eu.oscillator.outfits&pcampaignid=web_share) · [App Store](#) <!-- TODO: add App Store link once live -->
 
@@ -9,7 +9,8 @@ A local-first wardrobe app for planning outfits: photograph what you own, mix to
 - **Outfit canvas** — lay out cards for the kinds of clothing you want to combine (top, trousers, shoes, a hat, a second layer…): hold a card to move it, pinch to resize it, swipe it for the next item, pin the ones you want to keep, and shuffle the rest.
 - **Wardrobe** — add clothing with a camera photo or one from your gallery, sorted into kinds and types (e.g. Tops → Shirts, T-shirts), with detected colors and optional details (name, seller, size, price, note), and search across all of it.
 - **Kinds and types** — fully your own: create, rename, reorder or delete them in settings, and move clothing between them (or between wardrobes) at any time.
-- **Collections** — save an outfit under a named collection (e.g. "Work", "Weekend") and browse, rename or delete collections and the outfits in them later.
+- **Collection** — every saved outfit in one place: search them by the clothes in them, heart your favorites, and filter by favorites, worn often or not worn lately; open one for its wear stats.
+- **Diary and stats** — log what you wore each day (with an optional daily reminder) and see how often each piece and color gets worn.
 - **Offline, on-device storage** — wardrobe data is a single JSON file and photos are plain files in the app's documents directory; nothing leaves the device.
 
 ## Tech stack
@@ -41,11 +42,16 @@ lib/
   models.dart                  # ClothingItem / kinds + types / canvas / SavedOutfit
   home_screen.dart             # Scaffold, tab switching, toast
   outfit_tab.dart              # Outfit canvas (cards, layout editing)
-  wardrobe_tab.dart            # Wardrobe, one section per kind with type tabs
-  settings_screen.dart         # Settings: wardrobes, kinds and types, options
-  collections_tab.dart         # Collections overview
-  collection_detail_screen.dart # One collection's saved outfits
-  sheets.dart                  # Bottom sheets (add item, pick, detail, move, save)
+  outfits_tab.dart             # Saved outfits: search, favorites, filters
+  diary_tab.dart               # Diary calendar and stats
+  wardrobe_tab.dart            # Wardrobe, one section per kind with type folders
+  type_detail_screen.dart      # One type's clothing
+  settings_screen.dart         # Settings: wardrobes, kinds and types, reminder, options
+  sheets.dart                  # Sheets and the item detail (add, pick, move, log)
+  reminders.dart               # Daily diary reminder (local notifications)
+  color_detect.dart            # Garment color detection from photos
+  color_names.dart             # Named color families
+  auto_name.dart               # "<color> <type>" names for unnamed items
   widgets.dart                 # Shared UI pieces (cards, chips, dialogs)
   theme.dart                   # Colors and text styles
 ```

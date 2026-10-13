@@ -3,7 +3,6 @@
 
   "tabOutfit": "Outfit",
   "tabWardrobe": "Wardrobe",
-  "tabCollections": "Collections",
 
   "cancel": "Cancel",
   "save": "Save",
@@ -34,10 +33,6 @@
     }
   },
 
-  "newCollectionTile": "new collection",
-  "newCollectionDialogTitle": "New collection",
-  "newCollectionHint": "e.g. Work",
-
   "outfitCount": "{count, plural, one{{count} outfit} other{{count} outfits}}",
   "@outfitCount": {
     "placeholders": {
@@ -45,22 +40,7 @@
     }
   },
 
-  "collectionEmptyHint": "Nothing here yet. Save an outfit and pick this collection.",
-  "renameCollectionTitle": "Rename collection",
-  "deleteCollectionTitle": "Delete collection?",
-  "deleteCollectionMessage": "The collection “{name}” and everything in it will be deleted.",
-  "@deleteCollectionMessage": {
-    "placeholders": {
-      "name": {"type": "String"}
-    }
-  },
   "deleteOutfitTitle": "Delete outfit?",
-  "deleteOutfitMessage": "“{name}” will be deleted.",
-  "@deleteOutfitMessage": {
-    "placeholders": {
-      "name": {"type": "String"}
-    }
-  },
 
   "addItemTitle": "Add clothing",
   "takePhoto": "Take photo",
@@ -82,10 +62,6 @@
   "sectionNote": "note",
   "noteHint": "e.g. wash at 30 °C",
 
-  "sectionOutfitName": "outfit name",
-  "outfitNameHint": "e.g. Monday meeting",
-  "sectionCollection": "collection",
-
   "toastSavedWithPhoto": "Saved to “{category}” · photo stored in app files",
   "@toastSavedWithPhoto": {
     "placeholders": {
@@ -106,28 +82,7 @@
     }
   },
   "outfitAlreadySavedTitle": "Outfit already saved",
-  "outfitAlreadySavedMessage": "This combination is already saved as “{name}” in {wardrobe} / {col}. Save it anyway?",
-  "@outfitAlreadySavedMessage": {
-    "placeholders": {
-      "name": {"type": "String"},
-      "wardrobe": {"type": "String"},
-      "col": {"type": "String"}
-    }
-  },
   "saveAnyway": "Save anyway",
-  "toastOutfitSaved": "“{name}” saved to the {col} collection",
-  "@toastOutfitSaved": {
-    "placeholders": {
-      "name": {"type": "String"},
-      "col": {"type": "String"}
-    }
-  },
-  "defaultOutfitName": "Outfit {n}",
-  "@defaultOutfitName": {
-    "placeholders": {
-      "n": {"type": "int"}
-    }
-  },
 
   "aboutTagline": "A wardrobe for planning outfits",
   "aboutVersionLine": "v{version} ({buildNumber}) · Václav Parma",
@@ -212,7 +167,6 @@
   "diaryFromSaved": "From saved",
   "diaryCanvasEmpty": "There are no clothes on the canvas yet.",
   "diaryPickSavedTitle": "Saved outfits",
-  "diaryNoSaved": "You have no saved outfits yet. Save one on the main page.",
   "diaryRemoveEntry": "Remove from diary",
   "statsDaysLogged": "{count, plural, one{day logged this month} other{days logged this month}}",
   "statsItemsWorn": "items worn this month",
@@ -251,5 +205,19 @@
   "reminderHint": "Reminds you to log your outfit — only if nothing's logged for the day yet.",
   "reminderTime": "Time",
   "reminderDeniedTitle": "Notifications are off",
-  "reminderDeniedMessage": "To get the reminder, allow notifications for the app in your phone's Settings."
+  "reminderDeniedMessage": "To get the reminder, allow notifications for the app in your phone's Settings.",
+  "tabOutfits": "Collection",
+  "searchOutfitsHint": "Search by clothes",
+  "filterFavorites": "Favorites",
+  "filterOftenWorn": "Worn often",
+  "favorite": "Favorite",
+  "toastOutfitSavedPlain": "Outfit saved",
+  "outfitAlreadySavedHere": "You already have this combination among your outfits. Save it anyway?",
+  "outfitAlreadySavedIn": "You already have this combination saved in the “{wardrobe}” wardrobe. Save it anyway?",
+  "deleteOutfitPlain": "The outfit will be deleted.",
+  "outfitsEmpty": "No saved outfits yet. Put one together on the main page and save it.",
+  "outfitUsualWeekday": "{weekday, select, 1{mostly on Mondays} 2{mostly on Tuesdays} 3{mostly on Wednesdays} 4{mostly on Thursdays} 5{mostly on Fridays} 6{mostly on Saturdays} 7{mostly on Sundays} other{}}",
+  "wearToday": "Wearing it today",
+  "outfitWornToday": "Logged today",
+  "editOnCanvas": "Edit on canvas"
 }

@@ -110,12 +110,6 @@ abstract class AppLocalizations {
   /// **'Šatník'**
   String get tabWardrobe;
 
-  /// No description provided for @tabCollections.
-  ///
-  /// In cs, this message translates to:
-  /// **'Kolekce'**
-  String get tabCollections;
-
   /// No description provided for @cancel.
   ///
   /// In cs, this message translates to:
@@ -236,65 +230,17 @@ abstract class AppLocalizations {
   /// **'{count, plural, one{{count} kus} few{{count} kusy} other{{count} kusů}}'**
   String itemCount(int count);
 
-  /// No description provided for @newCollectionTile.
-  ///
-  /// In cs, this message translates to:
-  /// **'nová kolekce'**
-  String get newCollectionTile;
-
-  /// No description provided for @newCollectionDialogTitle.
-  ///
-  /// In cs, this message translates to:
-  /// **'Nová kolekce'**
-  String get newCollectionDialogTitle;
-
-  /// No description provided for @newCollectionHint.
-  ///
-  /// In cs, this message translates to:
-  /// **'např. Práce'**
-  String get newCollectionHint;
-
   /// No description provided for @outfitCount.
   ///
   /// In cs, this message translates to:
   /// **'{count, plural, one{{count} outfit} few{{count} outfity} other{{count} outfitů}}'**
   String outfitCount(int count);
 
-  /// No description provided for @collectionEmptyHint.
-  ///
-  /// In cs, this message translates to:
-  /// **'Zatím prázdné. Ulož outfit a vyber tuto kolekci.'**
-  String get collectionEmptyHint;
-
-  /// No description provided for @renameCollectionTitle.
-  ///
-  /// In cs, this message translates to:
-  /// **'Přejmenovat kolekci'**
-  String get renameCollectionTitle;
-
-  /// No description provided for @deleteCollectionTitle.
-  ///
-  /// In cs, this message translates to:
-  /// **'Smazat kolekci?'**
-  String get deleteCollectionTitle;
-
-  /// No description provided for @deleteCollectionMessage.
-  ///
-  /// In cs, this message translates to:
-  /// **'Kolekce „{name}“ a vše v ní bude smazáno.'**
-  String deleteCollectionMessage(String name);
-
   /// No description provided for @deleteOutfitTitle.
   ///
   /// In cs, this message translates to:
   /// **'Smazat outfit?'**
   String get deleteOutfitTitle;
-
-  /// No description provided for @deleteOutfitMessage.
-  ///
-  /// In cs, this message translates to:
-  /// **'„{name}“ bude smazán.'**
-  String deleteOutfitMessage(String name);
 
   /// No description provided for @addItemTitle.
   ///
@@ -404,24 +350,6 @@ abstract class AppLocalizations {
   /// **'např. prát na 30 °C'**
   String get noteHint;
 
-  /// No description provided for @sectionOutfitName.
-  ///
-  /// In cs, this message translates to:
-  /// **'název outfitu'**
-  String get sectionOutfitName;
-
-  /// No description provided for @outfitNameHint.
-  ///
-  /// In cs, this message translates to:
-  /// **'např. Pondělní porada'**
-  String get outfitNameHint;
-
-  /// No description provided for @sectionCollection.
-  ///
-  /// In cs, this message translates to:
-  /// **'kolekce'**
-  String get sectionCollection;
-
   /// No description provided for @toastSavedWithPhoto.
   ///
   /// In cs, this message translates to:
@@ -446,29 +374,11 @@ abstract class AppLocalizations {
   /// **'Outfit už je uložený'**
   String get outfitAlreadySavedTitle;
 
-  /// No description provided for @outfitAlreadySavedMessage.
-  ///
-  /// In cs, this message translates to:
-  /// **'Tahle kombinace je už uložená jako „{name}“ v {wardrobe} / {col}. Uložit ji i tak?'**
-  String outfitAlreadySavedMessage(String name, String wardrobe, String col);
-
   /// No description provided for @saveAnyway.
   ///
   /// In cs, this message translates to:
   /// **'Uložit i tak'**
   String get saveAnyway;
-
-  /// No description provided for @toastOutfitSaved.
-  ///
-  /// In cs, this message translates to:
-  /// **'„{name}“ uloženo do kolekce {col}'**
-  String toastOutfitSaved(String name, String col);
-
-  /// No description provided for @defaultOutfitName.
-  ///
-  /// In cs, this message translates to:
-  /// **'Outfit {n}'**
-  String defaultOutfitName(int n);
 
   /// No description provided for @aboutTagline.
   ///
@@ -854,12 +764,6 @@ abstract class AppLocalizations {
   /// **'Uložené outfity'**
   String get diaryPickSavedTitle;
 
-  /// No description provided for @diaryNoSaved.
-  ///
-  /// In cs, this message translates to:
-  /// **'Zatím nemáš žádné uložené outfity. Ulož si nějaký na hlavní stránce.'**
-  String get diaryNoSaved;
-
   /// No description provided for @diaryRemoveEntry.
   ///
   /// In cs, this message translates to:
@@ -1093,6 +997,90 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Aby upomínka mohla přijít, povol aplikaci notifikace v Nastavení telefonu.'**
   String get reminderDeniedMessage;
+
+  /// No description provided for @tabOutfits.
+  ///
+  /// In cs, this message translates to:
+  /// **'Sbírka'**
+  String get tabOutfits;
+
+  /// No description provided for @searchOutfitsHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'Hledat podle oblečení'**
+  String get searchOutfitsHint;
+
+  /// No description provided for @filterFavorites.
+  ///
+  /// In cs, this message translates to:
+  /// **'Oblíbené'**
+  String get filterFavorites;
+
+  /// No description provided for @filterOftenWorn.
+  ///
+  /// In cs, this message translates to:
+  /// **'Často nošené'**
+  String get filterOftenWorn;
+
+  /// No description provided for @favorite.
+  ///
+  /// In cs, this message translates to:
+  /// **'Oblíbený'**
+  String get favorite;
+
+  /// No description provided for @toastOutfitSavedPlain.
+  ///
+  /// In cs, this message translates to:
+  /// **'Outfit uložen'**
+  String get toastOutfitSavedPlain;
+
+  /// No description provided for @outfitAlreadySavedHere.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tuhle kombinaci už máš mezi outfity. Uložit i tak?'**
+  String get outfitAlreadySavedHere;
+
+  /// No description provided for @outfitAlreadySavedIn.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tuhle kombinaci už máš uloženou v šatníku „{wardrobe}“. Uložit i tak?'**
+  String outfitAlreadySavedIn(String wardrobe);
+
+  /// No description provided for @deleteOutfitPlain.
+  ///
+  /// In cs, this message translates to:
+  /// **'Outfit bude smazán.'**
+  String get deleteOutfitPlain;
+
+  /// No description provided for @outfitsEmpty.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zatím nemáš žádné uložené outfity. Poskládej si nějaký na hlavní stránce a ulož ho.'**
+  String get outfitsEmpty;
+
+  /// No description provided for @outfitUsualWeekday.
+  ///
+  /// In cs, this message translates to:
+  /// **'{weekday, select, 1{nejčastěji v pondělí} 2{nejčastěji v úterý} 3{nejčastěji ve středu} 4{nejčastěji ve čtvrtek} 5{nejčastěji v pátek} 6{nejčastěji v sobotu} 7{nejčastěji v neděli} other{}}'**
+  String outfitUsualWeekday(String weekday);
+
+  /// No description provided for @wearToday.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nosím dnes'**
+  String get wearToday;
+
+  /// No description provided for @outfitWornToday.
+  ///
+  /// In cs, this message translates to:
+  /// **'Dnes zapsáno'**
+  String get outfitWornToday;
+
+  /// No description provided for @editOnCanvas.
+  ///
+  /// In cs, this message translates to:
+  /// **'Upravit na plátně'**
+  String get editOnCanvas;
 }
 
 class _AppLocalizationsDelegate

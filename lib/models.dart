@@ -19,14 +19,15 @@ String _foldForSearch(String s) {
 /// appear in at least one of its details, its kind's name ([kindName]) or
 /// its type's ([typeName]) — ignoring case and diacritics ("kosile" finds
 /// "Košile"). A blank query matches everything.
-bool matchesSearch(ClothingItem item, String query, {required String kindName, String? typeName}) {
+bool matchesSearch(ClothingItem item, String query, {required String kindName, String? typeName}) =>
+    textsMatchSearch([item.name, item.seller, item.size, item.price, item.note, typeName, kindName], query);
+
+/// Whether every word of [query] appears somewhere in [texts], ignoring
+/// case and diacritics. A blank query matches everything.
+bool textsMatchSearch(Iterable<String?> texts, String query) {
   final words = _foldForSearch(query).split(RegExp(r'\s+')).where((w) => w.isNotEmpty);
   if (words.isEmpty) return true;
-  final haystack = _foldForSearch(
-    [item.name, item.seller, item.size, item.price, item.note, typeName, kindName]
-        .whereType<String>()
-        .join(' '),
-  );
+  final haystack = _foldForSearch(texts.whereType<String>().join(' '));
   return words.every(haystack.contains);
 }
 
@@ -224,41 +225,45 @@ class ClothingItem {
   );
 }
 
-/// A saved combination of items, filed under a collection. [catKeys] mirrors
-/// the kind of each item in [itemIds] at save time, so a resilient summary
-/// caption can still be shown even if an item was later deleted. [slots]
-/// is the canvas it was laid out on.
+/// A saved combination of items. [catKeys] mirrors the kind of each item in
+/// [itemIds] at save time. [slots] is the canvas it was laid out on.
+/// [favorite] is the heart on it in the outfits list.
 class SavedOutfit {
-  final String name;
+  final String id;
   final List<String> catKeys;
   final List<String> itemIds;
   final List<SavedSlot> slots;
+  bool favorite;
 
   SavedOutfit({
-    required this.name,
+    required this.id,
     required this.catKeys,
     required this.itemIds,
     required this.slots,
+    this.favorite = false,
   });
 
   Map<String, dynamic> toJson() => {
-    'name': name,
+    'id': id,
     'catKeys': catKeys,
     'itemIds': itemIds,
     'slots': slots.map((s) => s.toJson()).toList(),
+    if (favorite) 'favorite': true,
   };
 
-  factory SavedOutfit.fromJson(Map<String, dynamic> json) {
+  /// Outfits saved before they had ids (in named collections) get [newId].
+  factory SavedOutfit.fromJson(Map<String, dynamic> json, {required String Function() newId}) {
     final catKeys = (json['catKeys'] as List<dynamic>? ?? []).map((e) => e as String).toList();
     final itemIds = (json['itemIds'] as List<dynamic>? ?? []).map((e) => e as String).toList();
     final rawSlots = json['slots'] as List<dynamic>?;
     return SavedOutfit(
-      name: json['name'] as String,
+      id: json['id'] as String? ?? newId(),
       catKeys: catKeys,
       itemIds: itemIds,
       slots: rawSlots == null
           ? legacyLayout(catKeys, itemIds)
           : rawSlots.whereType<Map<String, dynamic>>().map(SavedSlot.fromJson).toList(),
+      favorite: json['favorite'] as bool? ?? false,
     );
   }
 
@@ -323,7 +328,7 @@ class SavedSlot {
 }
 
 /// One of the user's separate wardrobes (e.g. home vs. the cottage) — its
-/// own items, collections and saved outfits. Only the identity
+/// own items, saved outfits and diary. Only the identity
 /// lives here; the content itself is held by [WardrobeStore].
 class Wardrobe {
   final String id;
@@ -371,4 +376,4 @@ class DiaryEntry {
 }
 
 /// The tabs, in the order they sit in the bottom bar (and swipe between).
-enum WardrobeTabKind { outfit, collections, diary, wardrobe }
+enum WardrobeTabKind { outfit, outfits, diary, wardrobe }

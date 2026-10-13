@@ -17,7 +17,7 @@ import 'models.dart';
 
 /// Holds the entire app state: the wardrobes and their clothing, the kinds
 /// and types it's sorted into, the outfit canvas with what's currently on
-/// it, collections of saved outfits, settings — and persistence to disk.
+/// it, saved outfits, the diary, settings — and persistence to disk.
 class WardrobeStore extends ChangeNotifier {
   static const _fileName = 'satnik_v1.json';
 
@@ -26,15 +26,8 @@ class WardrobeStore extends ChangeNotifier {
   /// to be looked into.
   static const _preKindsBackupName = 'satnik_v1.pre-kinds.json';
 
-  /// The catch-all a saved outfit lands in when the user hasn't created a
-  /// collection yet, so saving an outfit never dead-ends behind "go create
-  /// a collection first". Localized at the moment it's created (matching
-  /// [localeCode], or the device locale when that's unset) since it's
-  /// stored as a plain name from then on, just like any user-created one.
-  String get fallbackCollection => _l10n.unsortedName;
-
   /// Localizations for text this store has to bake into stored data (default
-  /// kind/type/collection/wardrobe names) without a [BuildContext] —
+  /// kind/type/wardrobe names) without a [BuildContext] —
   /// matching [localeCode], or the device locale when that's unset.
   /// The app's texts in its current language, for things said outside any
   /// screen (notifications).
@@ -46,7 +39,7 @@ class WardrobeStore extends ChangeNotifier {
   }
 
   /// Every wardrobe, in display order. The *active* one's content lives in
-  /// the plain fields below ([items], [cols], [saved]) so the rest of the
+  /// the plain fields below ([items], [outfits], [diary]) so the rest of the
   /// app never has to know there's more than one; every other wardrobe's
   /// content waits in [_stash] until it's switched to.
   List<Wardrobe> wardrobes = [];
@@ -62,8 +55,8 @@ class WardrobeStore extends ChangeNotifier {
 
   WardrobeTabKind screen = WardrobeTabKind.outfit;
   List<ClothingItem> items = [];
-  List<String> cols = [];
-  Map<String, List<SavedOutfit>> saved = {};
+  /// Saved outfits, oldest first.
+  List<SavedOutfit> outfits = [];
 
   /// The outfits written down as worn, oldest first.
   List<DiaryEntry> diary = [];
@@ -220,9 +213,9 @@ class WardrobeStore extends ChangeNotifier {
     } else {
       migrated = data['kinds'] == null;
       if (migrated && file != null) await _backUpBeforeKinds(file);
-      // Outfits saved before the canvas get a layout as they're parsed
-      // (see SavedOutfit.legacyLayout); written back below.
-      fixed = _hasOutfitsWithoutLayout(data);
+      // Outfits from collections, or saved before the canvas, are converted
+      // as they're parsed (see SavedOutfit.legacyLayout); written back below.
+      fixed = _outfitsNeedMigrating(data);
       await _loadFrom(data);
       fixed = _ensureTypes() || fixed;
     }
@@ -235,13 +228,21 @@ class WardrobeStore extends ChangeNotifier {
     if (migrated || fixed) await _persist();
   }
 
-  static bool _hasOutfitsWithoutLayout(Map<String, dynamic> data) => [
-    if (data['wardrobes'] case final List<dynamic> wardrobes)
-      for (final w in wardrobes)
-        if (w is Map && w['saved'] is Map)
-          for (final outfits in (w['saved'] as Map).values)
-            if (outfits is List) ...outfits,
-  ].any((o) => o is Map && o['slots'] == null);
+  /// Whether saved outfits still need converting: kept in named
+  /// collections, or saved before they had a canvas layout or an id. They
+  /// get those as they're parsed; this says to write them back.
+  static bool _outfitsNeedMigrating(Map<String, dynamic> data) {
+    final wardrobes = data['wardrobes'];
+    if (wardrobes is! List) return false;
+    for (final w in wardrobes) {
+      if (w is! Map) continue;
+      if (w['outfits'] == null && w['saved'] != null) return true;
+      for (final o in w['outfits'] as List? ?? const []) {
+        if (o is Map && (o['slots'] == null || o['id'] == null)) return true;
+      }
+    }
+    return false;
+  }
 
   Future<void> _backUpBeforeKinds(File file) async {
     try {
@@ -304,7 +305,7 @@ class WardrobeStore extends ChangeNotifier {
         name: e['name'] as String? ?? _l10n.defaultWardrobeName,
       );
       parsed.add(w);
-      _stash[w.id] = _WardrobeContent.fromJson(e, docsPath);
+      _stash[w.id] = _WardrobeContent.fromJson(e, docsPath, newId: () => _newId('o'));
     }
 
     if (parsed.isEmpty) {
@@ -452,8 +453,7 @@ class WardrobeStore extends ChangeNotifier {
 
   _WardrobeContent get _liveContent => _WardrobeContent(
     items: items,
-    cols: cols,
-    saved: saved,
+    outfits: outfits,
     diary: diary,
   );
 
@@ -465,8 +465,7 @@ class WardrobeStore extends ChangeNotifier {
     final c = _stash.remove(id) ?? _WardrobeContent.empty();
     activeWardrobeId = id;
     items = c.items;
-    cols = c.cols;
-    saved = c.saved;
+    outfits = c.outfits;
     diary = c.diary;
     // Open on a random outfit, as if Shuffle had just been pressed — with
     // pinned garments already on their cards, since that's what Shuffle
@@ -558,7 +557,7 @@ class WardrobeStore extends ChangeNotifier {
     });
   }
 
-  /// Id lookup, indexed — collections resolve every item of every outfit
+  /// Id lookup, indexed — the outfits list resolves every item of every outfit
   /// on each rebuild. [items] is only ever replaced, never changed in
   /// place, so a new list instance is what invalidates the index.
   ClothingItem? itemById(String id) {
@@ -1047,7 +1046,7 @@ class WardrobeStore extends ChangeNotifier {
   }
 
   // ---------------------------------------------------------------------
-  // Collections and saved outfits
+  // Saved outfits
 
   Future<void> _deleteImageFile(String? path) async {
     if (path == null) return;
@@ -1059,80 +1058,43 @@ class WardrobeStore extends ChangeNotifier {
     }
   }
 
-  Future<void> addCollection(String rawName) async {
-    final name = rawName.trim();
-    if (name.isEmpty || cols.contains(name)) return;
-    cols = [...cols, name];
-    saved = {...saved, name: []};
-    notifyListeners();
-    await _persist();
-  }
-
-  /// Renames a collection, returning the name that ended up in effect (the
-  /// new name on success, or the unchanged [oldName] if the rename was
-  /// rejected — empty, unchanged, a duplicate, or the collection is gone).
-  Future<String> renameCollection(String oldName, String rawNewName) async {
-    final newName = rawNewName.trim();
-    if (newName.isEmpty || newName == oldName || cols.contains(newName)) {
-      return oldName;
+  void toggleFavorite(String outfitId) {
+    for (final o in outfits) {
+      if (o.id == outfitId) o.favorite = !o.favorite;
     }
-    if (!cols.contains(oldName)) return oldName;
-    cols = [for (final c in cols) c == oldName ? newName : c];
-    final list = saved[oldName] ?? [];
-    final newSaved = {...saved}..remove(oldName);
-    newSaved[newName] = list;
-    saved = newSaved;
-    notifyListeners();
-    // Deliberately not awaited: the collection screen awaits this whole
-    // call and then updates its own local "current name" state right after.
-    // If persisting were awaited here too, that real disk-write gap would
-    // give a Consumer rebuild a chance to run first — with a still-stale
-    // local name — and misread the rename as the collection having been
-    // deleted. Persistence is already best-effort (see [_persist]).
-    unawaited(_persist());
-    return newName;
-  }
-
-  Future<void> deleteCollection(String name) async {
-    cols = cols.where((c) => c != name).toList();
-    saved = {...saved}..remove(name);
-    notifyListeners();
-    await _persist();
-  }
-
-  /// Manual reordering of the collections grid.
-  void reorderCollections(int oldIndex, int newIndex) {
-    if (oldIndex < 0 || oldIndex >= cols.length) return;
-    final reordered = [...cols];
-    reordered.insert(newIndex, reordered.removeAt(oldIndex));
-    cols = reordered;
+    outfits = [...outfits];
     notifyListeners();
     _persist();
   }
 
-  Future<void> deleteOutfit(String colName, int index) async {
-    final list = saved[colName] ?? [];
-    saved = {
-      ...saved,
-      colName: [
-        for (var j = 0; j < list.length; j++)
-          if (j != index) list[j],
-      ],
+  Future<void> deleteOutfit(String outfitId) async {
+    outfits = outfits.where((o) => o.id != outfitId).toList();
+    notifyListeners();
+    await _persist();
+  }
+
+  /// The days [o] was worn: those the diary has exactly its items (layout
+  /// aside), in any entry.
+  Set<DateTime> outfitWearDays(SavedOutfit o) {
+    final key = _itemsKey(o.itemIds);
+    return {for (final e in diary) if (_itemsKey(e.itemIds) == key) e.day};
+  }
+
+  /// For every saved outfit worn at least once — on a day the diary has
+  /// exactly its items (layout aside) — on how many days, and the last one.
+  Map<String, ({int count, DateTime last})> get outfitWearStats {
+    final byItems = <String, Set<DateTime>>{};
+    for (final e in diary) {
+      (byItems[_itemsKey(e.itemIds)] ??= {}).add(e.day);
+    }
+    return {
+      for (final o in outfits)
+        if (byItems[_itemsKey(o.itemIds)] case final days?)
+          o.id: (count: days.length, last: days.reduce((a, b) => a.isAfter(b) ? a : b)),
     };
-    notifyListeners();
-    await _persist();
   }
 
-  /// Manual reordering of outfits within one collection.
-  void reorderOutfits(String colName, int oldIndex, int newIndex) {
-    final list = saved[colName] ?? const [];
-    if (oldIndex < 0 || oldIndex >= list.length) return;
-    final reordered = [...list];
-    reordered.insert(newIndex, reordered.removeAt(oldIndex));
-    saved = {...saved, colName: reordered};
-    notifyListeners();
-    _persist();
-  }
+  static String _itemsKey(Iterable<String> ids) => (ids.toSet().toList()..sort()).join('|');
 
   /// What the canvas shows, top to bottom — what [saveOutfit] stores.
   List<ClothingItem> get currentOutfitItems {
@@ -1144,7 +1106,7 @@ class WardrobeStore extends ChangeNotifier {
   /// aside), looked for in the active wardrobe first, then the others: an
   /// item moved between wardrobes keeps its id, so the same combination can
   /// be saved elsewhere too.
-  ({String wardrobe, String col, String name})? findSavedCopyOfCurrentOutfit() {
+  ({String wardrobe, bool here})? findSavedCopyOfCurrentOutfit() {
     final ids = currentOutfitItems.map((i) => i.id).toSet();
     if (ids.isEmpty) return null;
     final ordered = [
@@ -1154,54 +1116,30 @@ class WardrobeStore extends ChangeNotifier {
     for (final w in ordered) {
       final content = w.id == activeWardrobeId ? _liveContent : _stash[w.id];
       if (content == null) continue;
-      for (final col in content.cols) {
-        for (final o in content.saved[col] ?? const <SavedOutfit>[]) {
-          final other = o.itemIds.toSet();
-          if (other.length == ids.length && other.containsAll(ids)) {
-            return (wardrobe: w.name, col: col, name: o.name);
-          }
+      for (final o in content.outfits) {
+        final other = o.itemIds.toSet();
+        if (other.length == ids.length && other.containsAll(ids)) {
+          return (wardrobe: w.name, here: w.id == activeWardrobeId);
         }
       }
     }
     return null;
   }
 
-  /// Saves the current outfit, canvas layout included, into [targetCol]
-  /// (or the first collection, if empty — falling back to
-  /// [fallbackCollection], creating it if this is the very first save),
-  /// returning the collection/name it landed under. [defaultName] supplies
-  /// the auto-generated name ("Outfit N") when [rawName] is blank, since
-  /// that text needs a [BuildContext] this store doesn't have.
-  Future<({String col, String name})> saveOutfit({
-    required String rawName,
-    required String targetCol,
-    required String Function(int n) defaultName,
-  }) async {
-    if (cols.isEmpty) {
-      cols = [fallbackCollection];
-      saved = {...saved, fallbackCollection: []};
-    }
+  /// Saves the current outfit, canvas layout included.
+  Future<void> saveOutfit() async {
     final parts = currentOutfitItems;
-
-    final total = cols.fold<int>(0, (a, k) => a + (saved[k]?.length ?? 0));
-    final name = rawName.trim().isNotEmpty
-        ? rawName.trim()
-        : defaultName(total + 1);
-    final col = targetCol.isNotEmpty ? targetCol : cols.first;
-
-    final entry = SavedOutfit(
-      name: name,
-      catKeys: parts.map((i) => i.cat).toList(),
-      itemIds: parts.map((i) => i.id).toList(),
-      slots: _canvasSnapshot(),
-    );
-    saved = {
-      ...saved,
-      col: [...(saved[col] ?? []), entry],
-    };
+    outfits = [
+      ...outfits,
+      SavedOutfit(
+        id: _newId('o'),
+        catKeys: parts.map((i) => i.cat).toList(),
+        itemIds: parts.map((i) => i.id).toList(),
+        slots: _canvasSnapshot(),
+      ),
+    ];
     notifyListeners();
     await _persist();
-    return (col: col, name: name);
   }
 
   /// The canvas as it is now, for saving or the diary.
@@ -1318,10 +1256,14 @@ class WardrobeStore extends ChangeNotifier {
 
   /// Up to three colors worn the most on [day], by the main color of each
   /// item (top to bottom, so ties go to what was higher up).
-  List<ColorFamily> dayColors(DateTime day) {
+  List<ColorFamily> dayColors(DateTime day) => topColors([for (final e in diaryOn(day)) e.slots]);
+
+  /// Up to three colors most common across [canvases] (an outfit, or a
+  /// day's), by the main color of each item; ties go to what's higher up.
+  List<ColorFamily> topColors(Iterable<List<SavedSlot>> canvases) {
     final counts = <ColorFamily, int>{};
-    for (final e in diaryOn(day)) {
-      final slots = [...e.slots]..sort((a, b) => a.y.compareTo(b.y));
+    for (final canvas in canvases) {
+      final slots = [...canvas]..sort((a, b) => a.y.compareTo(b.y));
       for (final s in slots) {
         final c = s.itemId == null ? null : itemById(s.itemId!)?.colors;
         if (c == null || c.isEmpty) continue;
@@ -1395,7 +1337,7 @@ class WardrobeStore extends ChangeNotifier {
       name.isNotEmpty && !wardrobes.any((w) => w.name == name);
 
   /// Creates a new, empty wardrobe and switches to it (a no-op for a blank
-  /// or already-taken name — mirrors [addCollection]).
+  /// or already-taken name).
   Future<void> addWardrobe(String rawName) async {
     final name = rawName.trim();
     if (!_isFreeWardrobeName(name)) return;
@@ -1494,23 +1436,21 @@ String _resolveImagePath(String stored, String docsPath) {
 /// Everything that belongs to one wardrobe, as stored in the state file.
 class _WardrobeContent {
   List<ClothingItem> items;
-  List<String> cols;
-  Map<String, List<SavedOutfit>> saved;
+  List<SavedOutfit> outfits;
   List<DiaryEntry> diary;
 
   _WardrobeContent({
     required this.items,
-    required this.cols,
-    required this.saved,
+    required this.outfits,
     required this.diary,
   });
 
-  _WardrobeContent.empty() : items = [], cols = [], saved = {}, diary = [];
+  _WardrobeContent.empty() : outfits = [], items = [], diary = [];
 
   /// Each section is parsed independently, and each entry within a section
   /// is parsed independently too, so a single corrupt item/outfit can't
   /// wipe out the rest of the wardrobe.
-  factory _WardrobeContent.fromJson(Map<String, dynamic> data, String? docsPath) {
+  factory _WardrobeContent.fromJson(Map<String, dynamic> data, String? docsPath, {required String Function() newId}) {
     final c = _WardrobeContent.empty();
 
     try {
@@ -1525,24 +1465,28 @@ class _WardrobeContent {
       }
     } catch (_) {}
 
+    // Outfits used to be filed in named collections: they become one list,
+    // collection by collection in the order they were arranged.
+    final rawOutfits = <dynamic>[];
     try {
-      c.cols = (data['cols'] as List<dynamic>? ?? [])
-          .map((e) => e as String)
-          .toList();
-    } catch (_) {}
-
-    try {
-      final rawSaved = data['saved'] as Map<String, dynamic>? ?? {};
-      rawSaved.forEach((key, value) {
-        final outfits = <SavedOutfit>[];
-        for (final e in (value as List<dynamic>? ?? [])) {
-          try {
-            outfits.add(SavedOutfit.fromJson(e as Map<String, dynamic>));
-          } catch (_) {}
+      if (data['outfits'] case final List<dynamic> list) {
+        rawOutfits.addAll(list);
+      } else if (data['saved'] case final Map<String, dynamic> byCol) {
+        final order = [
+          for (final c in data['cols'] as List<dynamic>? ?? const [])
+            if (c is String && byCol.containsKey(c)) c,
+          ...byCol.keys.where((k) => !(data['cols'] as List<dynamic>? ?? const []).contains(k)),
+        ];
+        for (final col in order) {
+          rawOutfits.addAll(byCol[col] as List<dynamic>? ?? const []);
         }
-        c.saved[key] = outfits;
-      });
+      }
     } catch (_) {}
+    for (final e in rawOutfits) {
+      try {
+        c.outfits.add(SavedOutfit.fromJson(e as Map<String, dynamic>, newId: newId));
+      } catch (_) {}
+    }
 
     try {
       for (final e in data['diary'] as List<dynamic>? ?? const []) {
@@ -1558,10 +1502,7 @@ class _WardrobeContent {
 
   Map<String, dynamic> toJson() => {
     'items': items.map((e) => e.toJson()).toList(),
-    'cols': cols,
-    'saved': saved.map(
-      (key, value) => MapEntry(key, value.map((e) => e.toJson()).toList()),
-    ),
+    'outfits': outfits.map((e) => e.toJson()).toList(),
     'diary': diary.map((e) => e.toJson()).toList(),
   };
 }

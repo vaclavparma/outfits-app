@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
-import 'collections_tab.dart';
 import 'diary_tab.dart';
 import 'l10n/app_localizations.dart';
 import 'models.dart';
+import 'outfits_tab.dart';
 import 'outfit_tab.dart';
 import 'settings_screen.dart';
 import 'sheets.dart';
@@ -15,7 +15,7 @@ import 'wardrobe_tab.dart';
 import 'widgets.dart';
 
 /// One navigator per tab for everything above the bottom tab bar: the tab
-/// itself plus type/collection screens pushed from it. They open *under* a
+/// itself plus type screens pushed from it. They open *under* a
 /// bar that stays put, and each tab keeps its own stack — leave a type for
 /// another tab and coming back lands you in it again. Sheets
 /// and dialogs go on the root navigator and cover the bar.
@@ -25,7 +25,7 @@ final Map<WardrobeTabKind, GlobalKey<NavigatorState>> _tabNavigatorKeys = {
 
 /// How many screens are open on top of each tab's root. Swiping between
 /// tabs only works while the visible tab is at its root — inside a
-/// type or collection a sideways swipe is iOS "back" instead — and not while a
+/// type a sideways swipe is iOS "back" instead — and not while a
 /// finger is on an outfit card (swiping, moving or resizing it).
 final Map<WardrobeTabKind, ValueNotifier<int>> _tabDepth = {
   for (final kind in WardrobeTabKind.values) kind: ValueNotifier(0),
@@ -62,7 +62,7 @@ class _DepthObserver extends NavigatorObserver {
   void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) => _bump(-1);
 }
 
-/// Closes any type/collection screen open in [kind]'s tab.
+/// Closes any type screen open in [kind]'s tab.
 void _popTabToRoot(WardrobeTabKind kind) =>
     _tabNavigatorKeys[kind]!.currentState?.popUntil((route) => route.isFirst);
 
@@ -109,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
 
-    // A type/collection kept open in another tab belongs to the wardrobe
+    // A type kept open in another tab belongs to the wardrobe
     // it was opened in — drop them all when the wardrobe changes.
     if (_wardrobeId != null && _wardrobeId != store.activeWardrobeId) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -210,7 +210,7 @@ class _TabNavigatorState extends State<_TabNavigator> with AutomaticKeepAliveCli
       child: TickerMode(
         enabled: widget.active,
         // Routes Android's back button to this tab's navigator first,
-        // so it closes an open type or collection instead of the app.
+        // so it closes an open type instead of the app.
         child: NavigatorPopHandler<Object?>(
           enabled: widget.active,
           onPopWithResult: (_) => key.currentState?.maybePop(),
@@ -271,13 +271,13 @@ class _TabRoot extends StatelessWidget {
             child: switch (kind) {
               WardrobeTabKind.outfit => OutfitTab(
                 onPick: (slotId) => openPickSheet(context, slotId),
-                onOpenSave: () => openSaveOutfitSheet(context),
+                onOpenSave: () => saveCurrentOutfit(context),
               ),
               WardrobeTabKind.wardrobe => WardrobeTab(
                 onOpenItem: (item, browseIds) =>
                     openItemDetail(context, item, browseIds: browseIds),
               ),
-              WardrobeTabKind.collections => const CollectionsTab(),
+              WardrobeTabKind.outfits => const OutfitsTab(),
               WardrobeTabKind.diary => const DiaryTab(),
             },
           ),
@@ -473,7 +473,7 @@ class _BottomTabs extends StatelessWidget {
           kind,
           switch (kind) {
             WardrobeTabKind.outfit => l10n.tabOutfit,
-            WardrobeTabKind.collections => l10n.tabCollections,
+            WardrobeTabKind.outfits => l10n.tabOutfits,
             WardrobeTabKind.diary => l10n.tabDiary,
             WardrobeTabKind.wardrobe => l10n.tabWardrobe,
           },
