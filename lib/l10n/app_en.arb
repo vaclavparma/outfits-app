@@ -242,5 +242,14 @@
   "itemLastToday": "today",
   "itemLastYesterday": "yesterday",
   "itemAutoNameHint": "named from color and type · change it in the details",
-  "sectionDetails": "details · optional"
+  "sectionDetails": "details · optional",
+  "reminderTitle": "What are you wearing today?",
+  "reminderBody": "Log today's outfit in your diary.",
+  "reminderChannel": "Diary reminder",
+  "sectionDiary": "diary",
+  "reminderLabel": "Daily reminder",
+  "reminderHint": "Reminds you to log your outfit — only if nothing's logged for the day yet.",
+  "reminderTime": "Time",
+  "reminderDeniedTitle": "Notifications are off",
+  "reminderDeniedMessage": "To get the reminder, allow notifications for the app in your phone's Settings."
 }

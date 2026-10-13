@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'l10n/app_localizations.dart';
 import 'models.dart';
+import 'reminders.dart';
 import 'sheets.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
@@ -70,6 +71,10 @@ class SettingsScreen extends StatelessWidget {
                         style: AppText.sans(size: 11.5, color: AppColors.mutedTag, height: 1.4),
                       ),
                     ),
+                    const SizedBox(height: 22),
+                    SettingsSectionLabel(l10n.sectionDiary, uppercase: true),
+                    const SizedBox(height: 8),
+                    const _ReminderCard(),
                     const SizedBox(height: 22),
                     const SettingsContent(uppercaseLabels: true),
                   ],
@@ -691,4 +696,96 @@ class _TypeList extends StatelessWidget {
 
   Future<void> _delete(BuildContext context, WardrobeStore store, ClothingType t) =>
       deleteTypeAskingWhereTo(context, kind, t);
+}
+
+/// The daily diary reminder: on/off, and (when on) the time it comes.
+class _ReminderCard extends StatelessWidget {
+  const _ReminderCard();
+
+  Future<void> _toggle(BuildContext context, WardrobeStore store, bool on) async {
+    if (!on) {
+      store.setReminder(enabled: false);
+      return;
+    }
+    final allowed = await DailyReminder.requestPermission();
+    if (allowed) {
+      store.setReminder(enabled: true);
+    } else if (context.mounted) {
+      final l10n = AppLocalizations.of(context)!;
+      await infoDialog(context, title: l10n.reminderDeniedTitle, message: l10n.reminderDeniedMessage);
+    }
+  }
+
+  Future<void> _pickTime(BuildContext context, WardrobeStore store) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: store.reminderMinutes ~/ 60, minute: store.reminderMinutes % 60),
+    );
+    if (picked != null) store.setReminder(minutes: picked.hour * 60 + picked.minute);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final time = TimeOfDay(hour: store.reminderMinutes ~/ 60, minute: store.reminderMinutes % 60);
+    return SettingsCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 12, 12, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l10n.reminderLabel, style: AppText.sans(size: 16, color: AppColors.ink)),
+                      const SizedBox(height: 3),
+                      Text(l10n.reminderHint, style: AppText.sans(size: 12, color: AppColors.mutedTag, height: 1.4)),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Switch.adaptive(
+                  value: store.reminderEnabled,
+                  activeThumbColor: AppColors.accent,
+                  onChanged: (on) => _toggle(context, store, on),
+                ),
+              ],
+            ),
+          ),
+          if (store.reminderEnabled) ...[
+            Divider(height: 1, thickness: 1, color: AppColors.rowBorder),
+            Semantics(
+              button: true,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _pickTime(context, store),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+                  child: SizedBox(
+                    height: 52,
+                    child: Row(
+                      children: [
+                        Expanded(child: Text(l10n.reminderTime, style: AppText.sans(size: 16, color: AppColors.ink))),
+                        Text(
+                          MaterialLocalizations.of(context).formatTimeOfDay(
+                            time,
+                            alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
+                          ),
+                          style: AppText.sans(size: 16, color: AppColors.accent),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }

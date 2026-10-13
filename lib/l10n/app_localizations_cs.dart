@@ -586,4 +586,33 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get sectionDetails => 'podrobnosti · volitelné';
+
+  @override
+  String get reminderTitle => 'Co máš dnes na sobě?';
+
+  @override
+  String get reminderBody => 'Zapiš si dnešní outfit do deníku.';
+
+  @override
+  String get reminderChannel => 'Upomínka deníku';
+
+  @override
+  String get sectionDiary => 'deník';
+
+  @override
+  String get reminderLabel => 'Denní upomínka';
+
+  @override
+  String get reminderHint =>
+      'Připomene ti zapsat outfit — jen když ten den ještě nemáš nic zapsané.';
+
+  @override
+  String get reminderTime => 'Čas';
+
+  @override
+  String get reminderDeniedTitle => 'Notifikace jsou vypnuté';
+
+  @override
+  String get reminderDeniedMessage =>
+      'Aby upomínka mohla přijít, povol aplikaci notifikace v Nastavení telefonu.';
 }

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'home_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'onboarding_screen.dart';
+import 'reminders.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
 
@@ -20,8 +21,11 @@ class SatnikApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) {
         final store = WardrobeStore();
-        // Colors for items that don't have them yet, in the background.
-        store.load().then((_) => store.detectMissingColors());
+        store.load().then((_) {
+          ReminderSync.start(store);
+          // Colors for items that don't have them yet, in the background.
+          store.detectMissingColors();
+        });
         return store;
       },
       child: Consumer<WardrobeStore>(

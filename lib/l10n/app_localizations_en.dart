@@ -581,4 +581,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sectionDetails => 'details · optional';
+
+  @override
+  String get reminderTitle => 'What are you wearing today?';
+
+  @override
+  String get reminderBody => 'Log today\'s outfit in your diary.';
+
+  @override
+  String get reminderChannel => 'Diary reminder';
+
+  @override
+  String get sectionDiary => 'diary';
+
+  @override
+  String get reminderLabel => 'Daily reminder';
+
+  @override
+  String get reminderHint =>
+      'Reminds you to log your outfit — only if nothing\'s logged for the day yet.';
+
+  @override
+  String get reminderTime => 'Time';
+
+  @override
+  String get reminderDeniedTitle => 'Notifications are off';
+
+  @override
+  String get reminderDeniedMessage =>
+      'To get the reminder, allow notifications for the app in your phone\'s Settings.';
 }

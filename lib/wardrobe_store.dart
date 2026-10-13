@@ -36,6 +36,10 @@ class WardrobeStore extends ChangeNotifier {
   /// Localizations for text this store has to bake into stored data (default
   /// kind/type/collection/wardrobe names) without a [BuildContext] —
   /// matching [localeCode], or the device locale when that's unset.
+  /// The app's texts in its current language, for things said outside any
+  /// screen (notifications).
+  AppLocalizations get texts => _l10n;
+
   AppLocalizations get _l10n {
     final code = localeCode ?? PlatformDispatcher.instance.locale.languageCode;
     return lookupAppLocalizations(Locale(code == 'en' ? 'en' : 'cs'));
@@ -164,6 +168,12 @@ class WardrobeStore extends ChangeNotifier {
   /// `'dark'` picked in settings (or onboarding).
   String? themeModeCode;
 
+  /// The daily reminder to log the day's outfit in the diary: whether it's
+  /// on, and when it comes, as minutes after midnight.
+  bool reminderEnabled = false;
+  int reminderMinutes = defaultReminderMinutes;
+  static const defaultReminderMinutes = 20 * 60;
+
   ThemeMode get themeMode => switch (themeModeCode) {
     'light' => ThemeMode.light,
     'dark' => ThemeMode.dark,
@@ -250,6 +260,10 @@ class WardrobeStore extends ChangeNotifier {
     } catch (_) {}
     try {
       themeModeCode = data['themeMode'] as String?;
+    } catch (_) {}
+    try {
+      reminderEnabled = data['reminderEnabled'] as bool? ?? false;
+      reminderMinutes = ((data['reminderMinutes'] as num?)?.toInt() ?? defaultReminderMinutes).clamp(0, 24 * 60 - 1);
     } catch (_) {}
     try {
       onboardingDone = data['onboardingDone'] as bool? ?? false;
@@ -506,6 +520,8 @@ class WardrobeStore extends ChangeNotifier {
         'activeWardrobeId': activeWardrobeId,
         'localeCode': localeCode,
         'themeMode': themeModeCode,
+        'reminderEnabled': reminderEnabled,
+        'reminderMinutes': reminderMinutes,
         'onboardingDone': onboardingDone,
       };
       // Write to a temp file and rename over the real one, so a crash or
@@ -1348,6 +1364,16 @@ class WardrobeStore extends ChangeNotifier {
     notifyListeners();
     _persist();
   }
+
+  void setReminder({bool? enabled, int? minutes}) {
+    if (enabled != null) reminderEnabled = enabled;
+    if (minutes != null) reminderMinutes = minutes.clamp(0, 24 * 60 - 1);
+    notifyListeners();
+    _persist();
+  }
+
+  /// Whether anything is written down in the diary for today.
+  bool get loggedToday => diaryOn(DateTime.now()).isNotEmpty;
 
   void setThemeMode(String? code) {
     themeModeCode = code;

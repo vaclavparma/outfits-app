@@ -255,5 +255,14 @@
   "itemLastToday": "dnes",
   "itemLastYesterday": "včera",
   "itemAutoNameHint": "název z barvy a typu · přepíšeš v podrobnostech",
-  "sectionDetails": "podrobnosti · volitelné"
+  "sectionDetails": "podrobnosti · volitelné",
+  "reminderTitle": "Co máš dnes na sobě?",
+  "reminderBody": "Zapiš si dnešní outfit do deníku.",
+  "reminderChannel": "Upomínka deníku",
+  "sectionDiary": "deník",
+  "reminderLabel": "Denní upomínka",
+  "reminderHint": "Připomene ti zapsat outfit — jen když ten den ještě nemáš nic zapsané.",
+  "reminderTime": "Čas",
+  "reminderDeniedTitle": "Notifikace jsou vypnuté",
+  "reminderDeniedMessage": "Aby upomínka mohla přijít, povol aplikaci notifikace v Nastavení telefonu."
 }

@@ -1039,6 +1039,60 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'podrobnosti · volitelné'**
   String get sectionDetails;
+
+  /// No description provided for @reminderTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Co máš dnes na sobě?'**
+  String get reminderTitle;
+
+  /// No description provided for @reminderBody.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zapiš si dnešní outfit do deníku.'**
+  String get reminderBody;
+
+  /// No description provided for @reminderChannel.
+  ///
+  /// In cs, this message translates to:
+  /// **'Upomínka deníku'**
+  String get reminderChannel;
+
+  /// No description provided for @sectionDiary.
+  ///
+  /// In cs, this message translates to:
+  /// **'deník'**
+  String get sectionDiary;
+
+  /// No description provided for @reminderLabel.
+  ///
+  /// In cs, this message translates to:
+  /// **'Denní upomínka'**
+  String get reminderLabel;
+
+  /// No description provided for @reminderHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'Připomene ti zapsat outfit — jen když ten den ještě nemáš nic zapsané.'**
+  String get reminderHint;
+
+  /// No description provided for @reminderTime.
+  ///
+  /// In cs, this message translates to:
+  /// **'Čas'**
+  String get reminderTime;
+
+  /// No description provided for @reminderDeniedTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Notifikace jsou vypnuté'**
+  String get reminderDeniedTitle;
+
+  /// No description provided for @reminderDeniedMessage.
+  ///
+  /// In cs, this message translates to:
+  /// **'Aby upomínka mohla přijít, povol aplikaci notifikace v Nastavení telefonu.'**
+  String get reminderDeniedMessage;
 }
 
 class _AppLocalizationsDelegate
