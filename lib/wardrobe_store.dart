@@ -532,31 +532,34 @@ class WardrobeStore extends ChangeNotifier {
 
   Future<void> _saving = Future.value();
 
+  /// Everything that's saved, as written to the state file.
+  Map<String, dynamic> get stateJson => {
+    'version': 3,
+    'kinds': kinds.map((k) => k.toJson()).toList(),
+    'canvas': canvas.map((s) => s.toJson()).toList(),
+    'wardrobes': [
+      for (final w in wardrobes)
+        {
+          'id': w.id,
+          'name': w.name,
+          ...(w.id == activeWardrobeId
+                  ? _liveContent
+                  : _stash[w.id] ?? _WardrobeContent.empty())
+              .toJson(),
+        },
+    ],
+    'activeWardrobeId': activeWardrobeId,
+    'localeCode': localeCode,
+    'themeMode': themeModeCode,
+    'reminderEnabled': reminderEnabled,
+    'reminderMinutes': reminderMinutes,
+    'onboardingDone': onboardingDone,
+  };
+
   Future<void> _write() async {
     try {
       final file = await _localFile();
-      final data = {
-        'version': 3,
-        'kinds': kinds.map((k) => k.toJson()).toList(),
-        'canvas': canvas.map((s) => s.toJson()).toList(),
-        'wardrobes': [
-          for (final w in wardrobes)
-            {
-              'id': w.id,
-              'name': w.name,
-              ...(w.id == activeWardrobeId
-                      ? _liveContent
-                      : _stash[w.id] ?? _WardrobeContent.empty())
-                  .toJson(),
-            },
-        ],
-        'activeWardrobeId': activeWardrobeId,
-        'localeCode': localeCode,
-        'themeMode': themeModeCode,
-        'reminderEnabled': reminderEnabled,
-        'reminderMinutes': reminderMinutes,
-        'onboardingDone': onboardingDone,
-      };
+      final data = stateJson;
       // Write to a temp file and rename over the real one, so a crash or
       // kill mid-write can never leave a half-written/corrupt state file.
       final tmp = File('${file.path}.tmp');
@@ -1350,6 +1353,117 @@ class WardrobeStore extends ChangeNotifier {
       for (final MapEntry(:key, :value) in days.entries)
         key: (count: value.length, last: value.reduce((a, b) => a.isAfter(b) ? a : b)),
     };
+  }
+
+  // ---------------------------------------------------------------------
+  // Debug tools (the hidden debug screen)
+
+  /// Where the state file, photos and backups live.
+  Future<Directory> dataDirectory() => getApplicationDocumentsDirectory();
+
+  /// Item, saved-outfit and diary counts of every wardrobe.
+  List<({String name, bool active, int items, int outfits, int diary})> get wardrobeSummaries => [
+    for (final w in wardrobes)
+      if (w.id == activeWardrobeId ? _liveContent : _stash[w.id] case final c?)
+        (name: w.name, active: w.id == activeWardrobeId, items: c.items.length, outfits: c.outfits.length, diary: c.diary.length),
+  ];
+
+  /// Items (in any wardrobe) whose photo file is gone.
+  Future<int> missingPhotoCount() async {
+    var n = 0;
+    for (final it in _allItems) {
+      final path = it.imagePath;
+      if (path != null && !await File(path).exists()) n++;
+    }
+    return n;
+  }
+
+  /// Files in the photos folder no item (in any wardrobe) points to.
+  Future<List<File>> orphanPhotos() async {
+    final dir = Directory(p.join((await dataDirectory()).path, 'satnik_images'));
+    if (!await dir.exists()) return [];
+    final used = {for (final it in _allItems) ?it.imagePath};
+    return [
+      await for (final f in dir.list())
+        if (f is File && !used.contains(f.path)) f,
+    ];
+  }
+
+  /// Deletes [orphanPhotos]; how many it deleted.
+  Future<int> deleteOrphanPhotos() async {
+    var n = 0;
+    for (final f in await orphanPhotos()) {
+      try {
+        await f.delete();
+        n++;
+      } catch (_) {}
+    }
+    return n;
+  }
+
+  /// Forgets every item's colors (corrected ones too) and detects them all
+  /// again.
+  Future<void> redetectAllColors() async {
+    for (final it in _allItems) {
+      it.colors = null;
+    }
+    items = [...items];
+    notifyListeners();
+    await detectMissingColors();
+  }
+
+  /// Empties the active wardrobe's diary.
+  void clearDiary() {
+    diary = [];
+    notifyListeners();
+    _persist();
+  }
+
+  /// Shows onboarding again on the next frame (the data stays).
+  void resetOnboarding() {
+    onboardingDone = false;
+    notifyListeners();
+    _persist();
+  }
+
+  /// Old-format copies kept by migrations, next to the state file.
+  Future<List<File>> migrationBackups() async {
+    final dir = await dataDirectory();
+    return [
+      await for (final f in dir.list())
+        if (f is File && p.basename(f.path).startsWith('satnik_v1.') && p.basename(f.path) != _fileName && f.path.endsWith('.json')) f,
+    ];
+  }
+
+  /// Deletes everything — state file, photos, backups — and starts over as
+  /// a fresh install (onboarding included).
+  Future<void> eraseEverything() async {
+    // No more saves: the one queued would bring the file back.
+    loaded = false;
+    await _saving;
+    final dir = await dataDirectory();
+    for (final name in [_fileName, '$_fileName.tmp']) {
+      try {
+        await File(p.join(dir.path, name)).delete();
+      } catch (_) {}
+    }
+    for (final f in await migrationBackups()) {
+      try {
+        await f.delete();
+      } catch (_) {}
+    }
+    try {
+      await Directory(p.join(dir.path, 'satnik_images')).delete(recursive: true);
+    } catch (_) {}
+    wardrobes = [];
+    _stash.clear();
+    localeCode = null;
+    themeModeCode = null;
+    reminderEnabled = false;
+    reminderMinutes = defaultReminderMinutes;
+    onboardingDone = false;
+    screen = WardrobeTabKind.outfit;
+    await load();
   }
 
   // ---------------------------------------------------------------------

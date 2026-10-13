@@ -3,6 +3,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'debug_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'models.dart';
 import 'reminders.dart';
@@ -120,10 +121,7 @@ class _AppCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(l10n.aboutTagline, style: AppText.sans(size: 14, color: AppColors.muted)),
                         const SizedBox(height: 6),
-                        Text(
-                          info == null ? ' ' : l10n.aboutVersionLine(info.version, info.buildNumber),
-                          style: AppText.mono(size: 10, letterSpacing: 0.4, color: AppColors.mutedTag),
-                        ),
+                        _VersionLine(text: info == null ? ' ' : l10n.aboutVersionLine(info.version, info.buildNumber)),
                       ],
                     ),
                   ),
@@ -141,6 +139,48 @@ class _AppCard extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// The version line — five quick taps on it open the hidden debug screen.
+class _VersionLine extends StatefulWidget {
+  final String text;
+  const _VersionLine({required this.text});
+
+  @override
+  State<_VersionLine> createState() => _VersionLineState();
+}
+
+class _VersionLineState extends State<_VersionLine> {
+  static const _taps = 5;
+
+  /// A pause longer than this starts the count over.
+  static const _maxGap = Duration(milliseconds: 600);
+
+  int _count = 0;
+  DateTime? _last;
+
+  void _tap() {
+    final now = DateTime.now();
+    final last = _last;
+    _count = last != null && now.difference(last) <= _maxGap ? _count + 1 : 1;
+    _last = now;
+    if (_count < _taps) return;
+    _count = 0;
+    _last = null;
+    openDebugScreen(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: _tap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(widget.text, style: AppText.mono(size: 10, letterSpacing: 0.4, color: AppColors.mutedTag)),
       ),
     );
   }

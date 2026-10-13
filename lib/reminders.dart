@@ -81,6 +81,33 @@ class DailyReminder {
     return false;
   }
 
+  static NotificationDetails _details(String channelName) => NotificationDetails(
+    android: AndroidNotificationDetails(_channelId, channelName, importance: Importance.defaultImportance),
+    iOS: const DarwinNotificationDetails(),
+  );
+
+  /// Shows the reminder right away (debug screen) — asking for permission
+  /// first if need be; whether it could.
+  static Future<bool> showNow({required String title, required String body, required String channelName}) async {
+    if (!await requestPermission()) return false;
+    try {
+      await _plugin.show(id: _firstId - 1, title: title, body: body, notificationDetails: _details(channelName));
+      return true;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  /// How many reminders are scheduled (debug screen); `null` if unknown.
+  static Future<int?> pendingCount() async {
+    if (!await _init()) return null;
+    try {
+      return (await _plugin.pendingNotificationRequests()).length;
+    } on PlatformException {
+      return null;
+    }
+  }
+
   /// Replaces the scheduled reminders: daily at [minutes] after midnight,
   /// from today (unless [skipToday], or the time has passed) for the next
   /// [_days] days — or none, when not [enabled].
@@ -99,10 +126,7 @@ class DailyReminder {
       }
       if (!enabled) return;
       final now = tz.TZDateTime.now(tz.local);
-      final details = NotificationDetails(
-        android: AndroidNotificationDetails(_channelId, channelName, importance: Importance.defaultImportance),
-        iOS: const DarwinNotificationDetails(),
-      );
+      final details = _details(channelName);
       for (var i = 0; i < _days; i++) {
         final at = tz.TZDateTime(tz.local, now.year, now.month, now.day + i, minutes ~/ 60, minutes % 60);
         if (!at.isAfter(now) || (i == 0 && skipToday)) continue;
