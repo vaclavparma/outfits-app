@@ -154,6 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
+                if (store.tourStep case final step?) _TourCard(step: step),
                 _BottomTabs(
                   current: store.screen,
                   onSelect: (kind) {
@@ -404,6 +405,127 @@ class _WardrobeSwitcherState extends State<_WardrobeSwitcher> {
                   : null,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The guided tour after onboarding: a card above the tab bar for each
+/// step, on the tab it's about, with what to try there.
+class _TourCard extends StatelessWidget {
+  final int step;
+  const _TourCard({required this.step});
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final hasItems = store.items.isNotEmpty;
+    final canvasHasClothes = store.currentOutfitItems.isNotEmpty;
+
+    final (title, body) = switch (step) {
+      0 => (l10n.tourAddTitle, l10n.tourAddBody),
+      1 => (l10n.tourCanvasTitle, l10n.tourCanvasBody),
+      2 => (l10n.tabOutfits, l10n.tourOutfitsBody),
+      _ => (l10n.tabDiary, l10n.tourDiaryBody),
+    };
+    // The main button does the step's thing where there is one; the
+    // secondary one moves on without it.
+    final (String primary, VoidCallback onPrimary, String? secondary, VoidCallback? onSecondary) = switch (step) {
+      0 when !hasItems => (l10n.tourAddButton, () => openAddItemSheet(context), l10n.tourSkip, store.nextTourStep),
+      0 => (l10n.tourNext, store.nextTourStep, l10n.tourAddMore, () => openAddItemSheet(context)),
+      1 when canvasHasClothes => (
+        l10n.saveOutfitButton,
+        () async {
+          await saveCurrentOutfit(context);
+          store.nextTourStep();
+        },
+        l10n.tourSkip,
+        store.nextTourStep,
+      ),
+      _ when step == WardrobeStore.tourSteps - 1 => (l10n.done, store.nextTourStep, null, null),
+      _ => (l10n.tourNext, store.nextTourStep, null, null),
+    };
+
+    // Inverted against the app (light on dark, dark on light), so it reads
+    // as a layer over it.
+    final ink = AppColors.background;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+      child: ContentWidth(
+        maxWidth: kMaxContentWidth - 24,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(18, 14, 8, 14),
+          decoration: BoxDecoration(
+            color: AppColors.ink,
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 18, offset: Offset(0, 6))],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(child: Text(title, style: AppText.sans(size: 16, weight: FontWeight.w600, color: ink))),
+                  Text(
+                    '${step + 1} / ${WardrobeStore.tourSteps}',
+                    style: AppText.mono(size: 10, letterSpacing: 0.6, color: ink.withValues(alpha: 0.6)),
+                  ),
+                  Semantics(
+                    button: true,
+                    label: l10n.tourClose,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: store.endTour,
+                      child: SizedBox(width: 36, height: 28, child: Icon(Icons.close, size: 17, color: ink.withValues(alpha: 0.7))),
+                    ),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 4, right: 10),
+                child: Text(body, style: AppText.sans(size: 13.5, color: ink.withValues(alpha: 0.85), height: 1.4)),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.only(right: 10),
+                // Wraps rather than overflows with long labels or large text.
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  runSpacing: 6,
+                  children: [
+                    if (secondary != null)
+                      GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: onSecondary,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          child: Text(secondary, style: AppText.sans(size: 14, color: ink.withValues(alpha: 0.75))),
+                        ),
+                      ),
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: onPrimary,
+                      child: Container(
+                        height: 42,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        decoration: BoxDecoration(color: ink, borderRadius: BorderRadius.circular(21)),
+                        // Only as wide as the label (an aligned Container
+                        // would fill the row).
+                        child: Center(
+                          widthFactor: 1,
+                          child: Text(primary, style: AppText.sans(size: 14, weight: FontWeight.w500, color: AppColors.ink)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

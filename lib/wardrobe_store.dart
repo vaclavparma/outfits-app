@@ -201,6 +201,11 @@ class WardrobeStore extends ChangeNotifier {
   /// [main.dart] to decide what to show first.
   bool onboardingDone = false;
 
+  /// Where the guided tour of the app (after onboarding) is: the step
+  /// shown, or `null` once it's done or closed.
+  int? tourStep;
+  static const tourSteps = 4;
+
   /// Whether [load] has finished at least once. Distinct from
   /// [onboardingDone] — this just guards against briefly showing onboarding
   /// (or the home screen) with pre-load default values before the real,
@@ -246,6 +251,12 @@ class WardrobeStore extends ChangeNotifier {
 
     loaded = true;
     _applyFirstLaunchScreen();
+    // A tour left unfinished picks up where it was.
+    if (tourStep case final step? when step >= 0 && step < tourSteps) {
+      _goToTourStep(step);
+    } else {
+      tourStep = null;
+    }
     notifyListeners();
     // Write the migrated/fixed data right away, so it isn't redone (with
     // fresh type ids) on every launch until something else happens to save.
@@ -292,6 +303,7 @@ class WardrobeStore extends ChangeNotifier {
     } catch (_) {}
     try {
       onboardingDone = data['onboardingDone'] as bool? ?? false;
+      tourStep = (data['tourStep'] as num?)?.toInt();
     } catch (_) {}
 
     String? docsPath;
@@ -554,6 +566,7 @@ class WardrobeStore extends ChangeNotifier {
     'reminderEnabled': reminderEnabled,
     'reminderMinutes': reminderMinutes,
     'onboardingDone': onboardingDone,
+    'tourStep': ?tourStep,
   };
 
   Future<void> _write() async {
@@ -1422,6 +1435,7 @@ class WardrobeStore extends ChangeNotifier {
   /// Shows onboarding again on the next frame (the data stays).
   void resetOnboarding() {
     onboardingDone = false;
+    tourStep = null;
     notifyListeners();
     _persist();
   }
@@ -1462,6 +1476,7 @@ class WardrobeStore extends ChangeNotifier {
     reminderEnabled = false;
     reminderMinutes = defaultReminderMinutes;
     onboardingDone = false;
+    tourStep = null;
     screen = WardrobeTabKind.outfit;
     await load();
   }
@@ -1470,7 +1485,19 @@ class WardrobeStore extends ChangeNotifier {
   // Settings and wardrobes
 
   void setLocale(String? code) {
+    final before = _l10n;
     localeCode = code;
+    // Still setting up a fresh install: the default kinds, types and
+    // wardrobe name were made in the phone's language — remake them in the
+    // one just picked.
+    if (!onboardingDone && _allItems.isEmpty && before.localeName != _l10n.localeName) {
+      kinds = _defaultKinds();
+      canvas = _defaultCanvas();
+      _worn = {};
+      for (final w in wardrobes) {
+        if (w.name == before.defaultWardrobeName) w.name = _l10n.defaultWardrobeName;
+      }
+    }
     notifyListeners();
     _persist();
   }
@@ -1498,12 +1525,54 @@ class WardrobeStore extends ChangeNotifier {
 
   /// [wardrobeName] names the (so far only) wardrobe; blank keeps the
   /// default name it was created with.
+  /// Starts the tour of the app on its first step's tab.
   void completeOnboarding({String? wardrobeName}) {
     final name = wardrobeName?.trim() ?? '';
     if (name.isNotEmpty) activeWardrobe.name = name;
     onboardingDone = true;
+    _goToTourStep(0);
     notifyListeners();
     _persist();
+  }
+
+  /// The tab each tour step is about.
+  static const _tourTabs = [
+    WardrobeTabKind.wardrobe,
+    WardrobeTabKind.outfit,
+    WardrobeTabKind.outfits,
+    WardrobeTabKind.diary,
+  ];
+
+  /// Moves the tour on — or ends it after the last step.
+  void nextTourStep() {
+    final step = tourStep;
+    if (step == null) return;
+    if (step + 1 >= tourSteps) {
+      endTour();
+      return;
+    }
+    _goToTourStep(step + 1);
+    notifyListeners();
+    _persist();
+  }
+
+  void endTour() {
+    tourStep = null;
+    notifyListeners();
+    _persist();
+  }
+
+  void _goToTourStep(int step) {
+    tourStep = step;
+    screen = _tourTabs[step];
+  }
+
+  /// Keeps only these of the kinds (onboarding): the rest are deleted —
+  /// unless something is already filed under them.
+  void keepOnlyKinds(Set<String> kindIds) {
+    for (final k in [...kinds]) {
+      if (!kindIds.contains(k.id)) deleteKind(k.id);
+    }
   }
 
   bool _isFreeWardrobeName(String name, {String? except}) =>

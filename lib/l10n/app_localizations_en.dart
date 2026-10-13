@@ -213,16 +213,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingSubtitle =>
-      'A few things to start — you can change all of them later.';
+      'In a couple of minutes you\'ll set up your wardrobe your way and put together your first outfit. You can change everything later.';
 
   @override
   String get onboardingContinue => 'Continue';
 
   @override
   String get defaultWardrobeName => 'My wardrobe';
-
-  @override
-  String get sectionWardrobeName => 'wardrobe name';
 
   @override
   String get newWardrobe => 'New wardrobe';
@@ -618,4 +615,72 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nameTaken => 'That name is already taken.';
+
+  @override
+  String get onboardingStart => 'Get started';
+
+  @override
+  String get onboardingLooksTitle => 'Look and language';
+
+  @override
+  String get onboardingLooksBody =>
+      'How the app should look and which language it speaks.';
+
+  @override
+  String get onboardingWardrobeTitle => 'Your wardrobe';
+
+  @override
+  String get onboardingWardrobeBody =>
+      'Give it a name — say “Home”. You can add more wardrobes (cottage, office…) in settings any time.';
+
+  @override
+  String get onboardingKindsTitle => 'What you wear';
+
+  @override
+  String get onboardingKindsBody =>
+      'Pick the kinds of clothing you want to work with. Each kind is a card on the canvas; the types within (t-shirts, shirts…) can be edited in settings.';
+
+  @override
+  String get onboardingReminderTitle => 'Daily reminder';
+
+  @override
+  String get onboardingReminderBody =>
+      'The diary is what shows what you wear most and what just sits in the closet. The reminder nudges you to log today\'s outfit — feel free to leave it off.';
+
+  @override
+  String get tourAddTitle => 'Add your first pieces';
+
+  @override
+  String get tourAddBody =>
+      'Take or pick a few photos — say a top, trousers and shoes. Colors and names fill in by themselves.';
+
+  @override
+  String get tourAddButton => 'Add clothes';
+
+  @override
+  String get tourAddMore => 'Add more';
+
+  @override
+  String get tourCanvasTitle => 'Your first outfit';
+
+  @override
+  String get tourCanvasBody =>
+      'Your clothes are on the canvas. Tap a card to pick another piece, hold it to move it, pinch to resize. Then save the outfit.';
+
+  @override
+  String get tourOutfitsBody =>
+      'Your saved outfits live here. Search them by clothes, heart your favorites, and tap one for its detail.';
+
+  @override
+  String get tourDiaryBody =>
+      'Log what you wear — with the + button or by tapping a day. The entries add up to stats: what you wear most, and what you don\'t.';
+
+  @override
+  String get tourNext => 'Next';
+
+  @override
+  String get tourSkip => 'Skip';
+
+  @override
+  String get tourClose => 'End the tour';
 }

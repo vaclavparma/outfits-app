@@ -437,13 +437,13 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingTitle.
   ///
   /// In cs, this message translates to:
-  /// **'Vítej v Šatníku'**
+  /// **'Vítej v Outfits'**
   String get onboardingTitle;
 
   /// No description provided for @onboardingSubtitle.
   ///
   /// In cs, this message translates to:
-  /// **'Pár věcí na začátek — všechno půjde později změnit.'**
+  /// **'Za pár minut si nastavíš šatník po svém a poskládáš první outfit. Všechno půjde později změnit.'**
   String get onboardingSubtitle;
 
   /// No description provided for @onboardingContinue.
@@ -457,12 +457,6 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Můj šatník'**
   String get defaultWardrobeName;
-
-  /// No description provided for @sectionWardrobeName.
-  ///
-  /// In cs, this message translates to:
-  /// **'název šatníku'**
-  String get sectionWardrobeName;
 
   /// No description provided for @newWardrobe.
   ///
@@ -1099,6 +1093,126 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Tenhle název už existuje.'**
   String get nameTaken;
+
+  /// No description provided for @onboardingStart.
+  ///
+  /// In cs, this message translates to:
+  /// **'Začít'**
+  String get onboardingStart;
+
+  /// No description provided for @onboardingLooksTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Vzhled a jazyk'**
+  String get onboardingLooksTitle;
+
+  /// No description provided for @onboardingLooksBody.
+  ///
+  /// In cs, this message translates to:
+  /// **'Jak má aplikace vypadat a jakou řečí mluvit.'**
+  String get onboardingLooksBody;
+
+  /// No description provided for @onboardingWardrobeTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tvůj šatník'**
+  String get onboardingWardrobeTitle;
+
+  /// No description provided for @onboardingWardrobeBody.
+  ///
+  /// In cs, this message translates to:
+  /// **'Pojmenuj ho — třeba „Doma“. Další šatníky (chata, kancelář…) přidáš kdykoli v nastavení.'**
+  String get onboardingWardrobeBody;
+
+  /// No description provided for @onboardingKindsTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Co nosíš'**
+  String get onboardingKindsTitle;
+
+  /// No description provided for @onboardingKindsBody.
+  ///
+  /// In cs, this message translates to:
+  /// **'Vyber druhy oblečení, se kterými chceš pracovat. Každý druh je karta na plátně, typy uvnitř (trička, košile…) upravíš v nastavení.'**
+  String get onboardingKindsBody;
+
+  /// No description provided for @onboardingReminderTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Denní upomínka'**
+  String get onboardingReminderTitle;
+
+  /// No description provided for @onboardingReminderBody.
+  ///
+  /// In cs, this message translates to:
+  /// **'Z deníku se počítá, co nosíš nejčastěji a co leží ve skříni. Upomínka ti připomene zapsat dnešní outfit — klidně ji nech vypnutou.'**
+  String get onboardingReminderBody;
+
+  /// No description provided for @tourAddTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Přidej první kusy'**
+  String get tourAddTitle;
+
+  /// No description provided for @tourAddBody.
+  ///
+  /// In cs, this message translates to:
+  /// **'Vyfoť nebo vyber z galerie pár kousků — třeba tričko, kalhoty a boty. Barvy i název se doplní samy.'**
+  String get tourAddBody;
+
+  /// No description provided for @tourAddButton.
+  ///
+  /// In cs, this message translates to:
+  /// **'Přidat oblečení'**
+  String get tourAddButton;
+
+  /// No description provided for @tourAddMore.
+  ///
+  /// In cs, this message translates to:
+  /// **'Přidat další'**
+  String get tourAddMore;
+
+  /// No description provided for @tourCanvasTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tvůj první outfit'**
+  String get tourCanvasTitle;
+
+  /// No description provided for @tourCanvasBody.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tvoje kusy jsou na plátně. Ťukni na kartu a vyber jiný kus, podrž ji a přesuň, dvěma prsty změníš velikost. Pak outfit ulož.'**
+  String get tourCanvasBody;
+
+  /// No description provided for @tourOutfitsBody.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tady jsou uložené outfity. Najdeš je podle oblečení, srdíčkem si označíš oblíbené a ťuknutím otevřeš detail.'**
+  String get tourOutfitsBody;
+
+  /// No description provided for @tourDiaryBody.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zapisuj, co máš na sobě — tlačítkem + nebo ťuknutím na den. Ze zápisů vznikají statistiky: co nosíš nejvíc a co ne.'**
+  String get tourDiaryBody;
+
+  /// No description provided for @tourNext.
+  ///
+  /// In cs, this message translates to:
+  /// **'Dál'**
+  String get tourNext;
+
+  /// No description provided for @tourSkip.
+  ///
+  /// In cs, this message translates to:
+  /// **'Přeskočit'**
+  String get tourSkip;
+
+  /// No description provided for @tourClose.
+  ///
+  /// In cs, this message translates to:
+  /// **'Ukončit prohlídku'**
+  String get tourClose;
 }
 
 class _AppLocalizationsDelegate

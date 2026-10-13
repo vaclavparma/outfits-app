@@ -75,7 +75,7 @@ class SettingsScreen extends StatelessWidget {
                     const SizedBox(height: 22),
                     SettingsSectionLabel(l10n.sectionDiary, uppercase: true),
                     const SizedBox(height: 8),
-                    const _ReminderCard(),
+                    const ReminderCard(),
                     const SizedBox(height: 22),
                     const SettingsContent(uppercaseLabels: true),
                   ],
@@ -745,8 +745,8 @@ class _TypeList extends StatelessWidget {
 }
 
 /// The daily diary reminder: on/off, and (when on) the time it comes.
-class _ReminderCard extends StatelessWidget {
-  const _ReminderCard();
+class ReminderCard extends StatelessWidget {
+  const ReminderCard({super.key});
 
   Future<void> _toggle(BuildContext context, WardrobeStore store, bool on) async {
     if (!on) {

@@ -212,20 +212,17 @@ class AppLocalizationsCs extends AppLocalizations {
   String get themeDark => 'Tmavý';
 
   @override
-  String get onboardingTitle => 'Vítej v Šatníku';
+  String get onboardingTitle => 'Vítej v Outfits';
 
   @override
   String get onboardingSubtitle =>
-      'Pár věcí na začátek — všechno půjde později změnit.';
+      'Za pár minut si nastavíš šatník po svém a poskládáš první outfit. Všechno půjde později změnit.';
 
   @override
   String get onboardingContinue => 'Pokračovat';
 
   @override
   String get defaultWardrobeName => 'Můj šatník';
-
-  @override
-  String get sectionWardrobeName => 'název šatníku';
 
   @override
   String get newWardrobe => 'Nový šatník';
@@ -623,4 +620,72 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get nameTaken => 'Tenhle název už existuje.';
+
+  @override
+  String get onboardingStart => 'Začít';
+
+  @override
+  String get onboardingLooksTitle => 'Vzhled a jazyk';
+
+  @override
+  String get onboardingLooksBody =>
+      'Jak má aplikace vypadat a jakou řečí mluvit.';
+
+  @override
+  String get onboardingWardrobeTitle => 'Tvůj šatník';
+
+  @override
+  String get onboardingWardrobeBody =>
+      'Pojmenuj ho — třeba „Doma“. Další šatníky (chata, kancelář…) přidáš kdykoli v nastavení.';
+
+  @override
+  String get onboardingKindsTitle => 'Co nosíš';
+
+  @override
+  String get onboardingKindsBody =>
+      'Vyber druhy oblečení, se kterými chceš pracovat. Každý druh je karta na plátně, typy uvnitř (trička, košile…) upravíš v nastavení.';
+
+  @override
+  String get onboardingReminderTitle => 'Denní upomínka';
+
+  @override
+  String get onboardingReminderBody =>
+      'Z deníku se počítá, co nosíš nejčastěji a co leží ve skříni. Upomínka ti připomene zapsat dnešní outfit — klidně ji nech vypnutou.';
+
+  @override
+  String get tourAddTitle => 'Přidej první kusy';
+
+  @override
+  String get tourAddBody =>
+      'Vyfoť nebo vyber z galerie pár kousků — třeba tričko, kalhoty a boty. Barvy i název se doplní samy.';
+
+  @override
+  String get tourAddButton => 'Přidat oblečení';
+
+  @override
+  String get tourAddMore => 'Přidat další';
+
+  @override
+  String get tourCanvasTitle => 'Tvůj první outfit';
+
+  @override
+  String get tourCanvasBody =>
+      'Tvoje kusy jsou na plátně. Ťukni na kartu a vyber jiný kus, podrž ji a přesuň, dvěma prsty změníš velikost. Pak outfit ulož.';
+
+  @override
+  String get tourOutfitsBody =>
+      'Tady jsou uložené outfity. Najdeš je podle oblečení, srdíčkem si označíš oblíbené a ťuknutím otevřeš detail.';
+
+  @override
+  String get tourDiaryBody =>
+      'Zapisuj, co máš na sobě — tlačítkem + nebo ťuknutím na den. Ze zápisů vznikají statistiky: co nosíš nejvíc a co ne.';
+
+  @override
+  String get tourNext => 'Dál';
+
+  @override
+  String get tourSkip => 'Přeskočit';
+
+  @override
+  String get tourClose => 'Ukončit prohlídku';
 }
