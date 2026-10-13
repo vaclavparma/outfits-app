@@ -247,6 +247,7 @@ class _WardrobesCard extends StatelessWidget {
       initialValue: '',
       hintText: l10n.newWardrobeHint,
       confirmLabel: l10n.create,
+      isTaken: store.wardrobeNameTaken,
     );
     if (name != null) await store.addWardrobe(name);
   }
@@ -318,6 +319,7 @@ class _WardrobeRow extends StatelessWidget {
       title: l10n.renameWardrobeTitle,
       initialValue: wardrobe.name,
       confirmLabel: l10n.save,
+      isTaken: (n) => store.wardrobeNameTaken(n, except: wardrobe.id),
     );
     if (name != null) await store.renameWardrobe(wardrobe.id, name);
   }
@@ -437,6 +439,7 @@ class _KindsCardState extends State<_KindsCard> {
       initialValue: '',
       hintText: l10n.newKindHint,
       confirmLabel: l10n.create,
+      isTaken: store.kindNameTaken,
     );
     if (name == null) return;
     final kind = store.addKind(name);
@@ -566,6 +569,7 @@ class _KindRow extends StatelessWidget {
       title: l10n.renameKindTitle,
       initialValue: kind.name,
       confirmLabel: l10n.save,
+      isTaken: (n) => store.kindNameTaken(n, except: kind.id),
     );
     if (name != null) store.renameKind(kind.id, name);
   }
@@ -679,6 +683,7 @@ class _TypeList extends StatelessWidget {
       initialValue: '',
       hintText: l10n.newTypeHint,
       confirmLabel: l10n.create,
+      isTaken: (n) => store.typeNameTaken(kind.id, n),
     );
     if (name != null) store.addType(kind.id, name);
   }
@@ -690,6 +695,7 @@ class _TypeList extends StatelessWidget {
       title: l10n.renameTypeTitle,
       initialValue: t.name,
       confirmLabel: l10n.save,
+      isTaken: (n) => store.typeNameTaken(kind.id, n, except: t.id),
     );
     if (name != null) store.renameType(kind.id, t.id, name);
   }

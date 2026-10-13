@@ -1,8 +1,10 @@
 /// A name for a piece of clothing nobody has named: its main color and its
 /// type — "Zelená košile", "Hnědé kalhoty", "Green shirt". Type names are
 /// whatever the user typed, usually plural ("Trička", "T-shirts"), so the
-/// noun is guessed into shape from its ending; a type that's an adjective
-/// or the catch-all ("Letní", "Ostatní") gives way to the kind ("Šaty").
+/// noun is guessed into shape from its ending. A type that's a describing
+/// word ("Letní", "Summer" — [typeIsModifier], or a Czech adjective) goes
+/// in front of the kind ("Béžové letní šaty", "Green summer dress"); the
+/// catch-all type ("Ostatní") gives way to the kind altogether.
 ///
 /// [colorName] is the color family's name as shown in the app — for Czech
 /// the feminine form ("Zelená"), which is bent to fit; `null` without one.
@@ -11,13 +13,20 @@ String autoItemName({
   required String typeName,
   required String kindName,
   required String otherTypeName,
+  bool typeIsModifier = false,
   String? colorName,
 }) {
   final cs = languageCode == 'cs';
-  var noun = typeName.trim();
-  if (noun.isEmpty || noun == otherTypeName || (cs && _isCzechAdjective(noun))) noun = kindName.trim();
-  if (cs) return _czech(noun, colorName);
-  return _english(noun, colorName);
+  final type = typeName.trim(), kind = kindName.trim();
+  var noun = type;
+  String? modifier;
+  if (type.isEmpty || type == otherTypeName) {
+    noun = kind;
+  } else if (typeIsModifier || (cs && _isCzechAdjective(type))) {
+    noun = kind;
+    modifier = type.toLowerCase();
+  }
+  return cs ? _czech(noun, colorName, modifier) : _english(noun, colorName, modifier);
 }
 
 String _capitalize(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
@@ -28,13 +37,38 @@ bool _isCzechAdjective(String word) {
   return w.endsWith('í') || w.endsWith('ské') || w.endsWith('cké') || w.endsWith('né');
 }
 
-String _czech(String noun, String? colorName) {
+/// Common clothes named in the plural that have a singular for one piece,
+/// with the adjective ending that goes with it. Anything else ending in -y
+/// stays plural — it's said that way (kalhoty, džíny, tenisky) or the
+/// singular can't be told from the ending.
+const _czechSingulars = {
+  'mikiny': ('mikina', 'á'),
+  'bundy': ('bunda', 'á'),
+  'vesty': ('vesta', 'á'),
+  'halenky': ('halenka', 'á'),
+  'blůzy': ('blůza', 'á'),
+  'tuniky': ('tunika', 'á'),
+  'čepice': ('čepice', 'á'),
+  'svetry': ('svetr', 'ý'),
+  'kabáty': ('kabát', 'ý'),
+  'roláky': ('rolák', 'ý'),
+  'kardigany': ('kardigan', 'ý'),
+  'topy': ('top', 'ý'),
+  'kulichy': ('kulich', 'ý'),
+  'šátky': ('šátek', 'ý'),
+  'pásky': ('pásek', 'ý'),
+};
+
+String _czech(String noun, String? colorName, String? modifier) {
   // A multi-word kind ("Horní díl") agrees through its last word.
   final words = noun.split(' ');
   var last = words.last.toLowerCase();
   // Adjective ending to put on the color's stem ("zelen-").
   String ending;
-  if (last.endsWith('a')) {
+  if (_czechSingulars[last] case (final singular, final e)) {
+    last = singular;
+    ending = e;
+  } else if (last.endsWith('a')) {
     // Neuter plural ("trička", "saka") → singular ("tričko").
     last = '${last.substring(0, last.length - 1)}o';
     ending = 'é';
@@ -48,7 +82,10 @@ String _czech(String noun, String? colorName) {
     ending = 'ý'; // svetr, kabát
   }
   words[words.length - 1] = last;
-  final phrase = [for (final (i, w) in words.indexed) i == 0 ? w.toLowerCase() : w].join(' ');
+  final phrase = [
+    ?modifier,
+    for (final (i, w) in words.indexed) i == 0 ? w.toLowerCase() : w,
+  ].join(' ');
   if (colorName == null || !colorName.endsWith('á')) return _capitalize(phrase);
   final adjective = colorName.substring(0, colorName.length - 1).toLowerCase() + ending;
   return _capitalize('$adjective $phrase');
@@ -60,7 +97,7 @@ const _englishPluralOnly = {
   'loafers', 'trainers', 'heels', 'flats', 'slippers', 'glasses', 'sunglasses', 'gloves', 'socks',
 };
 
-String _english(String noun, String? colorName) {
+String _english(String noun, String? colorName, String? modifier) {
   final words = noun.toLowerCase().split(' ');
   var last = words.last;
   if (!_englishPluralOnly.contains(last)) {
@@ -71,6 +108,6 @@ String _english(String noun, String? colorName) {
     }
   }
   words[words.length - 1] = last;
-  final phrase = words.join(' ');
+  final phrase = [?modifier, ...words].join(' ');
   return _capitalize(colorName == null ? phrase : '${colorName.toLowerCase()} $phrase');
 }

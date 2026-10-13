@@ -15,13 +15,6 @@ String _foldForSearch(String s) {
   return b.toString();
 }
 
-/// Whether [item] matches a free-text search: every word of [query] has to
-/// appear in at least one of its details, its kind's name ([kindName]) or
-/// its type's ([typeName]) — ignoring case and diacritics ("kosile" finds
-/// "Košile"). A blank query matches everything.
-bool matchesSearch(ClothingItem item, String query, {required String kindName, String? typeName}) =>
-    textsMatchSearch([item.name, item.seller, item.size, item.price, item.note, typeName, kindName], query);
-
 /// Whether every word of [query] appears somewhere in [texts], ignoring
 /// case and diacritics. A blank query matches everything.
 bool textsMatchSearch(Iterable<String?> texts, String query) {
@@ -374,6 +367,16 @@ class DiaryEntry {
 
   static String _two(int n) => n.toString().padLeft(2, '0');
 }
+
+/// Whole calendar days from [from] to [to], times of day ignored. Counted
+/// on UTC dates, so a daylight-saving change in between can't make a day
+/// 23 or 25 hours long and the count come out one short.
+int daysBetween(DateTime from, DateTime to) =>
+    DateTime.utc(to.year, to.month, to.day).difference(DateTime.utc(from.year, from.month, from.day)).inDays;
+
+/// Midnight [days] calendar days after [day] (before, if negative) — not
+/// `day ± 24 h`, which lands on the wrong date across a clock change.
+DateTime addDays(DateTime day, int days) => DateTime(day.year, day.month, day.day + days);
 
 /// The tabs, in the order they sit in the bottom bar (and swipe between).
 enum WardrobeTabKind { outfit, outfits, diary, wardrobe }

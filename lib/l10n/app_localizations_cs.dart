@@ -613,4 +613,14 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get editOnCanvas => 'Upravit na plátně';
+
+  @override
+  String get diaryRemoveEntryTitle => 'Odebrat z deníku?';
+
+  @override
+  String get diaryRemoveEntryMessage =>
+      'Zápis tohoto outfitu u dne bude smazán.';
+
+  @override
+  String get nameTaken => 'Tenhle název už existuje.';
 }

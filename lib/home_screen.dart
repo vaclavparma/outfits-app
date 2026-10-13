@@ -25,8 +25,8 @@ final Map<WardrobeTabKind, GlobalKey<NavigatorState>> _tabNavigatorKeys = {
 
 /// How many screens are open on top of each tab's root. Swiping between
 /// tabs only works while the visible tab is at its root — inside a
-/// type a sideways swipe is iOS "back" instead — and not while a
-/// finger is on an outfit card (swiping, moving or resizing it).
+/// type a sideways swipe is iOS "back" instead — and not while two
+/// fingers are on an outfit card, resizing it.
 final Map<WardrobeTabKind, ValueNotifier<int>> _tabDepth = {
   for (final kind in WardrobeTabKind.values) kind: ValueNotifier(0),
 };
@@ -138,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     listenable: Listenable.merge([_tabDepth[store.screen]!, canvasTouches]),
                     builder: (context, _) => PageView(
                       controller: _pages,
-                      physics: _tabDepth[store.screen]!.value == 0 && canvasTouches.value == 0
+                      physics: _tabDepth[store.screen]!.value == 0 && canvasTouches.value < 2
                           ? const PageScrollPhysics()
                           : const NeverScrollableScrollPhysics(),
                       onPageChanged: (i) {

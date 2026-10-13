@@ -219,5 +219,8 @@
   "outfitUsualWeekday": "{weekday, select, 1{mostly on Mondays} 2{mostly on Tuesdays} 3{mostly on Wednesdays} 4{mostly on Thursdays} 5{mostly on Fridays} 6{mostly on Saturdays} 7{mostly on Sundays} other{}}",
   "wearToday": "Wearing it today",
   "outfitWornToday": "Logged today",
-  "editOnCanvas": "Edit on canvas"
+  "editOnCanvas": "Edit on canvas",
+  "diaryRemoveEntryTitle": "Remove from the diary?",
+  "diaryRemoveEntryMessage": "This outfit will be removed from the day.",
+  "nameTaken": "That name is already taken."
 }

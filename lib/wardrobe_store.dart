@@ -91,12 +91,36 @@ class WardrobeStore extends ChangeNotifier {
       typeName: _otherTypeNames.contains(type) ? '' : type,
       kindName: kindName(item.cat),
       otherTypeName: l.otherTypeName,
+      typeIsModifier: _modifierTypeNames.contains(type),
       colorName: colors == null || colors.isEmpty ? null : l.colorFamily(ColorFamily.of(colors.first).name),
     );
   }
 
+  /// Everything [item] can be found by: its name (own or made up), kind,
+  /// type, color and other details — the same in every search.
+  List<String?> searchTexts(ClothingItem item) {
+    final colors = item.colors;
+    return [
+      displayName(item),
+      kindName(item.cat),
+      typeName(item),
+      if (colors != null && colors.isNotEmpty) _l10n.colorFamily(ColorFamily.of(colors.first).name),
+      item.seller,
+      item.size,
+      item.price,
+      item.note,
+    ];
+  }
+
   /// Whether [item]'s name was given by the user, not made up.
   bool hasOwnName(ClothingItem item) => item.name?.isNotEmpty ?? false;
+
+  /// Default type names that describe rather than name ("Summer",
+  /// "Formal" dresses), in every language.
+  static final _modifierTypeNames = {
+    for (final code in ['cs', 'en'])
+      for (final n in lookupAppLocalizations(Locale(code)).defaultTypesDress.split(',')) n.trim(),
+  };
 
   /// The catch-all type's name in every language (it's stored as created).
   static final _otherTypeNames = {
@@ -495,10 +519,20 @@ class WardrobeStore extends ChangeNotifier {
     return File(p.join(dir.path, _fileName));
   }
 
-  Future<void> _persist() async {
+  /// Saves everything to disk. Saves are queued, one after another: two
+  /// running at once would write the same temp file, and one could rename
+  /// the other's half-written file into place. Each writes the state as it
+  /// is when its turn comes, so a queued save never writes stale data.
+  Future<void> _persist() {
     // Writing before load() has populated [wardrobes] would overwrite the
     // real file with an empty wardrobe list.
-    if (!loaded) return;
+    if (!loaded) return Future.value();
+    return _saving = _saving.then((_) => _write());
+  }
+
+  Future<void> _saving = Future.value();
+
+  Future<void> _write() async {
     try {
       final file = await _localFile();
       final data = {
@@ -574,8 +608,15 @@ class WardrobeStore extends ChangeNotifier {
   // ---------------------------------------------------------------------
   // Kinds and types
 
-  bool _isFreeKindName(String name, {String? except}) =>
-      name.isNotEmpty && !kinds.any((k) => k.id != except && k.name == name);
+  bool _isFreeKindName(String name, {String? except}) => name.isNotEmpty && !kindNameTaken(name, except: except);
+
+  /// Whether another kind (not [except]) is already called [name].
+  bool kindNameTaken(String name, {String? except}) => kinds.any((k) => k.id != except && k.name == name.trim());
+
+  /// Whether another type of [kindId] (not [except]) is already called
+  /// [name].
+  bool typeNameTaken(String kindId, String name, {String? except}) =>
+      kindById(kindId)?.types.any((t) => t.id != except && t.name == name.trim()) ?? false;
 
   /// Adds a new kind (a no-op for a blank or taken name), starting with
   /// a single "Other" type so clothing can be added to it right away.
@@ -752,6 +793,7 @@ class WardrobeStore extends ChangeNotifier {
     items = [...items];
     // A card of the old kind can't show it any more.
     _fillEmptySlots();
+    _unpinUnworn();
     notifyListeners();
     _persist();
   }
@@ -797,16 +839,28 @@ class WardrobeStore extends ChangeNotifier {
 
   /// Background pass after startup: detects colors for every item, in every
   /// wardrobe, that doesn't have them yet (e.g. added before detection
-  /// existed). One photo at a time, so it never competes much with the UI;
-  /// a pass cut short by closing the app just continues next time.
+  /// existed). A few photos at a time, each analyzed off the UI isolate; a
+  /// pass cut short by closing the app just continues next time.
   Future<void> detectMissingColors() async {
     final pending = _allItems.where((it) => it.colors == null && it.imagePath != null).toList();
-    var done = 0;
-    for (final it in pending) {
-      if (await _detect(it) && ++done % 10 == 0) await _persist();
+    var next = 0, unsaved = 0;
+    // A few photos at once (each analyzed in its own isolate), saving every
+    // so often so an interrupted pass doesn't start over.
+    Future<void> worker() async {
+      while (next < pending.length) {
+        final it = pending[next++];
+        if (await _detect(it) && ++unsaved >= 10) {
+          unsaved = 0;
+          await _persist();
+        }
+      }
     }
-    if (done % 10 != 0) await _persist();
+
+    await Future.wait([for (var i = 0; i < _detectWorkers; i++) worker()]);
+    if (unsaved > 0) await _persist();
   }
+
+  static const _detectWorkers = 3;
 
   /// Sets [it]'s colors from its photo if it has none yet; true if it did.
   /// [it] may sit in another wardrobe, or be moved/deleted meanwhile — it's
@@ -906,6 +960,7 @@ class WardrobeStore extends ChangeNotifier {
   void removeSlot(String slotId) {
     canvas = canvas.where((s) => s.id != slotId).toList();
     _worn.remove(slotId);
+    _unpinUnworn();
     notifyListeners();
     _persist();
   }
@@ -931,33 +986,13 @@ class WardrobeStore extends ChangeNotifier {
     _persistSoon();
   }
 
-  /// Swipes a card to the next (+1) or previous (-1) item of its kind,
-  /// skipping items worn on other cards.
-  void stepSlot(String slotId, int dir) {
-    final slot = slotById(slotId);
-    if (slot == null) return;
-    final current = itemInSlot(slotId);
-    final elsewhere = {
-      for (final s in visibleSlots)
-        if (s.id != slotId) ?itemInSlot(s.id)?.id,
-    };
-    final list = itemsOfKind(slot.kindId)
-        .where((i) => i.id == current?.id || !elsewhere.contains(i.id))
-        .toList();
-    if (list.isEmpty) return;
-    final i = current == null ? (dir > 0 ? -1 : 0) : list.indexWhere((x) => x.id == current.id);
-    final next = list[((i + dir) % list.length + list.length) % list.length];
-    final pinMoved = _transferPin(current, next);
-    _worn[slotId] = next.id;
-    notifyListeners();
-    if (pinMoved) _persist();
-  }
-
   /// Puts [itemId] on [slotId]'s card. If it's already on another card,
   /// the two cards swap — a garment can't be worn twice.
   void setSlotItem(String slotId, String itemId) {
     final slot = slotById(slotId);
-    if (slot == null) return;
+    // Only an item of the card's kind (e.g. one added from the card's pick
+    // sheet, but then filed under another kind, doesn't go on it).
+    if (slot == null || itemById(itemId)?.cat != slot.kindId) return;
     final pinMoved = _wearIn(slot, itemId);
     notifyListeners();
     if (pinMoved) _persist();
@@ -976,6 +1011,16 @@ class WardrobeStore extends ChangeNotifier {
     _worn[slot.id] = itemId;
     if (other != null) return false;
     return _transferPin(current, itemById(itemId));
+  }
+
+  /// A pin keeps an item on its card through Shuffle — so one that's no
+  /// longer on any card (its card removed, another outfit loaded, the item
+  /// moved to another kind) loses it, rather than turning up locked on some
+  /// card later.
+  void _unpinUnworn() {
+    final worn = {for (final s in visibleSlots) ?itemInSlot(s.id)?.id};
+    if (!items.any((i) => i.pinned && !worn.contains(i.id))) return;
+    items = [for (final i in items) i.pinned && !worn.contains(i.id) ? (i..pinned = false) : i];
   }
 
   /// If [oldItem] was pinned, moves the pin onto [newItem] instead of
@@ -1126,9 +1171,11 @@ class WardrobeStore extends ChangeNotifier {
     return null;
   }
 
-  /// Saves the current outfit, canvas layout included.
-  Future<void> saveOutfit() async {
+  /// Saves the current outfit, canvas layout included — unless the canvas
+  /// shows no clothes; returns whether it saved.
+  Future<bool> saveOutfit() async {
     final parts = currentOutfitItems;
+    if (parts.isEmpty) return false;
     outfits = [
       ...outfits,
       SavedOutfit(
@@ -1140,6 +1187,7 @@ class WardrobeStore extends ChangeNotifier {
     ];
     notifyListeners();
     await _persist();
+    return true;
   }
 
   /// The canvas as it is now, for saving or the diary.
@@ -1172,6 +1220,7 @@ class WardrobeStore extends ChangeNotifier {
     }
     canvas = restored;
     _fillEmptySlots();
+    _unpinUnworn();
     screen = WardrobeTabKind.outfit;
     notifyListeners();
     _persist();
@@ -1195,8 +1244,13 @@ class WardrobeStore extends ChangeNotifier {
     return true;
   }
 
-  /// Writes down a saved outfit as worn on [day].
-  void logSavedOutfit(DateTime day, SavedOutfit o) => _addDiaryEntry(day, o.slots);
+  /// Writes down a saved outfit as worn on [day] — unless none of its
+  /// clothes are left; returns whether it did.
+  bool logSavedOutfit(DateTime day, SavedOutfit o) {
+    if (!o.itemIds.any((id) => itemById(id) != null)) return false;
+    _addDiaryEntry(day, o.slots);
+    return true;
+  }
 
   void _addDiaryEntry(DateTime day, List<SavedSlot> slots) {
     final entry = DiaryEntry(id: _newId('d'), day: day, loggedAt: DateTime.now(), slots: slots);
@@ -1314,8 +1368,13 @@ class WardrobeStore extends ChangeNotifier {
     _persist();
   }
 
-  /// Whether anything is written down in the diary for today.
-  bool get loggedToday => diaryOn(DateTime.now()).isNotEmpty;
+  /// Whether anything is written down for today, in any wardrobe's diary
+  /// — the reminder is about the person, not the wardrobe.
+  bool get loggedToday {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return [...diary, for (final c in _stash.values) ...c.diary].any((e) => e.day == today);
+  }
 
   void setThemeMode(String? code) {
     themeModeCode = code;
@@ -1333,8 +1392,12 @@ class WardrobeStore extends ChangeNotifier {
     _persist();
   }
 
-  bool _isFreeWardrobeName(String name) =>
-      name.isNotEmpty && !wardrobes.any((w) => w.name == name);
+  bool _isFreeWardrobeName(String name, {String? except}) =>
+      name.isNotEmpty && !wardrobeNameTaken(name, except: except);
+
+  /// Whether another wardrobe (not [except]) is already called [name].
+  bool wardrobeNameTaken(String name, {String? except}) =>
+      wardrobes.any((w) => w.id != except && w.name == name.trim());
 
   /// Creates a new, empty wardrobe and switches to it (a no-op for a blank
   /// or already-taken name).
@@ -1361,7 +1424,7 @@ class WardrobeStore extends ChangeNotifier {
 
   Future<void> renameWardrobe(String id, String rawName) async {
     final name = rawName.trim();
-    if (!_isFreeWardrobeName(name)) return;
+    if (!_isFreeWardrobeName(name, except: id)) return;
     for (final w in wardrobes) {
       if (w.id == id) w.name = name;
     }

@@ -34,7 +34,7 @@ class _WardrobeTabState extends State<WardrobeTab> {
     final results = _query.trim().isEmpty
         ? null
         : store.items
-              .where((it) => matchesSearch(it, _query, kindName: store.kindName(it.cat), typeName: store.typeName(it)))
+              .where((it) => textsMatchSearch(store.searchTexts(it), _query))
               .toList();
 
     return CustomScrollView(
@@ -83,7 +83,6 @@ class _WardrobeTabState extends State<WardrobeTab> {
                           width: double.infinity,
                           height: double.infinity,
                           slotLabel: store.kindName(it.cat).toLowerCase(),
-                          caption: it.name ?? store.typeName(it) ?? '',
                           imagePath: it.imagePath,
                           onTap: () => widget.onOpenItem(it, [for (final x in results) x.id]),
                         ),
@@ -198,6 +197,7 @@ class _KindSection extends StatelessWidget {
       initialValue: '',
       hintText: l10n.newTypeHint,
       confirmLabel: l10n.create,
+      isTaken: (n) => store.typeNameTaken(kind.id, n),
     );
     if (name != null) store.addType(kind.id, name);
   }

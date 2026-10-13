@@ -12,8 +12,9 @@ import 'wardrobe_store.dart';
 import 'widgets.dart';
 
 /// How many fingers are on canvas cards right now. Swiping between tabs
-/// pauses while it's above zero, so swiping, dragging or pinching a card
-/// never turns the page instead.
+/// pauses while two are (a pinch), so resizing a card never turns the page
+/// instead. (Holding a card to move it can't turn it either: the hold wins
+/// before the finger moves.)
 final ValueNotifier<int> canvasTouches = ValueNotifier(0);
 
 /// Counts a finger landing on a card until it lifts — followed through the
@@ -32,8 +33,7 @@ void _trackCardTouch(PointerDownEvent down) {
 }
 
 /// The outfit canvas: a card per [CanvasSlot], wherever the user put it.
-/// Tap a card to pick what it shows, swipe it for the next item, pin it to
-/// keep it through Shuffle. Hold a card to drag it somewhere else (or onto
+/// Tap a card to pick what it shows, pin it to keep it through Shuffle. Hold a card to drag it somewhere else (or onto
 /// the bin that appears below, to remove it), pinch it to resize. The chips
 /// below add a card of any kind.
 class OutfitTab extends StatefulWidget {
@@ -48,7 +48,7 @@ class OutfitTab extends StatefulWidget {
 
 class _OutfitTabState extends State<OutfitTab> {
   /// How long a card is held before it lifts to be moved — short, since a
-  /// tap or swipe is over well before it.
+  /// tap is over well before it.
   static const _holdToMove = Duration(milliseconds: 250);
 
   /// The card being moved or resized, and where it is so far — committed to
@@ -62,10 +62,9 @@ class _OutfitTabState extends State<OutfitTab> {
   bool _moving = false;
   bool _overBin = false;
 
-  /// The most fingers seen in the current gesture on [_active], and how far
-  /// it went — a one-finger flick is a swipe to the next item.
+  /// The most fingers seen in the current gesture on [_active] — only two
+  /// (a pinch) move and resize the card.
   int _maxPointers = 0;
-  Offset _travel = Offset.zero;
 
   final _binKey = GlobalKey();
   Size _size = Size.zero;
@@ -98,7 +97,6 @@ class _OutfitTabState extends State<OutfitTab> {
   void _begin(CanvasSlot s) {
     _active = s.id;
     _drag = Offset.zero;
-    _travel = Offset.zero;
     _maxPointers = 0;
     _startScale = _liveScale = s.scale;
   }
@@ -276,7 +274,6 @@ class _OutfitTabState extends State<OutfitTab> {
 
     void onScaleUpdate(ScaleUpdateDetails d) => setState(() {
       _maxPointers = math.max(_maxPointers, d.pointerCount);
-      _travel += d.focalPointDelta;
       if (_maxPointers > 1) {
         _drag += d.focalPointDelta;
         if (d.pointerCount > 1) {
@@ -290,10 +287,8 @@ class _OutfitTabState extends State<OutfitTab> {
         _commit(store, s);
         return;
       }
-      final v = d.velocity.pixelsPerSecond.dx;
-      if (item != null && _travel.dx.abs() > _travel.dy.abs() && (v.abs() > 200 || _travel.dx.abs() > 60)) {
-        store.stepSlot(s.id, (v.abs() > 200 ? v : _travel.dx) < 0 ? 1 : -1);
-      }
+      // A one-finger drag does nothing: what a card shows is picked by
+      // tapping it.
       setState(() => _active = null);
     }
 
@@ -330,8 +325,7 @@ class _OutfitTabState extends State<OutfitTab> {
               if (_moving && _active == s.id) _endMove(store, s);
             },
         ),
-        // Two fingers resize (and move); a one-finger flick swipes to the
-        // next item.
+        // Two fingers resize (and move) the card.
         ScaleGestureRecognizer: GestureRecognizerFactoryWithHandlers<ScaleGestureRecognizer>(
           ScaleGestureRecognizer.new,
           (r) => r

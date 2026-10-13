@@ -608,4 +608,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editOnCanvas => 'Edit on canvas';
+
+  @override
+  String get diaryRemoveEntryTitle => 'Remove from the diary?';
+
+  @override
+  String get diaryRemoveEntryMessage =>
+      'This outfit will be removed from the day.';
+
+  @override
+  String get nameTaken => 'That name is already taken.';
 }

@@ -234,5 +234,8 @@
   "@outfitUsualWeekday": {"placeholders": {"weekday": {"type": "String"}}},
   "wearToday": "Nosím dnes",
   "outfitWornToday": "Dnes zapsáno",
-  "editOnCanvas": "Upravit na plátně"
+  "editOnCanvas": "Upravit na plátně",
+  "diaryRemoveEntryTitle": "Odebrat z deníku?",
+  "diaryRemoveEntryMessage": "Zápis tohoto outfitu u dne bude smazán.",
+  "nameTaken": "Tenhle název už existuje."
 }

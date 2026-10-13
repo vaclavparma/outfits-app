@@ -361,7 +361,7 @@ class _StatsState extends State<_Stats> {
     final maxCount = worn.isEmpty ? 1 : worn.first.count;
     final shownWorn = _showAll ? worn : worn.take(_topCount).toList();
 
-    final cutoff = today.subtract(const Duration(days: _unwornDays));
+    final cutoff = addDays(today, -_unwornDays);
     final unworn = [
       for (final it in store.items)
         if (stats[it.id]?.last case final last when last == null || !last.isAfter(cutoff))
@@ -423,7 +423,7 @@ class _StatsState extends State<_Stats> {
             browseIds: [for (final x in unworn) x.item.id],
             subtitle: [store.kindName(u.item.cat), ?store.typeName(u.item)].join(' · '),
             trailing: Text(
-              u.last == null ? l10n.statsNever : l10n.statsDaysAgo(today.difference(u.last!).inDays),
+              u.last == null ? l10n.statsNever : l10n.statsDaysAgo(daysBetween(u.last!, today)),
               style: AppText.mono(size: 10, letterSpacing: 0.3, color: u.last == null ? AppColors.warn : AppColors.mutedTag),
             ),
           ),

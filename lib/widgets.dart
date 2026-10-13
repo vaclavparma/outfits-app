@@ -489,11 +489,17 @@ Future<String?> promptTextDialog(
   required String initialValue,
   String? hintText,
   required String confirmLabel,
+  bool Function(String name)? isTaken,
 }) {
   return showDialog<String>(
     context: context,
-    builder: (dialogContext) =>
-        _TextPromptDialog(title: title, initialValue: initialValue, hintText: hintText, confirmLabel: confirmLabel),
+    builder: (dialogContext) => _TextPromptDialog(
+      title: title,
+      initialValue: initialValue,
+      hintText: hintText,
+      confirmLabel: confirmLabel,
+      isTaken: isTaken,
+    ),
   );
 }
 
@@ -502,7 +508,18 @@ class _TextPromptDialog extends StatefulWidget {
   final String initialValue;
   final String? hintText;
   final String confirmLabel;
-  const _TextPromptDialog({required this.title, required this.initialValue, this.hintText, required this.confirmLabel});
+
+  /// Says a name is already used — shown as an error, and it can't be
+  /// confirmed (neither can a blank one).
+  final bool Function(String name)? isTaken;
+
+  const _TextPromptDialog({
+    required this.title,
+    required this.initialValue,
+    this.hintText,
+    required this.confirmLabel,
+    this.isTaken,
+  });
 
   @override
   State<_TextPromptDialog> createState() => _TextPromptDialogState();
@@ -519,16 +536,24 @@ class _TextPromptDialogState extends State<_TextPromptDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final name = _controller.text.trim();
+    final taken = name.isNotEmpty && (widget.isTaken?.call(name) ?? false);
+    final canConfirm = name.isNotEmpty && !taken;
     return AlertDialog(
       backgroundColor: AppColors.surface,
       title: Text(widget.title, style: AppText.sans(size: 16, color: AppColors.ink)),
       content: TextField(
         controller: _controller,
         autofocus: true,
+        onChanged: (_) => setState(() {}),
+        onSubmitted: (_) {
+          if (canConfirm) Navigator.of(context).pop(_controller.text);
+        },
         style: AppText.sans(size: 14, color: AppColors.ink),
         decoration: InputDecoration(
           hintText: widget.hintText,
           hintStyle: AppText.sans(size: 14, color: AppColors.mutedTag),
+          errorText: taken ? AppLocalizations.of(context)!.nameTaken : null,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         ),
@@ -539,10 +564,14 @@ class _TextPromptDialogState extends State<_TextPromptDialog> {
           child: Text(AppLocalizations.of(context)!.cancel, style: AppText.sans(size: 13, color: AppColors.muted)),
         ),
         TextButton(
-          onPressed: () => Navigator.of(context).pop(_controller.text),
+          onPressed: canConfirm ? () => Navigator.of(context).pop(_controller.text) : null,
           child: Text(
             widget.confirmLabel,
-            style: AppText.sans(size: 13, weight: FontWeight.w500, color: AppColors.accent),
+            style: AppText.sans(
+              size: 13,
+              weight: FontWeight.w500,
+              color: canConfirm ? AppColors.accent : AppColors.mutedSoft,
+            ),
           ),
         ),
       ],
@@ -908,7 +937,10 @@ class OutfitPreview extends StatelessWidget {
   final List<SavedSlot> slots;
   final ClothingItem? Function(String id) itemById;
 
-  const OutfitPreview({super.key, required this.slots, required this.itemById});
+  /// What to call an item — shown on a card that has no photo.
+  final String Function(ClothingItem item) nameOf;
+
+  const OutfitPreview({super.key, required this.slots, required this.itemById, required this.nameOf});
 
   @override
   Widget build(BuildContext context) {
@@ -953,9 +985,10 @@ class OutfitPreview extends StatelessWidget {
                             rotationDeg: CanvasGeometry.tilt(c.slot.id),
                             imagePath: c.slot.itemId == null ? null : itemById(c.slot.itemId!)?.imagePath,
                             // Without a photo, its name says what it is.
-                            name: c.slot.itemId == null || itemById(c.slot.itemId!)?.imagePath != null
-                                ? null
-                                : itemById(c.slot.itemId!)?.name,
+                            name: switch (c.slot.itemId == null ? null : itemById(c.slot.itemId!)) {
+                              final it? when it.imagePath == null => nameOf(it),
+                              _ => null,
+                            },
                             shadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 2))],
                           ),
                         ),

@@ -234,7 +234,7 @@ class _PickGridState extends State<_PickGrid> {
     if (!tabs.any((t) => t.key == _tab)) _tab = null;
     final filtered = all
         .where((it) => inTypeTab(it, _tab))
-        .where((it) => matchesSearch(it, _query, kindName: kind?.name ?? '', typeName: store.typeName(it)))
+        .where((it) => textsMatchSearch(store.searchTexts(it), _query))
         .toList();
 
     return Column(
@@ -272,7 +272,6 @@ class _PickGridState extends State<_PickGrid> {
             return GarmentCard(
               width: double.infinity,
               height: double.infinity,
-              caption: it.name ?? store.typeName(it) ?? '',
               imagePath: it.imagePath,
               borderColor: current?.id == it.id ? AppColors.ink : AppColors.cardBorder,
               onTap: () {
@@ -340,6 +339,7 @@ class _AddItemFormState extends State<_AddItemForm> {
       initialValue: '',
       hintText: l10n.newTypeHint,
       confirmLabel: l10n.create,
+      isTaken: (n) => store.typeNameTaken(kindId, n),
     );
     if (name == null) return;
     final type = store.addType(kindId, name);
@@ -837,7 +837,7 @@ class _ItemWearStats extends StatelessWidget {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final last = stats?.last;
-    final ago = last == null ? null : today.difference(last).inDays;
+    final ago = last == null ? null : daysBetween(last, today);
     final perWear = count == 0 ? null : pricePerWear(item.price, count, locale);
     final worn = store.daysWornIn(item.id, now);
 
@@ -1218,6 +1218,10 @@ class _ColorEditorState extends State<_ColorEditor> {
 Future<void> saveCurrentOutfit(BuildContext context) async {
   final store = context.read<WardrobeStore>();
   final l10n = AppLocalizations.of(context)!;
+  if (store.currentOutfitItems.isEmpty) {
+    store.flash(l10n.diaryCanvasEmpty);
+    return;
+  }
   final existing = store.findSavedCopyOfCurrentOutfit();
   if (existing != null) {
     final saveAnyway = await confirmDialog(
@@ -1228,8 +1232,7 @@ Future<void> saveCurrentOutfit(BuildContext context) async {
     );
     if (!saveAnyway) return;
   }
-  await store.saveOutfit();
-  store.flash(l10n.toastOutfitSavedPlain);
+  if (await store.saveOutfit()) store.flash(l10n.toastOutfitSavedPlain);
 }
 
 /// Closes the sheets so the outfit tab (which the store just switched to)
@@ -1566,9 +1569,11 @@ Future<void> _confirmDeleteItem(
     message: '${l10n.deleteItemMessage} ${l10n.actionCannotBeUndone}',
     confirmLabel: l10n.delete,
   );
-  if (!confirmed) return;
+  if (!confirmed || !context.mounted) return;
+  // Close the detail first: once the item is gone, the page would close
+  // itself too — and a second pop after that would close the home screen.
+  Navigator.of(context).pop();
   await store.deleteItem(item);
-  if (context.mounted) Navigator.of(context).pop();
 }
 
 class SettingsContent extends StatelessWidget {
@@ -1696,7 +1701,7 @@ String _diaryDayTitle(BuildContext context, DateTime day) {
   final date = DateFormat.MMMMEEEEd(Localizations.localeOf(context).toString()).format(day);
   final prefix = day == today
       ? l10n.diaryToday
-      : day == today.subtract(const Duration(days: 1))
+      : day == addDays(today, -1)
       ? l10n.diaryYesterday
       : null;
   return prefix == null ? date : '$prefix · $date';
@@ -1749,7 +1754,7 @@ class _DiaryDay extends StatelessWidget {
                     clipBehavior: Clip.antiAlias,
                     child: Column(
                       children: [
-                        Expanded(child: OutfitPreview(slots: e.slots, itemById: store.itemById)),
+                        Expanded(child: OutfitPreview(slots: e.slots, itemById: store.itemById, nameOf: store.displayName)),
                         Padding(
                           padding: const EdgeInsets.fromLTRB(12, 0, 0, 0),
                           child: Row(
@@ -1765,7 +1770,15 @@ class _DiaryDay extends StatelessWidget {
                                 label: l10n.diaryRemoveEntry,
                                 child: GestureDetector(
                                   behavior: HitTestBehavior.opaque,
-                                  onTap: () => store.deleteDiaryEntry(e.id),
+                                  onTap: () async {
+                                    final confirmed = await confirmDialog(
+                                      context,
+                                      title: l10n.diaryRemoveEntryTitle,
+                                      message: l10n.diaryRemoveEntryMessage,
+                                      confirmLabel: l10n.delete,
+                                    );
+                                    if (confirmed) store.deleteDiaryEntry(e.id);
+                                  },
                                   child: SizedBox(
                                     width: 40,
                                     height: 40,
@@ -1845,7 +1858,8 @@ class _PickSavedOutfit extends StatelessWidget {
         for (final o in outfits)
           GestureDetector(
             onTap: () {
-              store.logSavedOutfit(day, o);
+              // An outfit whose clothes have all been deleted has nothing to log.
+              if (!store.logSavedOutfit(day, o)) return;
               final nav = Navigator.of(context)..pop();
               if (closeBoth) {
                 nav.pop();
@@ -1859,7 +1873,7 @@ class _PickSavedOutfit extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
               clipBehavior: Clip.antiAlias,
-              child: OutfitPreview(slots: o.slots, itemById: store.itemById),
+              child: OutfitPreview(slots: o.slots, itemById: store.itemById, nameOf: store.displayName),
             ),
           ),
       ],
@@ -1902,7 +1916,7 @@ class _LogOutfitState extends State<_LogOutfit> {
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
     final l10n = AppLocalizations.of(context)!;
-    final today = _today, yesterday = today.subtract(const Duration(days: 1));
+    final today = _today, yesterday = addDays(today, -1);
     final other = _day != today && _day != yesterday;
     final canvasHasClothes = store.currentOutfitItems.isNotEmpty;
 
@@ -2032,7 +2046,7 @@ class _OutfitDetail extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
           ),
           clipBehavior: Clip.antiAlias,
-          child: OutfitPreview(slots: outfit.slots, itemById: store.itemById),
+          child: OutfitPreview(slots: outfit.slots, itemById: store.itemById, nameOf: store.displayName),
         ),
         const SizedBox(height: 16),
         Row(
@@ -2060,7 +2074,7 @@ class _OutfitDetail extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: _WearTile(
-                value: switch (last == null ? null : today.difference(last).inDays) {
+                value: switch (last == null ? null : daysBetween(last, today)) {
                   null => l10n.statsNever,
                   0 => l10n.itemLastToday,
                   1 => l10n.itemLastYesterday,
@@ -2081,8 +2095,7 @@ class _OutfitDetail extends StatelessWidget {
                 filled: !wornToday,
                 textColor: wornToday ? AppColors.mutedSoft : Colors.white,
                 onTap: () {
-                  if (wornToday) return;
-                  store.logSavedOutfit(today, outfit);
+                  if (wornToday || !store.logSavedOutfit(today, outfit)) return;
                   store.flash(l10n.toastLogged(_diaryDayTitle(context, today)));
                   Navigator.of(context).pop();
                 },

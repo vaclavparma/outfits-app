@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'color_names.dart';
 import 'l10n/app_localizations.dart';
 import 'models.dart';
 import 'sheets.dart';
@@ -31,20 +30,13 @@ class _OutfitsTabState extends State<OutfitsTab> {
   String _query = '';
   _Filter _filter = _Filter.all;
 
-  /// Everything an outfit can be found by: each piece's name (its own or
-  /// made up), kind, type, color and other details.
-  List<String?> _searchTexts(WardrobeStore store, AppLocalizations l10n, SavedOutfit o) => [
+  /// Everything an outfit can be found by: everything each of its pieces
+  /// can (see [WardrobeStore.searchTexts]).
+  List<String?> _searchTexts(WardrobeStore store, SavedOutfit o) => [
     for (final id in o.itemIds)
-      if (store.itemById(id) case final it?) ...[
-        store.displayName(it),
-        store.kindName(it.cat),
-        store.typeName(it),
-        if (it.colors case final c? when c.isNotEmpty) l10n.colorFamily(ColorFamily.of(c.first).name),
-        it.seller,
-        it.size,
-        it.note,
-      ],
+      if (store.itemById(id) case final it?) ...store.searchTexts(it),
   ];
+
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +46,7 @@ class _OutfitsTabState extends State<OutfitsTab> {
     final wears = store.outfitWearStats;
     final all = store.outfits.reversed.toList();
     var shown = all
-        .where((o) => textsMatchSearch(_searchTexts(store, l10n, o), _query))
+        .where((o) => textsMatchSearch(_searchTexts(store, o), _query))
         .toList();
     switch (_filter) {
       case _Filter.all:
@@ -65,7 +57,7 @@ class _OutfitsTabState extends State<OutfitsTab> {
         shown = shown.where((o) => (wears[o.id]?.count ?? 0) >= _oftenWorn).toList()
           ..sort((a, b) => wears[b.id]!.count.compareTo(wears[a.id]!.count));
       case _Filter.longUnworn:
-        final cutoff = today.subtract(const Duration(days: _unwornDays));
+        final cutoff = addDays(today, -_unwornDays);
         shown = shown.where((o) => !(wears[o.id]?.last.isAfter(cutoff) ?? false)).toList()
           // Never worn first, then the longest ago.
           ..sort((a, b) {
@@ -189,7 +181,7 @@ class _OutfitCard extends StatelessWidget {
             Positioned.fill(
               child: Padding(
                 padding: const EdgeInsets.only(bottom: 30),
-                child: OutfitPreview(slots: outfit.slots, itemById: store.itemById),
+                child: OutfitPreview(slots: outfit.slots, itemById: store.itemById, nameOf: store.displayName),
               ),
             ),
             Positioned(

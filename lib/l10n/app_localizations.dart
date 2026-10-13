@@ -1081,6 +1081,24 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Upravit na plátně'**
   String get editOnCanvas;
+
+  /// No description provided for @diaryRemoveEntryTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Odebrat z deníku?'**
+  String get diaryRemoveEntryTitle;
+
+  /// No description provided for @diaryRemoveEntryMessage.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zápis tohoto outfitu u dne bude smazán.'**
+  String get diaryRemoveEntryMessage;
+
+  /// No description provided for @nameTaken.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tenhle název už existuje.'**
+  String get nameTaken;
 }
 
 class _AppLocalizationsDelegate
