@@ -432,4 +432,154 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get newTypeTile => 'new type';
+
+  @override
+  String get tabDiary => 'Diary';
+
+  @override
+  String get diaryCalendar => 'Calendar';
+
+  @override
+  String get diaryStats => 'Stats';
+
+  @override
+  String diaryDaysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '$count day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get diaryToday => 'Today';
+
+  @override
+  String get diaryYesterday => 'Yesterday';
+
+  @override
+  String get diaryDayEmpty => 'Nothing logged for this day yet.';
+
+  @override
+  String get diaryFromCanvas => 'From canvas';
+
+  @override
+  String get diaryFromSaved => 'From saved';
+
+  @override
+  String get diaryCanvasEmpty => 'There are no clothes on the canvas yet.';
+
+  @override
+  String get diaryPickSavedTitle => 'Saved outfits';
+
+  @override
+  String get diaryNoSaved =>
+      'You have no saved outfits yet. Save one on the main page.';
+
+  @override
+  String get diaryRemoveEntry => 'Remove from diary';
+
+  @override
+  String statsDaysLogged(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'days logged this month',
+      one: 'day logged this month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statsItemsWorn => 'items worn this month';
+
+  @override
+  String get statsTimesWorn => 'Times worn';
+
+  @override
+  String get statsAllTime => 'all time';
+
+  @override
+  String statsShowAll(int count) {
+    return 'show all $count';
+  }
+
+  @override
+  String get statsShowLess => 'show less';
+
+  @override
+  String get statsNotWorn => 'Not worn lately';
+
+  @override
+  String get statsNever => 'never';
+
+  @override
+  String statsDaysAgo(int n) {
+    return '$n days ago';
+  }
+
+  @override
+  String statsNothingUnworn(int n) {
+    return 'Every piece of clothing got worn at least once in the last $n days.';
+  }
+
+  @override
+  String get statsEmpty =>
+      'Stats show up once you log your first outfit in the calendar.';
+
+  @override
+  String timesWorn(int n) {
+    return '$n×';
+  }
+
+  @override
+  String colorFamily(String color) {
+    String _temp0 = intl.Intl.selectLogic(color, {
+      'white': 'White',
+      'beige': 'Beige',
+      'yellow': 'Yellow',
+      'orange': 'Orange',
+      'red': 'Red',
+      'pink': 'Pink',
+      'purple': 'Purple',
+      'blue': 'Blue',
+      'green': 'Green',
+      'brown': 'Brown',
+      'grey': 'Grey',
+      'black': 'Black',
+      'other': 'Other',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get statsColors => 'Colors';
+
+  @override
+  String get statsInWardrobe => 'in wardrobe';
+
+  @override
+  String get statsWornLabel => 'worn';
+
+  @override
+  String get statsColWardrobe => 'wardrobe';
+
+  @override
+  String get statsNotWornSince => '30+ days';
+
+  @override
+  String get diaryLogOutfit => 'Log an outfit';
+
+  @override
+  String get sectionDay => 'day';
+
+  @override
+  String get diaryOtherDay => 'Other day…';
+
+  @override
+  String toastLogged(String date) {
+    return 'Logged in the diary · $date';
+  }
 }

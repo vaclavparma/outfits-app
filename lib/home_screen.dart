@@ -3,6 +3,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 
 import 'collections_tab.dart';
+import 'diary_tab.dart';
 import 'l10n/app_localizations.dart';
 import 'models.dart';
 import 'outfit_tab.dart';
@@ -277,6 +278,7 @@ class _TabRoot extends StatelessWidget {
                     openItemSheet(context, item, browseIds: browseIds),
               ),
               WardrobeTabKind.collections => const CollectionsTab(),
+              WardrobeTabKind.diary => const DiaryTab(),
             },
           ),
         ],
@@ -469,6 +471,7 @@ class _BottomTabs extends StatelessWidget {
       (WardrobeTabKind.outfit, l10n.tabOutfit),
       (WardrobeTabKind.wardrobe, l10n.tabWardrobe),
       (WardrobeTabKind.collections, l10n.tabCollections),
+      (WardrobeTabKind.diary, l10n.tabDiary),
     ];
     return Container(
       decoration: BoxDecoration(

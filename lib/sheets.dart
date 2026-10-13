@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import 'l10n/app_localizations.dart';
@@ -1678,4 +1679,324 @@ class SettingsSectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       Text(uppercase ? text.toUpperCase() : text, style: _sectionLabelStyle);
+}
+
+/// One day of the diary: the outfits written down for it, and buttons to
+/// add the one on the canvas or a saved one.
+void openDiaryDaySheet(BuildContext context, DateTime day) {
+  _showSheet(context, (ctx) => _diaryDayTitle(ctx, day), _DiaryDay(day: day));
+}
+
+String _diaryDayTitle(BuildContext context, DateTime day) {
+  final l10n = AppLocalizations.of(context)!;
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final date = DateFormat.MMMMEEEEd(Localizations.localeOf(context).toString()).format(day);
+  final prefix = day == today
+      ? l10n.diaryToday
+      : day == today.subtract(const Duration(days: 1))
+      ? l10n.diaryYesterday
+      : null;
+  return prefix == null ? date : '$prefix · $date';
+}
+
+class _DiaryDay extends StatelessWidget {
+  final DateTime day;
+  const _DiaryDay({required this.day});
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final entries = store.diaryOn(day)..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
+    final canvasHasClothes = store.currentOutfitItems.isNotEmpty;
+    final time = DateFormat.Hm(Localizations.localeOf(context).toString());
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          entries.isEmpty ? l10n.diaryDayEmpty : l10n.outfitCount(entries.length),
+          style: entries.isEmpty
+              ? AppText.sans(size: 13, color: AppColors.mutedTag)
+              : AppText.mono(size: 10, letterSpacing: 0.5, color: AppColors.mutedTag),
+        ),
+        const SizedBox(height: 14),
+        if (entries.isNotEmpty) ...[
+          SizedBox(
+            height: 244,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: entries.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
+              itemBuilder: (context, i) {
+                final e = entries[i];
+                return GestureDetector(
+                  // Wear it again: onto the canvas.
+                  onTap: () {
+                    store.loadDiaryEntry(e);
+                    _backToOutfit(context);
+                  },
+                  child: Container(
+                    width: 176,
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      border: Border.all(color: AppColors.rowBorder),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      children: [
+                        Expanded(child: OutfitPreview(slots: e.slots, itemById: store.itemById)),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 0, 0, 0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  time.format(e.loggedAt),
+                                  style: AppText.mono(size: 10, letterSpacing: 0.5, color: AppColors.label),
+                                ),
+                              ),
+                              Semantics(
+                                button: true,
+                                label: l10n.diaryRemoveEntry,
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => store.deleteDiaryEntry(e.id),
+                                  child: SizedBox(
+                                    width: 40,
+                                    height: 40,
+                                    child: Icon(Icons.close, size: 16, color: AppColors.muted),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 18),
+        ],
+        Row(
+          children: [
+            Expanded(
+              child: _DetailAction(
+                label: '+ ${l10n.diaryFromCanvas}',
+                filled: canvasHasClothes,
+                textColor: canvasHasClothes ? Colors.white : AppColors.mutedSoft,
+                onTap: () {
+                  if (!store.logCanvas(day)) store.flash(l10n.diaryCanvasEmpty);
+                },
+              ),
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: _DetailAction(
+                label: l10n.diaryFromSaved,
+                textColor: AppColors.ink,
+                onTap: () => _showSheet(
+                  context,
+                  (ctx) => AppLocalizations.of(ctx)!.diaryPickSavedTitle,
+                  _PickSavedOutfit(day: day),
+                  maxHeightFactor: 0.92,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Every saved outfit, by collection — tap one to write it down for [day].
+/// [closeBoth] also closes the sheet this one was opened from, with a toast
+/// saying where it was logged.
+class _PickSavedOutfit extends StatelessWidget {
+  final DateTime day;
+  final bool closeBoth;
+  const _PickSavedOutfit({required this.day, this.closeBoth = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final cols = [
+      for (final c in store.cols)
+        if ((store.saved[c] ?? const []).isNotEmpty) c,
+    ];
+    if (cols.isEmpty) {
+      return Text(l10n.diaryNoSaved, style: AppText.sans(size: 13, color: AppColors.mutedTag, height: 1.4));
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (final c in cols) ...[
+          Text(c.toUpperCase(), style: _sectionLabelStyle),
+          const SizedBox(height: 8),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            crossAxisCount: gridColumns(context, 3),
+            mainAxisSpacing: 9,
+            crossAxisSpacing: 9,
+            childAspectRatio: 0.72,
+            children: [
+              for (final o in store.saved[c]!)
+                GestureDetector(
+                  onTap: () {
+                    store.logSavedOutfit(day, o);
+                    final nav = Navigator.of(context)..pop();
+                    if (closeBoth) {
+                      nav.pop();
+                      store.flash(l10n.toastLogged(_diaryDayTitle(context, day)));
+                    }
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      border: Border.all(color: AppColors.rowBorder),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(child: OutfitPreview(slots: o.slots, itemById: store.itemById)),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(9, 6, 9, 8),
+                          child: Text(
+                            o.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppText.sans(size: 12, color: AppColors.ink),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 18),
+        ],
+      ],
+    );
+  }
+}
+
+/// Logs a worn outfit without going through the calendar: pick the day
+/// (today by default), then the outfit on the canvas or a saved one.
+void openLogOutfitSheet(BuildContext context) {
+  _showSheet(context, (ctx) => AppLocalizations.of(ctx)!.diaryLogOutfit, const _LogOutfit());
+}
+
+class _LogOutfit extends StatefulWidget {
+  const _LogOutfit();
+
+  @override
+  State<_LogOutfit> createState() => _LogOutfitState();
+}
+
+class _LogOutfitState extends State<_LogOutfit> {
+  static DateTime get _today {
+    final n = DateTime.now();
+    return DateTime(n.year, n.month, n.day);
+  }
+
+  late DateTime _day = _today;
+
+  Future<void> _pickDay() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _day,
+      firstDate: DateTime(2000),
+      lastDate: _today,
+    );
+    if (picked != null && mounted) setState(() => _day = DateTime(picked.year, picked.month, picked.day));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final today = _today, yesterday = today.subtract(const Duration(days: 1));
+    final other = _day != today && _day != yesterday;
+    final canvasHasClothes = store.currentOutfitItems.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.sectionDay, style: _sectionLabelStyle),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 7,
+          runSpacing: 7,
+          children: [
+            SelectChip(
+              label: l10n.diaryToday,
+              active: _day == today,
+              mono: false,
+              height: 34,
+              onTap: () => setState(() => _day = today),
+            ),
+            SelectChip(
+              label: l10n.diaryYesterday,
+              active: _day == yesterday,
+              mono: false,
+              height: 34,
+              onTap: () => setState(() => _day = yesterday),
+            ),
+            SelectChip(
+              label: other ? DateFormat.MMMMEEEEd(Localizations.localeOf(context).toString()).format(_day) : l10n.diaryOtherDay,
+              active: other,
+              mono: false,
+              height: 34,
+              onTap: _pickDay,
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: _DetailAction(
+                label: '+ ${l10n.diaryFromCanvas}',
+                filled: canvasHasClothes,
+                textColor: canvasHasClothes ? Colors.white : AppColors.mutedSoft,
+                onTap: () {
+                  if (!store.logCanvas(_day)) {
+                    store.flash(l10n.diaryCanvasEmpty);
+                    return;
+                  }
+                  store.flash(l10n.toastLogged(_diaryDayTitle(context, _day)));
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: _DetailAction(
+                label: l10n.diaryFromSaved,
+                textColor: AppColors.ink,
+                onTap: () => _showSheet(
+                  context,
+                  (ctx) => AppLocalizations.of(ctx)!.diaryPickSavedTitle,
+                  _PickSavedOutfit(day: _day, closeBoth: true),
+                  maxHeightFactor: 0.92,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 }

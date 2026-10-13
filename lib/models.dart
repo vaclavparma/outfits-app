@@ -332,4 +332,42 @@ class Wardrobe {
   Wardrobe({required this.id, required this.name});
 }
 
-enum WardrobeTabKind { outfit, wardrobe, collections }
+/// An outfit written into the diary as worn on [day] (midnight, local
+/// time): the canvas it was laid out on, like a [SavedOutfit]'s, and when
+/// it was written down.
+class DiaryEntry {
+  final String id;
+  final DateTime day;
+  final DateTime loggedAt;
+  final List<SavedSlot> slots;
+
+  DiaryEntry({required this.id, required DateTime day, required this.loggedAt, required this.slots})
+    : day = DateTime(day.year, day.month, day.day);
+
+  /// The items worn, each once.
+  Iterable<String> get itemIds => {for (final s in slots) ?s.itemId};
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'day': '${day.year}-${_two(day.month)}-${_two(day.day)}',
+    'loggedAt': loggedAt.millisecondsSinceEpoch,
+    'slots': slots.map((s) => s.toJson()).toList(),
+  };
+
+  factory DiaryEntry.fromJson(Map<String, dynamic> json) {
+    final parts = (json['day'] as String).split('-').map(int.parse).toList();
+    return DiaryEntry(
+      id: json['id'] as String,
+      day: DateTime(parts[0], parts[1], parts[2]),
+      loggedAt: DateTime.fromMillisecondsSinceEpoch(json['loggedAt'] as int),
+      slots: [
+        for (final e in json['slots'] as List<dynamic>? ?? const [])
+          if (e is Map<String, dynamic>) SavedSlot.fromJson(e),
+      ],
+    );
+  }
+
+  static String _two(int n) => n.toString().padLeft(2, '0');
+}
+
+enum WardrobeTabKind { outfit, wardrobe, collections, diary }

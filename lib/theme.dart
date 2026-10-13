@@ -23,6 +23,7 @@ class AppPalette {
   final Color accent;
   final Color accentDark;
   final Color danger;
+  final Color warn;
 
   const AppPalette({
     required this.background,
@@ -46,6 +47,7 @@ class AppPalette {
     required this.accent,
     required this.accentDark,
     required this.danger,
+    required this.warn,
   });
 
   /// Design tokens lifted from the Šatník mockup (Satnik.dc.html).
@@ -71,6 +73,7 @@ class AppPalette {
     accent: Color(0xFF006D77),
     accentDark: Color(0xFF004852),
     danger: Color(0xFFD64541),
+    warn: Color(0xFFB36B2C),
   );
 
   /// The same warm greys, inverted: near-black surfaces with light ink. The
@@ -98,6 +101,7 @@ class AppPalette {
     accent: Color(0xFF177E88),
     accentDark: Color(0xFF0E5C64),
     danger: Color(0xFFC9403C),
+    warn: Color(0xFFD39A5C),
   );
 }
 
@@ -139,6 +143,9 @@ class AppColors {
 
   /// Red for destructive actions; white text on it.
   static Color get danger => current.danger;
+
+  /// Warm amber for something worth a look (clothes never worn).
+  static Color get warn => current.warn;
 }
 
 class AppText {

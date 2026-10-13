@@ -10,6 +10,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'color_detect.dart';
+import 'color_names.dart';
 import 'l10n/app_localizations.dart';
 import 'models.dart';
 
@@ -58,6 +59,9 @@ class WardrobeStore extends ChangeNotifier {
   List<ClothingItem> items = [];
   List<String> cols = [];
   Map<String, List<SavedOutfit>> saved = {};
+
+  /// The outfits written down as worn, oldest first.
+  List<DiaryEntry> diary = [];
 
   /// Every kind of clothing, in display order — shared by all wardrobes.
   List<ClothingKind> kinds = [];
@@ -409,6 +413,7 @@ class WardrobeStore extends ChangeNotifier {
     items: items,
     cols: cols,
     saved: saved,
+    diary: diary,
   );
 
   /// Makes [id] the active wardrobe: moves its content out of [_stash] into
@@ -421,6 +426,7 @@ class WardrobeStore extends ChangeNotifier {
     items = c.items;
     cols = c.cols;
     saved = c.saved;
+    diary = c.diary;
     // Open on a random outfit, as if Shuffle had just been pressed — with
     // pinned garments already on their cards, since that's what Shuffle
     // keeps (otherwise a pin would sit on an item that isn't even showing).
@@ -1166,10 +1172,7 @@ class WardrobeStore extends ChangeNotifier {
       name: name,
       catKeys: parts.map((i) => i.cat).toList(),
       itemIds: parts.map((i) => i.id).toList(),
-      slots: [
-        for (final s in visibleSlots)
-          SavedSlot(id: s.id, kindId: s.kindId, x: s.x, y: s.y, scale: s.scale, itemId: itemInSlot(s.id)?.id),
-      ],
+      slots: _canvasSnapshot(),
     );
     saved = {
       ...saved,
@@ -1180,11 +1183,22 @@ class WardrobeStore extends ChangeNotifier {
     return (col: col, name: name);
   }
 
+  /// The canvas as it is now, for saving or the diary.
+  List<SavedSlot> _canvasSnapshot() => [
+    for (final s in visibleSlots)
+      SavedSlot(id: s.id, kindId: s.kindId, x: s.x, y: s.y, scale: s.scale, itemId: itemInSlot(s.id)?.id),
+  ];
+
   /// Puts a saved outfit on the canvas, laid out as it was saved.
-  void loadOutfit(SavedOutfit o) {
+  void loadOutfit(SavedOutfit o) => _loadSlots(o.slots);
+
+  /// Puts an outfit from the diary on the canvas, laid out as it was.
+  void loadDiaryEntry(DiaryEntry e) => _loadSlots(e.slots);
+
+  void _loadSlots(List<SavedSlot> slots) {
     _worn = {};
     final restored = <CanvasSlot>[];
-    for (final ss in o.slots) {
+    for (final ss in slots) {
       if (kindById(ss.kindId) == null) continue;
       final slot = CanvasSlot(
         // Its own id again (unless taken), so it's tilted as it was.
@@ -1202,6 +1216,117 @@ class WardrobeStore extends ChangeNotifier {
     screen = WardrobeTabKind.outfit;
     notifyListeners();
     _persist();
+  }
+
+  // ---------------------------------------------------------------------
+  // Diary
+
+  /// The outfits written down for [day], in the order they were.
+  List<DiaryEntry> diaryOn(DateTime day) {
+    final d = DateTime(day.year, day.month, day.day);
+    return diary.where((e) => e.day == d).toList();
+  }
+
+  /// Writes down what's on the canvas now as worn on [day]. Returns false
+  /// (and writes nothing) when the canvas shows no clothes.
+  bool logCanvas(DateTime day) {
+    final slots = _canvasSnapshot();
+    if (!slots.any((s) => s.itemId != null)) return false;
+    _addDiaryEntry(day, slots);
+    return true;
+  }
+
+  /// Writes down a saved outfit as worn on [day].
+  void logSavedOutfit(DateTime day, SavedOutfit o) => _addDiaryEntry(day, o.slots);
+
+  void _addDiaryEntry(DateTime day, List<SavedSlot> slots) {
+    final entry = DiaryEntry(id: _newId('d'), day: day, loggedAt: DateTime.now(), slots: slots);
+    diary = [...diary, entry]..sort((a, b) => a.day.compareTo(b.day));
+    notifyListeners();
+    _persist();
+  }
+
+  void deleteDiaryEntry(String id) {
+    diary = diary.where((e) => e.id != id).toList();
+    notifyListeners();
+    _persist();
+  }
+
+  /// How many days of [month] (any day in it) have something written down.
+  int daysLoggedIn(DateTime month) =>
+      diary.where((e) => e.day.year == month.year && e.day.month == month.month).map((e) => e.day).toSet().length;
+
+  /// Ids of the items worn at least once in [month].
+  Set<String> itemsWornIn(DateTime month) => {
+    for (final e in diary)
+      if (e.day.year == month.year && e.day.month == month.month) ...e.itemIds,
+  };
+
+  /// Which items were worn on each day of [month] (each item once a day).
+  Map<DateTime, Set<String>> _wornByDay(DateTime month) {
+    final days = <DateTime, Set<String>>{};
+    for (final e in diary) {
+      if (e.day.year == month.year && e.day.month == month.month) (days[e.day] ??= {}).addAll(e.itemIds);
+    }
+    return days;
+  }
+
+  /// How many items of the active wardrobe are of each color (their main
+  /// detected color); items without colors aren't counted.
+  Map<ColorFamily, int> get wardrobeColors {
+    final counts = <ColorFamily, int>{};
+    for (final it in items) {
+      final c = it.colors;
+      if (c != null && c.isNotEmpty) counts.update(ColorFamily.of(c.first), (n) => n + 1, ifAbsent: () => 1);
+    }
+    return counts;
+  }
+
+  /// How often each color was worn in [month]: every day an item was worn
+  /// counts once, for its main color.
+  Map<ColorFamily, int> wornColorsIn(DateTime month) {
+    final counts = <ColorFamily, int>{};
+    for (final ids in _wornByDay(month).values) {
+      for (final id in ids) {
+        final c = itemById(id)?.colors;
+        if (c != null && c.isNotEmpty) counts.update(ColorFamily.of(c.first), (n) => n + 1, ifAbsent: () => 1);
+      }
+    }
+    return counts;
+  }
+
+  /// Up to three colors worn the most on [day], by the main color of each
+  /// item (top to bottom, so ties go to what was higher up).
+  List<ColorFamily> dayColors(DateTime day) {
+    final counts = <ColorFamily, int>{};
+    for (final e in diaryOn(day)) {
+      final slots = [...e.slots]..sort((a, b) => a.y.compareTo(b.y));
+      for (final s in slots) {
+        final c = s.itemId == null ? null : itemById(s.itemId!)?.colors;
+        if (c == null || c.isEmpty) continue;
+        counts.update(ColorFamily.of(c.first), (n) => n + 1, ifAbsent: () => 1);
+      }
+    }
+    // Ties go to the color that showed up first (map keys keep that order).
+    final order = counts.keys.toList();
+    final ranked = [...order]
+      ..sort((a, b) => counts[b] != counts[a] ? counts[b]!.compareTo(counts[a]!) : order.indexOf(a).compareTo(order.indexOf(b)));
+    return ranked.take(3).toList();
+  }
+
+  /// For every item worn at least once: on how many days, and the last one.
+  /// Two outfits with the same item on one day count as one wear.
+  Map<String, ({int count, DateTime last})> get wearStats {
+    final days = <String, Set<DateTime>>{};
+    for (final e in diary) {
+      for (final id in e.itemIds) {
+        (days[id] ??= {}).add(e.day);
+      }
+    }
+    return {
+      for (final MapEntry(:key, :value) in days.entries)
+        key: (count: value.length, last: value.reduce((a, b) => a.isAfter(b) ? a : b)),
+    };
   }
 
   // ---------------------------------------------------------------------
@@ -1334,14 +1459,16 @@ class _WardrobeContent {
   List<ClothingItem> items;
   List<String> cols;
   Map<String, List<SavedOutfit>> saved;
+  List<DiaryEntry> diary;
 
   _WardrobeContent({
     required this.items,
     required this.cols,
     required this.saved,
+    required this.diary,
   });
 
-  _WardrobeContent.empty() : items = [], cols = [], saved = {};
+  _WardrobeContent.empty() : items = [], cols = [], saved = {}, diary = [];
 
   /// Each section is parsed independently, and each entry within a section
   /// is parsed independently too, so a single corrupt item/outfit can't
@@ -1380,6 +1507,15 @@ class _WardrobeContent {
       });
     } catch (_) {}
 
+    try {
+      for (final e in data['diary'] as List<dynamic>? ?? const []) {
+        try {
+          c.diary.add(DiaryEntry.fromJson(e as Map<String, dynamic>));
+        } catch (_) {}
+      }
+      c.diary.sort((a, b) => a.day.compareTo(b.day));
+    } catch (_) {}
+
     return c;
   }
 
@@ -1389,5 +1525,6 @@ class _WardrobeContent {
     'saved': saved.map(
       (key, value) => MapEntry(key, value.map((e) => e.toJson()).toList()),
     ),
+    'diary': diary.map((e) => e.toJson()).toList(),
   };
 }

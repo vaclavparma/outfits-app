@@ -1018,6 +1018,10 @@ class OutfitPreview extends StatelessWidget {
                               height: c.rect.height,
                               rotationDeg: CanvasGeometry.tilt(c.slot.id),
                               imagePath: c.slot.itemId == null ? null : itemById(c.slot.itemId!)?.imagePath,
+                              // Without a photo, its name says what it is.
+                              name: c.slot.itemId == null || itemById(c.slot.itemId!)?.imagePath != null
+                                  ? null
+                                  : itemById(c.slot.itemId!)?.name,
                               shadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 2))],
                             ),
                           ),

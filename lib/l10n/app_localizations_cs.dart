@@ -435,4 +435,156 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get newTypeTile => 'nový typ';
+
+  @override
+  String get tabDiary => 'Deník';
+
+  @override
+  String get diaryCalendar => 'Kalendář';
+
+  @override
+  String get diaryStats => 'Statistiky';
+
+  @override
+  String diaryDaysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count dní',
+      few: '$count dny',
+      one: '$count den',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get diaryToday => 'Dnes';
+
+  @override
+  String get diaryYesterday => 'Včera';
+
+  @override
+  String get diaryDayEmpty => 'Na tenhle den zatím nemáš nic zapsané.';
+
+  @override
+  String get diaryFromCanvas => 'Z plátna';
+
+  @override
+  String get diaryFromSaved => 'Z uložených';
+
+  @override
+  String get diaryCanvasEmpty => 'Na plátně zatím není žádné oblečení.';
+
+  @override
+  String get diaryPickSavedTitle => 'Uložené outfity';
+
+  @override
+  String get diaryNoSaved =>
+      'Zatím nemáš žádné uložené outfity. Ulož si nějaký na hlavní stránce.';
+
+  @override
+  String get diaryRemoveEntry => 'Odebrat z deníku';
+
+  @override
+  String statsDaysLogged(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'dní zapsáno tento měsíc',
+      few: 'dny zapsány tento měsíc',
+      one: 'den zapsán tento měsíc',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statsItemsWorn => 'kusů nošeno tento měsíc';
+
+  @override
+  String get statsTimesWorn => 'Počet nošení';
+
+  @override
+  String get statsAllTime => 'celkem';
+
+  @override
+  String statsShowAll(int count) {
+    return 'zobrazit všech $count';
+  }
+
+  @override
+  String get statsShowLess => 'zobrazit méně';
+
+  @override
+  String get statsNotWorn => 'Dlouho nenošené';
+
+  @override
+  String get statsNever => 'nikdy';
+
+  @override
+  String statsDaysAgo(int n) {
+    return 'před $n dny';
+  }
+
+  @override
+  String statsNothingUnworn(int n) {
+    return 'Všechno oblečení bylo za posledních $n dní aspoň jednou na řadě.';
+  }
+
+  @override
+  String get statsEmpty =>
+      'Statistiky se objeví, až v kalendáři zapíšeš první outfit.';
+
+  @override
+  String timesWorn(int n) {
+    return '$n×';
+  }
+
+  @override
+  String colorFamily(String color) {
+    String _temp0 = intl.Intl.selectLogic(color, {
+      'white': 'Bílá',
+      'beige': 'Béžová',
+      'yellow': 'Žlutá',
+      'orange': 'Oranžová',
+      'red': 'Červená',
+      'pink': 'Růžová',
+      'purple': 'Fialová',
+      'blue': 'Modrá',
+      'green': 'Zelená',
+      'brown': 'Hnědá',
+      'grey': 'Šedá',
+      'black': 'Černá',
+      'other': 'Jiná',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get statsColors => 'Barvy';
+
+  @override
+  String get statsInWardrobe => 'v šatníku';
+
+  @override
+  String get statsWornLabel => 'na sobě';
+
+  @override
+  String get statsColWardrobe => 'šatník';
+
+  @override
+  String get statsNotWornSince => '30+ dní';
+
+  @override
+  String get diaryLogOutfit => 'Zapsat outfit';
+
+  @override
+  String get sectionDay => 'den';
+
+  @override
+  String get diaryOtherDay => 'Jiný den…';
+
+  @override
+  String toastLogged(String date) {
+    return 'Zapsáno do deníku · $date';
+  }
 }

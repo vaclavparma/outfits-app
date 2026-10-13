@@ -829,6 +829,216 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'nový typ'**
   String get newTypeTile;
+
+  /// No description provided for @tabDiary.
+  ///
+  /// In cs, this message translates to:
+  /// **'Deník'**
+  String get tabDiary;
+
+  /// No description provided for @diaryCalendar.
+  ///
+  /// In cs, this message translates to:
+  /// **'Kalendář'**
+  String get diaryCalendar;
+
+  /// No description provided for @diaryStats.
+  ///
+  /// In cs, this message translates to:
+  /// **'Statistiky'**
+  String get diaryStats;
+
+  /// No description provided for @diaryDaysCount.
+  ///
+  /// In cs, this message translates to:
+  /// **'{count, plural, one{{count} den} few{{count} dny} other{{count} dní}}'**
+  String diaryDaysCount(int count);
+
+  /// No description provided for @diaryToday.
+  ///
+  /// In cs, this message translates to:
+  /// **'Dnes'**
+  String get diaryToday;
+
+  /// No description provided for @diaryYesterday.
+  ///
+  /// In cs, this message translates to:
+  /// **'Včera'**
+  String get diaryYesterday;
+
+  /// No description provided for @diaryDayEmpty.
+  ///
+  /// In cs, this message translates to:
+  /// **'Na tenhle den zatím nemáš nic zapsané.'**
+  String get diaryDayEmpty;
+
+  /// No description provided for @diaryFromCanvas.
+  ///
+  /// In cs, this message translates to:
+  /// **'Z plátna'**
+  String get diaryFromCanvas;
+
+  /// No description provided for @diaryFromSaved.
+  ///
+  /// In cs, this message translates to:
+  /// **'Z uložených'**
+  String get diaryFromSaved;
+
+  /// No description provided for @diaryCanvasEmpty.
+  ///
+  /// In cs, this message translates to:
+  /// **'Na plátně zatím není žádné oblečení.'**
+  String get diaryCanvasEmpty;
+
+  /// No description provided for @diaryPickSavedTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Uložené outfity'**
+  String get diaryPickSavedTitle;
+
+  /// No description provided for @diaryNoSaved.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zatím nemáš žádné uložené outfity. Ulož si nějaký na hlavní stránce.'**
+  String get diaryNoSaved;
+
+  /// No description provided for @diaryRemoveEntry.
+  ///
+  /// In cs, this message translates to:
+  /// **'Odebrat z deníku'**
+  String get diaryRemoveEntry;
+
+  /// No description provided for @statsDaysLogged.
+  ///
+  /// In cs, this message translates to:
+  /// **'{count, plural, one{den zapsán tento měsíc} few{dny zapsány tento měsíc} other{dní zapsáno tento měsíc}}'**
+  String statsDaysLogged(int count);
+
+  /// No description provided for @statsItemsWorn.
+  ///
+  /// In cs, this message translates to:
+  /// **'kusů nošeno tento měsíc'**
+  String get statsItemsWorn;
+
+  /// No description provided for @statsTimesWorn.
+  ///
+  /// In cs, this message translates to:
+  /// **'Počet nošení'**
+  String get statsTimesWorn;
+
+  /// No description provided for @statsAllTime.
+  ///
+  /// In cs, this message translates to:
+  /// **'celkem'**
+  String get statsAllTime;
+
+  /// No description provided for @statsShowAll.
+  ///
+  /// In cs, this message translates to:
+  /// **'zobrazit všech {count}'**
+  String statsShowAll(int count);
+
+  /// No description provided for @statsShowLess.
+  ///
+  /// In cs, this message translates to:
+  /// **'zobrazit méně'**
+  String get statsShowLess;
+
+  /// No description provided for @statsNotWorn.
+  ///
+  /// In cs, this message translates to:
+  /// **'Dlouho nenošené'**
+  String get statsNotWorn;
+
+  /// No description provided for @statsNever.
+  ///
+  /// In cs, this message translates to:
+  /// **'nikdy'**
+  String get statsNever;
+
+  /// No description provided for @statsDaysAgo.
+  ///
+  /// In cs, this message translates to:
+  /// **'před {n} dny'**
+  String statsDaysAgo(int n);
+
+  /// No description provided for @statsNothingUnworn.
+  ///
+  /// In cs, this message translates to:
+  /// **'Všechno oblečení bylo za posledních {n} dní aspoň jednou na řadě.'**
+  String statsNothingUnworn(int n);
+
+  /// No description provided for @statsEmpty.
+  ///
+  /// In cs, this message translates to:
+  /// **'Statistiky se objeví, až v kalendáři zapíšeš první outfit.'**
+  String get statsEmpty;
+
+  /// No description provided for @timesWorn.
+  ///
+  /// In cs, this message translates to:
+  /// **'{n}×'**
+  String timesWorn(int n);
+
+  /// No description provided for @colorFamily.
+  ///
+  /// In cs, this message translates to:
+  /// **'{color, select, white{Bílá} beige{Béžová} yellow{Žlutá} orange{Oranžová} red{Červená} pink{Růžová} purple{Fialová} blue{Modrá} green{Zelená} brown{Hnědá} grey{Šedá} black{Černá} other{Jiná}}'**
+  String colorFamily(String color);
+
+  /// No description provided for @statsColors.
+  ///
+  /// In cs, this message translates to:
+  /// **'Barvy'**
+  String get statsColors;
+
+  /// No description provided for @statsInWardrobe.
+  ///
+  /// In cs, this message translates to:
+  /// **'v šatníku'**
+  String get statsInWardrobe;
+
+  /// No description provided for @statsWornLabel.
+  ///
+  /// In cs, this message translates to:
+  /// **'na sobě'**
+  String get statsWornLabel;
+
+  /// No description provided for @statsColWardrobe.
+  ///
+  /// In cs, this message translates to:
+  /// **'šatník'**
+  String get statsColWardrobe;
+
+  /// No description provided for @statsNotWornSince.
+  ///
+  /// In cs, this message translates to:
+  /// **'30+ dní'**
+  String get statsNotWornSince;
+
+  /// No description provided for @diaryLogOutfit.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zapsat outfit'**
+  String get diaryLogOutfit;
+
+  /// No description provided for @sectionDay.
+  ///
+  /// In cs, this message translates to:
+  /// **'den'**
+  String get sectionDay;
+
+  /// No description provided for @diaryOtherDay.
+  ///
+  /// In cs, this message translates to:
+  /// **'Jiný den…'**
+  String get diaryOtherDay;
+
+  /// No description provided for @toastLogged.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zapsáno do deníku · {date}'**
+  String toastLogged(String date);
 }
 
 class _AppLocalizationsDelegate
