@@ -275,7 +275,7 @@ class _TabRoot extends StatelessWidget {
               ),
               WardrobeTabKind.wardrobe => WardrobeTab(
                 onOpenItem: (item, browseIds) =>
-                    openItemSheet(context, item, browseIds: browseIds),
+                    openItemDetail(context, item, browseIds: browseIds),
               ),
               WardrobeTabKind.collections => const CollectionsTab(),
               WardrobeTabKind.diary => const DiaryTab(),

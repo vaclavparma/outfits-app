@@ -140,12 +140,6 @@ class AppLocalizationsCs extends AppLocalizations {
   String get fromGallery => 'Z galerie';
 
   @override
-  String get itemDetailTitle => 'Detail oblečení';
-
-  @override
-  String get useInOutfit => 'Použít v outfitu';
-
-  @override
   String get deleteItemTitle => 'Smazat oblečení?';
 
   @override
@@ -160,12 +154,6 @@ class AppLocalizationsCs extends AppLocalizations {
   }
 
   @override
-  String get wearWhereTitle => 'Kam do outfitu?';
-
-  @override
-  String get wornHere => 'teď tady';
-
-  @override
   String get searchHint => 'Hledat oblečení';
 
   @override
@@ -173,9 +161,6 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get sectionItemName => 'název';
-
-  @override
-  String get itemNameHint => 'např. Zelená lněná košile';
 
   @override
   String get sectionSeller => 'prodejce';
@@ -399,14 +384,6 @@ class AppLocalizationsCs extends AppLocalizations {
   String get sectionWardrobe => 'šatník';
 
   @override
-  String wearOnCard(String kind, int n) {
-    return '$kind $n';
-  }
-
-  @override
-  String get wearNewCard => 'Nová karta';
-
-  @override
   String get all => 'Vše';
 
   @override
@@ -587,4 +564,26 @@ class AppLocalizationsCs extends AppLocalizations {
   String toastLogged(String date) {
     return 'Zapsáno do deníku · $date';
   }
+
+  @override
+  String get itemWornLabel => 'nošeno';
+
+  @override
+  String get itemLastWornLabel => 'naposledy';
+
+  @override
+  String get itemPerWearLabel => 'za nošení';
+
+  @override
+  String get itemLastToday => 'dnes';
+
+  @override
+  String get itemLastYesterday => 'včera';
+
+  @override
+  String get itemAutoNameHint =>
+      'název z barvy a typu · přepíšeš v podrobnostech';
+
+  @override
+  String get sectionDetails => 'podrobnosti · volitelné';
 }

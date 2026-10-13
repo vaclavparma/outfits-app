@@ -314,18 +314,6 @@ abstract class AppLocalizations {
   /// **'Z galerie'**
   String get fromGallery;
 
-  /// No description provided for @itemDetailTitle.
-  ///
-  /// In cs, this message translates to:
-  /// **'Detail oblečení'**
-  String get itemDetailTitle;
-
-  /// No description provided for @useInOutfit.
-  ///
-  /// In cs, this message translates to:
-  /// **'Použít v outfitu'**
-  String get useInOutfit;
-
   /// No description provided for @deleteItemTitle.
   ///
   /// In cs, this message translates to:
@@ -350,18 +338,6 @@ abstract class AppLocalizations {
   /// **'Přesunuto do šatníku „{name}“'**
   String toastMovedToWardrobe(String name);
 
-  /// No description provided for @wearWhereTitle.
-  ///
-  /// In cs, this message translates to:
-  /// **'Kam do outfitu?'**
-  String get wearWhereTitle;
-
-  /// No description provided for @wornHere.
-  ///
-  /// In cs, this message translates to:
-  /// **'teď tady'**
-  String get wornHere;
-
   /// No description provided for @searchHint.
   ///
   /// In cs, this message translates to:
@@ -379,12 +355,6 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'název'**
   String get sectionItemName;
-
-  /// No description provided for @itemNameHint.
-  ///
-  /// In cs, this message translates to:
-  /// **'např. Zelená lněná košile'**
-  String get itemNameHint;
 
   /// No description provided for @sectionSeller.
   ///
@@ -764,18 +734,6 @@ abstract class AppLocalizations {
   /// **'šatník'**
   String get sectionWardrobe;
 
-  /// No description provided for @wearOnCard.
-  ///
-  /// In cs, this message translates to:
-  /// **'{kind} {n}'**
-  String wearOnCard(String kind, int n);
-
-  /// No description provided for @wearNewCard.
-  ///
-  /// In cs, this message translates to:
-  /// **'Nová karta'**
-  String get wearNewCard;
-
   /// No description provided for @all.
   ///
   /// In cs, this message translates to:
@@ -1039,6 +997,48 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Zapsáno do deníku · {date}'**
   String toastLogged(String date);
+
+  /// No description provided for @itemWornLabel.
+  ///
+  /// In cs, this message translates to:
+  /// **'nošeno'**
+  String get itemWornLabel;
+
+  /// No description provided for @itemLastWornLabel.
+  ///
+  /// In cs, this message translates to:
+  /// **'naposledy'**
+  String get itemLastWornLabel;
+
+  /// No description provided for @itemPerWearLabel.
+  ///
+  /// In cs, this message translates to:
+  /// **'za nošení'**
+  String get itemPerWearLabel;
+
+  /// No description provided for @itemLastToday.
+  ///
+  /// In cs, this message translates to:
+  /// **'dnes'**
+  String get itemLastToday;
+
+  /// No description provided for @itemLastYesterday.
+  ///
+  /// In cs, this message translates to:
+  /// **'včera'**
+  String get itemLastYesterday;
+
+  /// No description provided for @itemAutoNameHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'název z barvy a typu · přepíšeš v podrobnostech'**
+  String get itemAutoNameHint;
+
+  /// No description provided for @sectionDetails.
+  ///
+  /// In cs, this message translates to:
+  /// **'podrobnosti · volitelné'**
+  String get sectionDetails;
 }
 
 class _AppLocalizationsDelegate

@@ -104,9 +104,8 @@ class TypeDetailScreen extends StatelessWidget {
                         GarmentCard(
                           width: double.infinity,
                           height: double.infinity,
-                          caption: it.name ?? '',
                           imagePath: it.imagePath,
-                          onTap: () => openItemSheet(context, it, browseIds: [for (final x in items) x.id]),
+                          onTap: () => openItemDetail(context, it, browseIds: [for (final x in items) x.id]),
                         ),
                       AddTile(
                         label: l10n.add,

@@ -510,50 +510,42 @@ class _AddItemFormState extends State<_AddItemForm> {
   }
 }
 
-/// [browseIds] are the items shown alongside [item] where it was opened
-/// from (a wardrobe section, search results), in that order — swiping sideways in the
-/// sheet steps through them.
-void openItemSheet(BuildContext context, ClothingItem item, {List<String>? browseIds}) {
-  final browser = GlobalKey<_ItemBrowserState>();
-  _showSheet(
-    context,
-    (ctx) => AppLocalizations.of(ctx)!.itemDetailTitle,
-    _ItemBrowser(key: browser, initialId: item.id, ids: browseIds ?? [item.id]),
-    // Photo + five detail fields + actions: needs more room than most sheets.
-    maxHeightFactor: 0.92,
-    // The whole sheet is the swipe area, header included.
-    onSwipe: (finger) => browser.currentState?.swipe(finger),
+/// Opens an item's detail, full screen above the tab bar. [browseIds] are
+/// the items shown alongside [item] where it was opened from (a type, search
+/// results, stats), in that order — swiping sideways steps through them.
+void openItemDetail(BuildContext context, ClothingItem item, {List<String>? browseIds}) {
+  Navigator.of(context, rootNavigator: true).push(
+    MaterialPageRoute(builder: (_) => _ItemPage(initialId: item.id, ids: browseIds ?? [item.id])),
   );
 }
 
-/// Steps through [ids] (see [step]) — driven by a swipe anywhere on the
-/// sheet. Stops at either end.
-class _ItemBrowser extends StatefulWidget {
+/// The detail page: the item's type as the title, its detail (swipe
+/// anywhere for the next/previous one), and the actions pinned below.
+class _ItemPage extends StatefulWidget {
   final String initialId;
   final List<String> ids;
-  const _ItemBrowser({super.key, required this.initialId, required this.ids});
+  const _ItemPage({required this.initialId, required this.ids});
 
   @override
-  State<_ItemBrowser> createState() => _ItemBrowserState();
+  State<_ItemPage> createState() => _ItemPageState();
 }
 
-class _ItemBrowserState extends State<_ItemBrowser> {
+class _ItemPageState extends State<_ItemPage> {
   late String _currentId = widget.initialId;
+
   /// Which way the content slides: the finger's direction (+1 right).
   int _slide = 1;
 
   /// Items can't be added while browsing, but one could be deleted or moved.
-  List<String> _liveIds(WardrobeStore store) =>
-      widget.ids.where((id) => store.itemById(id) != null).toList();
+  List<String> _liveIds(WardrobeStore store) => widget.ids.where((id) => store.itemById(id) != null).toList();
 
   /// A flick with the finger moving left (-1) goes to the next item, right
   /// (+1) to the previous one — like flipping pages or photos. The content
-  /// slides along with the finger.
-  void swipe(int finger) {
-    final delta = -finger;
+  /// slides along with the finger. Stops at either end.
+  void _swipe(int finger) {
     final ids = _liveIds(context.read<WardrobeStore>());
     final index = ids.indexOf(_currentId);
-    final next = index + delta;
+    final next = index - finger;
     if (index < 0 || next < 0 || next >= ids.length) return;
     FocusManager.instance.primaryFocus?.unfocus();
     HapticFeedback.selectionClick();
@@ -565,46 +557,119 @@ class _ItemBrowserState extends State<_ItemBrowser> {
 
   @override
   Widget build(BuildContext context) {
-    final ids = _liveIds(context.watch<WardrobeStore>());
-    final index = ids.indexOf(_currentId);
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final cur = store.itemById(_currentId);
+    if (cur == null) {
+      // Deleted or moved away — nothing left to show. (Usually whatever did
+      // it closes this page itself; only if not, close it here.)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) Navigator.of(context).pop();
+      });
+      return Scaffold(backgroundColor: AppColors.background);
+    }
 
-    return AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
-        layoutBuilder: (current, previous) => Stack(
-          alignment: Alignment.topCenter,
-          children: [...previous, ?current],
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: ContentWidth(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 8, 20, 4),
+                child: Row(
+                  children: [
+                    const AppBackButton(),
+                    Expanded(
+                      child: Text(
+                        store.typeName(cur) ?? store.kindName(cur.cat),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.sans(size: 16, weight: FontWeight.w500, color: AppColors.ink),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: _SheetSwipe(
+                  onSwipe: _swipe,
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      layoutBuilder: (current, previous) => Stack(
+                        alignment: Alignment.topCenter,
+                        children: [...previous, ?current],
+                      ),
+                      // Content moves with the finger: the old item leaves the
+                      // way the finger went, the new one follows in from the
+                      // opposite side.
+                      transitionBuilder: (child, animation) {
+                        final incoming = child.key == ValueKey(_currentId);
+                        final dx = (incoming ? -_slide : _slide) * 0.25;
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: Tween(begin: Offset(dx, 0), end: Offset.zero).animate(animation),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: _ItemDetail(key: ValueKey(_currentId), itemId: _currentId),
+                    ),
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
+                decoration: BoxDecoration(border: Border(top: BorderSide(color: AppColors.hairline))),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _DetailAction(
+                        label: l10n.done,
+                        filled: true,
+                        textColor: Colors.white,
+                        onTap: () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                    const SizedBox(width: 9),
+                    _DetailIconAction(
+                      icon: Icons.drive_file_move_outline,
+                      label: l10n.moveTitle,
+                      onTap: () => _showSheet(
+                        context,
+                        (ctx) => AppLocalizations.of(ctx)!.moveTitle,
+                        _MoveItem(itemId: cur.id),
+                      ),
+                    ),
+                    const SizedBox(width: 9),
+                    _DetailIconAction(
+                      icon: Icons.delete_outline,
+                      label: l10n.delete,
+                      onTap: () => _confirmDeleteItem(context, store, cur),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        // Content moves with the finger: the old item leaves the way the
-        // finger went, the new one follows in from the opposite side.
-        transitionBuilder: (child, animation) {
-          final incoming = child.key == ValueKey(_currentId);
-          final dx = (incoming ? -_slide : _slide) * 0.25;
-          return FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: Tween(begin: Offset(dx, 0), end: Offset.zero).animate(animation),
-              child: child,
-            ),
-          );
-        },
-        child: _ItemDetail(
-          key: ValueKey(_currentId),
-          itemId: _currentId,
-          position: ids.length > 1 && index >= 0 ? (index: index + 1, count: ids.length) : null,
-        ),
+      ),
     );
   }
 }
 
+/// One item: photo, name (its own, or made up from color and type), kind
+/// and type with its colors, wear stats, and the optional details.
 class _ItemDetail extends StatefulWidget {
   final String itemId;
 
-  /// 1-based place among the items being browsed, if there's more than one.
-  final ({int index, int count})? position;
-
-  const _ItemDetail({super.key, required this.itemId, this.position});
+  const _ItemDetail({super.key, required this.itemId});
 
   @override
   State<_ItemDetail> createState() => _ItemDetailState();
@@ -626,6 +691,8 @@ class _ItemDetailState extends State<_ItemDetail> {
     _size = TextEditingController(text: it?.size);
     _price = TextEditingController(text: it?.price);
     _note = TextEditingController(text: it?.note);
+    // The title follows the name as it's typed, not once saving catches up.
+    _name.addListener(() => setState(() {}));
   }
 
   @override
@@ -643,6 +710,8 @@ class _ItemDetailState extends State<_ItemDetail> {
     final itemId = widget.itemId;
     final cur = store.itemById(itemId);
     if (cur == null) return const SizedBox.shrink();
+    final typed = _name.text.trim();
+    final autoName = store.displayName(ClothingItem(id: cur.id, cat: cur.cat, typeId: cur.typeId, colors: cur.colors));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -650,142 +719,236 @@ class _ItemDetailState extends State<_ItemDetail> {
         // A short hold opens the photo full screen, as on the outfit tab.
         GarmentCard(
           width: double.infinity,
-          height: 220,
+          height: 320,
           imagePath: cur.imagePath,
           zoomable: true,
         ),
+        const SizedBox(height: 18),
+        Text(
+          typed.isEmpty ? autoName : typed,
+          style: AppText.sans(
+            size: 28,
+            weight: FontWeight.w300,
+            // A made-up name stays a little in the background.
+            color: typed.isEmpty ? AppColors.label : AppColors.ink,
+            letterSpacing: -0.3,
+          ),
+        ),
+        if (typed.isEmpty) ...[
+          const SizedBox(height: 3),
+          Text(l10n.itemAutoNameHint, style: AppText.mono(size: 9.5, letterSpacing: 0.3, color: AppColors.mutedTag)),
+        ],
         const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
-              child: Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      [store.kindName(cur.cat), ?store.typeName(cur)].join(' · '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.sans(size: 15, color: AppColors.ink),
-                    ),
-                  ),
-                  // Colors detected from the photo; tap to correct them.
-                  // Hidden until detection (a background pass after
-                  // startup) has run, rather than flashing an empty bar.
-                  if (cur.imagePath != null && cur.colors != null)
-                    Semantics(
-                      button: true,
-                      label: l10n.colorsEdit,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => _openColorEditor(context, cur.id),
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                          child: ColorBar(colors: cur.colors!),
-                        ),
-                      ),
-                    ),
-                ],
+              child: Text(
+                [store.kindName(cur.cat), ?store.typeName(cur)].join(' · '),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.sans(size: 15, color: AppColors.muted),
               ),
             ),
-            if (widget.position case final pos?)
-              Text(
-                '${pos.index} / ${pos.count}',
-                style: AppText.mono(size: 10, letterSpacing: 0.8, color: AppColors.mutedSoft),
+            // Colors detected from the photo; tap to correct them. Hidden
+            // until detection (a background pass after startup) has run,
+            // rather than flashing an empty bar.
+            if (cur.imagePath != null && cur.colors != null)
+              Semantics(
+                button: true,
+                label: l10n.colorsEdit,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _openColorEditor(context, cur.id),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 0, 12),
+                    child: ColorBar(colors: cur.colors!),
+                  ),
+                ),
               ),
           ],
         ),
-        const SizedBox(height: 14),
-        _InfoField(
-          label: l10n.sectionItemName,
-          hint: l10n.itemNameHint,
-          controller: _name,
-          onChanged: (v) => store.setItemInfo(itemId, name: v),
-        ),
-        _InfoField(
-          label: l10n.sectionSeller,
-          hint: l10n.sellerHint,
-          controller: _seller,
-          onChanged: (v) => store.setItemInfo(itemId, seller: v),
-        ),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: _InfoField(
+        const SizedBox(height: 10),
+        _ItemWearStats(item: cur),
+        const SizedBox(height: 22),
+        Text(l10n.sectionDetails.toUpperCase(), style: _sectionLabelStyle),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            border: Border.all(color: AppColors.rowBorder),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            children: [
+              _InfoRow(
+                label: l10n.sectionItemName,
+                // The made-up name, as a suggestion to type over.
+                hint: autoName,
+                controller: _name,
+                onChanged: (v) => store.setItemInfo(itemId, name: v),
+              ),
+              _InfoRow(
+                label: l10n.sectionSeller,
+                hint: l10n.sellerHint,
+                controller: _seller,
+                onChanged: (v) => store.setItemInfo(itemId, seller: v),
+              ),
+              _InfoRow(
                 label: l10n.sectionSize,
                 hint: l10n.sizeHint,
                 controller: _size,
                 onChanged: (v) => store.setItemInfo(itemId, size: v),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _InfoField(
+              _InfoRow(
                 label: l10n.sectionPrice,
                 hint: l10n.priceHint,
                 controller: _price,
                 onChanged: (v) => store.setItemInfo(itemId, price: v),
               ),
-            ),
-          ],
+              _InfoRow(
+                label: l10n.sectionNote,
+                hint: l10n.noteHint,
+                controller: _note,
+                multiline: true,
+                last: true,
+                onChanged: (v) => store.setItemInfo(itemId, note: v),
+              ),
+            ],
+          ),
         ),
-        _InfoField(
-          label: l10n.sectionNote,
-          hint: l10n.noteHint,
-          controller: _note,
-          multiline: true,
-          onChanged: (v) => store.setItemInfo(itemId, note: v),
-        ),
-        const SizedBox(height: 4),
+      ],
+    );
+  }
+}
+
+/// How much an item gets worn, from the diary: times worn, when last, the
+/// price per wear (if a price is filled in), and this month day by day.
+class _ItemWearStats extends StatelessWidget {
+  final ClothingItem item;
+  const _ItemWearStats({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toString();
+    final stats = store.wearStats[item.id];
+    final count = stats?.count ?? 0;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final last = stats?.last;
+    final ago = last == null ? null : today.difference(last).inDays;
+    final perWear = count == 0 ? null : pricePerWear(item.price, count, locale);
+    final worn = store.daysWornIn(item.id, now);
+    final days = DateUtils.getDaysInMonth(now.year, now.month);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Row(
           children: [
+            Expanded(child: _WearTile(value: l10n.timesWorn(count), label: l10n.itemWornLabel)),
+            const SizedBox(width: 8),
             Expanded(
-              child: _DetailAction(
-                label: l10n.useInOutfit,
-                filled: true,
-                textColor: Colors.white,
-                onTap: () {
-                  // With several cards of its kind on the canvas, ask which.
-                  if (store.visibleSlots.where((s) => s.kindId == cur.cat).length > 1) {
-                    _showSheet(
-                      context,
-                      (ctx) => AppLocalizations.of(ctx)!.wearWhereTitle,
-                      _WearChoices(item: cur),
-                    );
-                    return;
-                  }
-                  store.useItem(cur);
-                  _backToOutfit(context);
+              child: _WearTile(
+                value: switch (ago) {
+                  null => l10n.statsNever,
+                  0 => l10n.itemLastToday,
+                  1 => l10n.itemLastYesterday,
+                  final n => l10n.statsDaysAgo(n),
                 },
+                label: l10n.itemLastWornLabel,
+                small: true,
               ),
             ),
-            const SizedBox(width: 9),
-            Expanded(
-              child: _DetailAction(
-                label: l10n.done,
-                textColor: AppColors.ink,
-                onTap: () => Navigator.of(context).pop(),
+            const SizedBox(width: 8),
+            Expanded(child: _WearTile(value: perWear ?? '–', label: l10n.itemPerWearLabel)),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Text(DateFormat.LLLL(locale).format(now).toUpperCase(), style: _sectionLabelStyle),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            for (var d = 1; d <= days; d++)
+              Expanded(
+                child: Container(
+                  height: 14,
+                  margin: EdgeInsets.only(left: d == 1 ? 0 : 2.5),
+                  decoration: BoxDecoration(
+                    color: worn.contains(d)
+                        ? AppColors.accent
+                        : d > now.day
+                        ? AppColors.cardFill.withValues(alpha: 0.5)
+                        : AppColors.cardBorder,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 9),
-            _DetailIconAction(
-              icon: Icons.drive_file_move_outline,
-              label: l10n.moveTitle,
-              onTap: () => _showSheet(
-                context,
-                (ctx) => AppLocalizations.of(ctx)!.moveTitle,
-                _MoveItem(itemId: itemId),
-              ),
-            ),
-            const SizedBox(width: 9),
-            _DetailIconAction(
-              icon: Icons.delete_outline,
-              label: l10n.delete,
-              onTap: () => _confirmDeleteItem(context, store, cur),
-            ),
           ],
         ),
       ],
+    );
+  }
+}
+
+/// [price] (as typed: "499 Kč", "$29", "1 290,50 €") divided by [wears], in
+/// the same notation; `null` if it has no number in it.
+String? pricePerWear(String? price, int wears, String locale) {
+  if (price == null || wears <= 0) return null;
+  final match = RegExp(r'\d[\d\s\u00a0.,]*').firstMatch(price);
+  if (match == null) return null;
+  final digits = match.group(0)!.replaceAll(RegExp(r'[\s\u00a0]'), '').replaceAll(RegExp(r'[.,]$'), '');
+  // The last separator followed by one or two digits is the decimal one;
+  // any other separators group thousands.
+  final dec = RegExp(r'[.,](\d{1,2})$').firstMatch(digits);
+  final sep = dec == null ? null : digits[dec.start];
+  final whole = (dec == null ? digits : digits.substring(0, dec.start)).replaceAll(RegExp(r'[.,]'), '');
+  final value = double.tryParse(dec == null ? whole : '$whole.${dec.group(1)}');
+  if (value == null) return null;
+  final each = value / wears;
+  final decimalSep = sep ?? (locale.startsWith('cs') ? ',' : '.');
+  final shown = each >= 10 || each == each.roundToDouble()
+      ? each.round().toString()
+      : each.toStringAsFixed(1).replaceAll('.', decimalSep);
+  return price.replaceRange(match.start, match.start + match.group(0)!.trimRight().length, shown);
+}
+
+class _WearTile extends StatelessWidget {
+  final String value;
+  final String label;
+
+  /// For a longer value ("před 12 dny") rather than a figure.
+  final bool small;
+
+  const _WearTile({required this.value, required this.label, this.small = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 72,
+      padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        border: Border.all(color: AppColors.rowBorder),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              maxLines: 1,
+              style: AppText.sans(size: small ? 16 : 24, weight: FontWeight.w300, color: AppColors.ink),
+            ),
+          ),
+          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.mono(size: 9, letterSpacing: 0.3, color: AppColors.mutedTag)),
+        ],
+      ),
     );
   }
 }
@@ -1154,93 +1317,6 @@ class _SaveOutfitFormState extends State<_SaveOutfitForm> {
 void _backToOutfit(BuildContext context) =>
     Navigator.of(context).popUntil((route) => route.isFirst);
 
-/// Which of the canvas cards of an item's kind it should go on — each
-/// shown with what's there now — or a new card of that kind.
-class _WearChoices extends StatelessWidget {
-  final ClothingItem item;
-  const _WearChoices({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    final store = context.watch<WardrobeStore>();
-    final l10n = AppLocalizations.of(context)!;
-    final slots = store.visibleSlots.where((s) => s.kindId == item.cat).toList()
-      ..sort((a, b) => a.y.compareTo(b.y));
-    final kindName = store.kindName(item.cat);
-
-    Widget row({required String label, required ClothingItem? occupant, required VoidCallback onTap, bool isNew = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 7),
-        child: GestureDetector(
-          onTap: () {
-            onTap();
-            _backToOutfit(context);
-          },
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.rowBorder),
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    color: isNew ? null : AppColors.cardFill,
-                    border: Border.all(color: isNew ? AppColors.dashedBorder : AppColors.cardBorder),
-                    borderRadius: BorderRadius.circular(9),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  alignment: Alignment.center,
-                  child: isNew
-                      ? Text('+', style: AppText.sans(size: 20, weight: FontWeight.w300, color: AppColors.mutedSoft))
-                      : occupant?.imagePath == null
-                      ? const DiagonalStripes()
-                      : GarmentImage(occupant!.imagePath!),
-                ),
-                const SizedBox(width: 12),
-                Expanded(child: Text(label, style: AppText.sans(size: 14, color: AppColors.ink))),
-                if (occupant?.id == item.id)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: Text(
-                      l10n.wornHere,
-                      style: AppText.mono(size: 8.5, letterSpacing: 0.4, color: AppColors.mutedTag),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final (i, s) in slots.indexed)
-          row(
-            label: l10n.wearOnCard(kindName, i + 1),
-            occupant: store.itemInSlot(s.id),
-            onTap: () => store.useItem(item, slotId: s.id),
-          ),
-        if (store.slotWearing(item.id) == null)
-          row(
-            label: l10n.wearNewCard,
-            occupant: null,
-            isNew: true,
-            onTap: () {
-              store.addSlot(item.cat, itemId: item.id);
-              store.setScreen(WardrobeTabKind.outfit);
-            },
-          ),
-      ],
-    );
-  }
-}
-
 /// Where an item can be moved: another type, another kind (and a type
 /// there), or another wardrobe. Picking a type moves it right away and
 /// returns to its detail; another wardrobe takes it out of this one, so
@@ -1408,61 +1484,67 @@ class _DetailAction extends StatelessWidget {
   }
 }
 
-/// One optional, labelled free-text detail of a clothing item — same look
-/// as the outfit-name field in the save sheet.
-class _InfoField extends StatelessWidget {
+/// One optional detail of a clothing item, as a row of the details card:
+/// a small label on the left, the text field filling the rest.
+class _InfoRow extends StatelessWidget {
   final String label;
   final String hint;
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final bool multiline;
+  final bool last;
 
-  const _InfoField({
+  const _InfoRow({
     required this.label,
     required this.hint,
     required this.controller,
     required this.onChanged,
     this.multiline = false,
+    this.last = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: BorderSide(color: AppColors.cardBorder),
-    );
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      constraints: const BoxConstraints(minHeight: 52),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        border: last ? null : Border(bottom: BorderSide(color: AppColors.rowBorder)),
+      ),
+      child: Row(
+        crossAxisAlignment: multiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
         children: [
-          Text(label, style: _sectionLabelStyle),
-          const SizedBox(height: 5),
-          TextField(
-            controller: controller,
-            onChanged: onChanged,
-            // Text fields share one tap region, so moving between fields
-            // keeps the keyboard up; anywhere else hides it.
-            onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-            textCapitalization: TextCapitalization.sentences,
-            minLines: multiline ? 2 : 1,
-            maxLines: multiline ? 5 : 1,
-            // A one-line field would otherwise claim every sideways drag to
-            // scroll its text — swallowing the swipe to the next item. It
-            // still scrolls itself to the caret while typing.
-            scrollPhysics: multiline ? null : const NeverScrollableScrollPhysics(),
-            keyboardType: multiline ? TextInputType.multiline : TextInputType.text,
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: AppText.sans(size: 14, color: AppColors.mutedTag),
-              filled: true,
-              fillColor: AppColors.background,
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-              border: border,
-              enabledBorder: border,
+          Padding(
+            padding: EdgeInsets.only(top: multiline ? 18 : 0),
+            child: SizedBox(
+              width: 86,
+              child: Text(label, style: AppText.mono(size: 9.5, letterSpacing: 0.4, color: AppColors.mutedTag)),
             ),
-            style: AppText.sans(size: 14, color: AppColors.ink),
+          ),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              onChanged: onChanged,
+              // Text fields share one tap region, so moving between fields
+              // keeps the keyboard up; anywhere else hides it.
+              onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+              textCapitalization: TextCapitalization.sentences,
+              minLines: 1,
+              maxLines: multiline ? 5 : 1,
+              // A one-line field would otherwise claim every sideways drag to
+              // scroll its text — swallowing the swipe to the next item. It
+              // still scrolls itself to the caret while typing.
+              scrollPhysics: multiline ? null : const NeverScrollableScrollPhysics(),
+              keyboardType: multiline ? TextInputType.multiline : TextInputType.text,
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: AppText.sans(size: 15, color: AppColors.mutedTag),
+                isDense: true,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              style: AppText.sans(size: 15, color: AppColors.ink),
+            ),
           ),
         ],
       ),

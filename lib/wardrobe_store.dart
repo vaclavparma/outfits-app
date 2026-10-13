@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'auto_name.dart';
 import 'color_detect.dart';
 import 'color_names.dart';
 import 'l10n/app_localizations.dart';
@@ -79,6 +80,32 @@ class WardrobeStore extends ChangeNotifier {
 
   /// The name of [item]'s type (`null` only if its type is somehow gone).
   String? typeName(ClothingItem item) => kindById(item.cat)?.typeById(item.typeId)?.name;
+
+  /// What to call [item]: its own name, or one made up from its color and
+  /// type ("Zelená košile") — see [hasOwnName].
+  String displayName(ClothingItem item) {
+    final own = item.name;
+    if (own != null && own.isNotEmpty) return own;
+    final l = _l10n;
+    final colors = item.colors;
+    final type = typeName(item) ?? '';
+    return autoItemName(
+      languageCode: l.localeName,
+      typeName: _otherTypeNames.contains(type) ? '' : type,
+      kindName: kindName(item.cat),
+      otherTypeName: l.otherTypeName,
+      colorName: colors == null || colors.isEmpty ? null : l.colorFamily(ColorFamily.of(colors.first).name),
+    );
+  }
+
+  /// Whether [item]'s name was given by the user, not made up.
+  bool hasOwnName(ClothingItem item) => item.name?.isNotEmpty ?? false;
+
+  /// The catch-all type's name in every language (it's stored as created).
+  static final _otherTypeNames = {
+    lookupAppLocalizations(const Locale('cs')).otherTypeName,
+    lookupAppLocalizations(const Locale('en')).otherTypeName,
+  };
 
   /// The active wardrobe's items of one kind, in the order they were added.
   List<ClothingItem> itemsOfKind(String kindId) =>
@@ -1003,28 +1030,6 @@ class WardrobeStore extends ChangeNotifier {
     }
   }
 
-  /// Wears [it] in the outfit: on [slotId]'s card if given; otherwise on
-  /// the card of its kind (adding one if there's none). With several cards
-  /// of its kind, the UI asks which one first and passes [slotId]. Nothing
-  /// changes if it's already worn.
-  void useItem(ClothingItem it, {String? slotId}) {
-    var pinMoved = false;
-    final target = slotId == null ? null : slotById(slotId);
-    if (target != null) {
-      pinMoved = _wearIn(target, it.id);
-    } else if (slotWearing(it.id) == null) {
-      final slots = visibleSlots.where((s) => s.kindId == it.cat).toList();
-      if (slots.isEmpty) {
-        addSlot(it.cat, itemId: it.id);
-      } else {
-        pinMoved = _wearIn(slots.first, it.id);
-      }
-    }
-    screen = WardrobeTabKind.outfit;
-    notifyListeners();
-    if (pinMoved) _persist();
-  }
-
   // ---------------------------------------------------------------------
   // Collections and saved outfits
 
@@ -1313,6 +1318,12 @@ class WardrobeStore extends ChangeNotifier {
       ..sort((a, b) => counts[b] != counts[a] ? counts[b]!.compareTo(counts[a]!) : order.indexOf(a).compareTo(order.indexOf(b)));
     return ranked.take(3).toList();
   }
+
+  /// The days of [month] (day numbers) [itemId] was worn on.
+  Set<int> daysWornIn(String itemId, DateTime month) => {
+    for (final e in diary)
+      if (e.day.year == month.year && e.day.month == month.month && e.itemIds.contains(itemId)) e.day.day,
+  };
 
   /// For every item worn at least once: on how many days, and the last one.
   /// Two outfits with the same item on one day count as one wear.

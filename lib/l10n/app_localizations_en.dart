@@ -138,12 +138,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fromGallery => 'From gallery';
 
   @override
-  String get itemDetailTitle => 'Clothing detail';
-
-  @override
-  String get useInOutfit => 'Use in outfit';
-
-  @override
   String get deleteItemTitle => 'Delete this item?';
 
   @override
@@ -158,12 +152,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get wearWhereTitle => 'Where in the outfit?';
-
-  @override
-  String get wornHere => 'here now';
-
-  @override
   String get searchHint => 'Search clothes';
 
   @override
@@ -171,9 +159,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sectionItemName => 'name';
-
-  @override
-  String get itemNameHint => 'e.g. Green linen shirt';
 
   @override
   String get sectionSeller => 'seller';
@@ -396,14 +381,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sectionWardrobe => 'wardrobe';
 
   @override
-  String wearOnCard(String kind, int n) {
-    return '$kind $n';
-  }
-
-  @override
-  String get wearNewCard => 'New card';
-
-  @override
   String get all => 'All';
 
   @override
@@ -582,4 +559,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String toastLogged(String date) {
     return 'Logged in the diary · $date';
   }
+
+  @override
+  String get itemWornLabel => 'worn';
+
+  @override
+  String get itemLastWornLabel => 'last worn';
+
+  @override
+  String get itemPerWearLabel => 'per wear';
+
+  @override
+  String get itemLastToday => 'today';
+
+  @override
+  String get itemLastYesterday => 'yesterday';
+
+  @override
+  String get itemAutoNameHint =>
+      'named from color and type · change it in the details';
+
+  @override
+  String get sectionDetails => 'details · optional';
 }

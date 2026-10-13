@@ -421,8 +421,7 @@ class _StatsState extends State<_Stats> {
           _ItemRow(
             item: u.item,
             browseIds: [for (final x in unworn) x.item.id],
-            // Unnamed items are already titled by kind and type.
-            subtitle: u.item.name == null ? null : [store.kindName(u.item.cat), ?store.typeName(u.item)].join(' · '),
+            subtitle: [store.kindName(u.item.cat), ?store.typeName(u.item)].join(' · '),
             trailing: Text(
               u.last == null ? l10n.statsNever : l10n.statsDaysAgo(today.difference(u.last!).inDays),
               style: AppText.mono(size: 10, letterSpacing: 0.3, color: u.last == null ? AppColors.warn : AppColors.mutedTag),
@@ -512,10 +511,10 @@ class _ItemRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = context.read<WardrobeStore>();
-    final name = item.name ?? [store.kindName(item.cat), ?store.typeName(item)].join(' · ');
+    final name = store.displayName(item);
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () => openItemSheet(context, item, browseIds: browseIds),
+      onTap: () => openItemDetail(context, item, browseIds: browseIds),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.rowBorder))),
