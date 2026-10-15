@@ -60,9 +60,15 @@ dev_dependencies:
 flutter_native_splash:
   color: "#faf8f5"
   image: assets/icon/app_icon.png
+  # Dark mode: the app's own dark background (AppPalette.dark), so there's
+  # no white flash before it.
+  color_dark: "#141413"
+  image_dark: assets/icon/app_icon.png
   android_12:
     color: "#faf8f5"
     image: assets/icon/app_icon.png
+    color_dark: "#141413"
+    image_dark: assets/icon/app_icon.png
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
