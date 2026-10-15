@@ -188,7 +188,7 @@ class _OutfitTabState extends State<OutfitTab> {
       key: const ValueKey('bin'),
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
       child: AnimatedScale(
-        scale: _overBin ? 1.04 : 1,
+        scale: _overBin && !reduceMotion ? 1.04 : 1,
         duration: const Duration(milliseconds: 120),
         child: AnimatedContainer(
           key: _binKey,

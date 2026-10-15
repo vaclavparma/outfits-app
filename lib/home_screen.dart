@@ -100,6 +100,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _slideTo(int page) async {
     if (!_pages.hasClients) return;
+    if (reduceMotion) {
+      _pages.jumpToPage(page);
+      return;
+    }
     _animating = true;
     await _pages.animateToPage(page, duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
     _animating = false;

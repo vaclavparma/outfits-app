@@ -649,6 +649,15 @@ class OutfitCollage extends StatelessWidget {
   }
 }
 
+/// Whether the system asks for less motion (iOS Reduce Motion, Android
+/// Remove animations): then nothing slides across the screen or zooms by
+/// itself — it fades or just appears. Read live, at the moment of the
+/// animation, so a change in settings applies straight away.
+bool get reduceMotion {
+  final f = WidgetsBinding.instance.platformDispatcher.accessibilityFeatures;
+  return f.reduceMotion || f.disableAnimations;
+}
+
 /// How long to hold a garment photo before it opens full screen — shorter
 /// than the system long-press (500 ms) so it feels like a quick peek.
 const photoHoldDuration = Duration(milliseconds: 300);
@@ -702,6 +711,10 @@ class _PhotoViewerState extends State<_PhotoViewer> with SingleTickerProviderSta
   }
 
   void _animateTo(Matrix4 target) {
+    if (reduceMotion) {
+      _transform.value = target;
+      return;
+    }
     _zoomTween = Matrix4Tween(begin: _transform.value.clone(), end: target);
     _zoomAnim.forward(from: 0);
   }

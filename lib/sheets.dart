@@ -607,10 +607,10 @@ class _ItemPageState extends State<_ItemPage> {
                       ),
                       // Content moves with the finger: the old item leaves the
                       // way the finger went, the new one follows in from the
-                      // opposite side.
+                      // opposite side. With Reduce Motion it only cross-fades.
                       transitionBuilder: (child, animation) {
                         final incoming = child.key == ValueKey(_currentId);
-                        final dx = (incoming ? -_slide : _slide) * 0.25;
+                        final dx = reduceMotion ? 0.0 : (incoming ? -_slide : _slide) * 0.25;
                         return FadeTransition(
                           opacity: animation,
                           child: SlideTransition(
