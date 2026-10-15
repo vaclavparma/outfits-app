@@ -273,7 +273,7 @@ class _DayCell extends StatelessWidget {
         style: AppText.sans(
           size: 17,
           weight: isToday ? FontWeight.w500 : FontWeight.w400,
-          color: isFuture ? AppColors.mutedSoft.withValues(alpha: 0.6) : AppColors.ink,
+          color: isFuture ? AppColors.mutedSoft : AppColors.ink,
         ),
       ),
     );
@@ -290,7 +290,7 @@ class _DayCell extends StatelessWidget {
               height: 38,
               alignment: Alignment.center,
               decoration: isToday
-                  ? BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.accent, width: 2))
+                  ? BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.accentText, width: 2))
                   : null,
               child: label,
             ),
@@ -416,7 +416,7 @@ class _StatsState extends State<_Stats> {
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text(
                 _showAll ? l10n.statsShowLess : l10n.statsShowAll(worn.length),
-                style: AppText.mono(size: 10.5, letterSpacing: 0.4, color: AppColors.accent),
+                style: AppText.mono(size: 10.5, letterSpacing: 0.4, color: AppColors.accentText),
               ),
             ),
           ),
@@ -568,7 +568,7 @@ class _ItemRow extends StatelessWidget {
                         child: LinearProgressIndicator(
                           value: bar,
                           backgroundColor: AppColors.cardBorder,
-                          valueColor: AlwaysStoppedAnimation(AppColors.accent),
+                          valueColor: AlwaysStoppedAnimation(AppColors.accentText),
                         ),
                       ),
                     ),

@@ -22,6 +22,7 @@ class AppPalette {
   final Color emptyStateBorder;
   final Color accent;
   final Color accentDark;
+  final Color accentText;
   final Color danger;
   final Color warn;
 
@@ -46,11 +47,15 @@ class AppPalette {
     required this.emptyStateBorder,
     required this.accent,
     required this.accentDark,
+    required this.accentText,
     required this.danger,
     required this.warn,
   });
 
-  /// Design tokens lifted from the Šatník mockup (Satnik.dc.html).
+  /// Design tokens lifted from the Šatník mockup (Satnik.dc.html), with
+  /// the greys taken dark enough that every text and icon keeps at least
+  /// 4.5:1 against background, surface and card fill (Apple's Sufficient
+  /// Contrast criteria).
   static const light = AppPalette(
     background: Color(0xFFFAFAFA),
     surface: Color(0xFFFFFFFF),
@@ -60,10 +65,10 @@ class AppPalette {
     ink: Color(0xFF141414),
     inkSoft: Color(0xFF2B2A28),
     label: Color(0xFF3D3B39),
-    muted: Color(0xFF8A8784),
-    mutedSoft: Color(0xFFB5B2AD),
-    mutedTag: Color(0xFFA5A29D),
-    mutedLabel: Color(0xFFADABA7),
+    muted: Color(0xFF63605D),
+    mutedSoft: Color(0xFF726E68),
+    mutedTag: Color(0xFF6E6B66),
+    mutedLabel: Color(0xFF6E6B66),
     hairline: Color(0xFFEEECEA),
     rowBorder: Color(0xFFECEAE7),
     chipBorderIdle: Color(0xFFE6E5E3),
@@ -72,13 +77,14 @@ class AppPalette {
     emptyStateBorder: Color(0xFFE2E0DC),
     accent: Color(0xFF006D77),
     accentDark: Color(0xFF004852),
-    danger: Color(0xFFD64541),
-    warn: Color(0xFFB36B2C),
+    accentText: Color(0xFF006D77),
+    danger: Color(0xFFC43D39),
+    warn: Color(0xFF9E5E27),
   );
 
   /// The same warm greys, inverted: near-black surfaces with light ink. The
-  /// accent is a touch lighter so it still reads on dark, while white text
-  /// on it keeps enough contrast (~4.8:1).
+  /// accent stays dark enough for white text on it (~4.8:1); as text or an
+  /// icon on dark it's the lighter [accentText].
   static const dark = AppPalette(
     background: Color(0xFF141413),
     surface: Color(0xFF1E1D1B),
@@ -89,9 +95,9 @@ class AppPalette {
     inkSoft: Color(0xFFD9D6D2),
     label: Color(0xFFC9C6C1),
     muted: Color(0xFF9C9893),
-    mutedSoft: Color(0xFF75716C),
-    mutedTag: Color(0xFF85817C),
-    mutedLabel: Color(0xFF7A7773),
+    mutedSoft: Color(0xFF908C86),
+    mutedTag: Color(0xFF95928D),
+    mutedLabel: Color(0xFF95928D),
     hairline: Color(0xFF2C2B28),
     rowBorder: Color(0xFF2F2D2A),
     chipBorderIdle: Color(0xFF3A3835),
@@ -100,8 +106,64 @@ class AppPalette {
     emptyStateBorder: Color(0xFF3A3835),
     accent: Color(0xFF177E88),
     accentDark: Color(0xFF0E5C64),
+    accentText: Color(0xFF2FA3AE),
     danger: Color(0xFFC9403C),
     warn: Color(0xFFD39A5C),
+  );
+
+  /// [light] with Increase Contrast on: darker greys, and borders that set
+  /// chips, fields and cards apart at 3:1.
+  static const lightHighContrast = AppPalette(
+    background: Color(0xFFFAFAFA),
+    surface: Color(0xFFFFFFFF),
+    cardFill: Color(0xFFF3F3F2),
+    cardBorder: Color(0xFF8E8A84),
+    dashedBorder: Color(0xFF8E8A84),
+    ink: Color(0xFF000000),
+    inkSoft: Color(0xFF1C1B1A),
+    label: Color(0xFF2B2A28),
+    muted: Color(0xFF545250),
+    mutedSoft: Color(0xFF64605A),
+    mutedTag: Color(0xFF5C5A55),
+    mutedLabel: Color(0xFF5C5A55),
+    hairline: Color(0xFFC4C0BA),
+    rowBorder: Color(0xFFC4C0BA),
+    chipBorderIdle: Color(0xFF8E8A84),
+    chipTextIdle: Color(0xFF45423F),
+    removeButtonBorder: Color(0xFF8E8A84),
+    emptyStateBorder: Color(0xFF8E8A84),
+    accent: Color(0xFF00606A),
+    accentDark: Color(0xFF003D45),
+    accentText: Color(0xFF00606A),
+    danger: Color(0xFFB53632),
+    warn: Color(0xFF8A5020),
+  );
+
+  /// [dark] with Increase Contrast on.
+  static const darkHighContrast = AppPalette(
+    background: Color(0xFF141413),
+    surface: Color(0xFF1E1D1B),
+    cardFill: Color(0xFF262523),
+    cardBorder: Color(0xFF77736C),
+    dashedBorder: Color(0xFF77736C),
+    ink: Color(0xFFFFFFFF),
+    inkSoft: Color(0xFFEDEBE8),
+    label: Color(0xFFDDDAD6),
+    muted: Color(0xFFBEBBB8),
+    mutedSoft: Color(0xFFA8A5A1),
+    mutedTag: Color(0xFFB2AFAC),
+    mutedLabel: Color(0xFFB2AFAC),
+    hairline: Color(0xFF524F4B),
+    rowBorder: Color(0xFF524F4B),
+    chipBorderIdle: Color(0xFF77736C),
+    chipTextIdle: Color(0xFFD0CDC8),
+    removeButtonBorder: Color(0xFF77736C),
+    emptyStateBorder: Color(0xFF77736C),
+    accent: Color(0xFF0F6E77),
+    accentDark: Color(0xFF09525A),
+    accentText: Color(0xFF3CC0CC),
+    danger: Color(0xFFB83632),
+    warn: Color(0xFFE0AC72),
   );
 }
 
@@ -140,6 +202,10 @@ class AppColors {
   /// Teal accent for primary actions and links.
   static Color get accent => current.accent;
   static Color get accentDark => current.accentDark;
+
+  /// [accent] for text, links and icons — lighter in dark mode, where the
+  /// fill-strength teal would be too dim to read.
+  static Color get accentText => current.accentText;
 
   /// Red for destructive actions; white text on it.
   static Color get danger => current.danger;

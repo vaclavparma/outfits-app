@@ -40,7 +40,14 @@ class SatnikApp extends StatelessWidget {
             ThemeMode.dark => true,
             ThemeMode.system => MediaQuery.platformBrightnessOf(context) == Brightness.dark,
           };
-          _applyPalette(context, dark ? AppPalette.dark : AppPalette.light);
+          // iOS Increase Contrast / Android high-contrast text.
+          final strong = MediaQuery.highContrastOf(context);
+          _applyPalette(
+            context,
+            dark
+                ? (strong ? AppPalette.darkHighContrast : AppPalette.dark)
+                : (strong ? AppPalette.lightHighContrast : AppPalette.light),
+          );
 
           return MaterialApp(
             title: 'Outfits',

@@ -219,7 +219,7 @@ class _OutfitCard extends StatelessWidget {
                     child: Icon(
                       outfit.favorite ? Icons.favorite : Icons.favorite_border,
                       size: 21,
-                      color: outfit.favorite ? AppColors.accent : AppColors.mutedSoft,
+                      color: outfit.favorite ? AppColors.accentText : AppColors.mutedSoft,
                     ),
                   ),
                 ),

@@ -892,7 +892,7 @@ class _MonthStrip extends StatelessWidget {
               margin: EdgeInsets.only(left: d == 1 ? 0 : 2.5),
               decoration: BoxDecoration(
                 color: worn.contains(d)
-                    ? AppColors.accent
+                    ? AppColors.accentText
                     : d > now.day
                     ? AppColors.cardFill.withValues(alpha: 0.5)
                     : AppColors.cardBorder,
@@ -1207,8 +1207,8 @@ class _ColorEditorState extends State<_ColorEditor> {
             });
             store.redetectColors(item.id);
           },
-          icon: Icon(Icons.auto_awesome_outlined, size: 18, color: AppColors.accent),
-          label: Text(l10n.colorsRedetect, style: AppText.sans(size: 13, color: AppColors.accent)),
+          icon: Icon(Icons.auto_awesome_outlined, size: 18, color: AppColors.accentText),
+          label: Text(l10n.colorsRedetect, style: AppText.sans(size: 13, color: AppColors.accentText)),
         ),
       ],
     );
@@ -1552,7 +1552,7 @@ class _MoveTypeItemsDialogState extends State<_MoveTypeItemsDialog> {
           onPressed: () => Navigator.of(context).pop(_target),
           child: Text(
             l10n.delete,
-            style: AppText.sans(size: 13, weight: FontWeight.w500, color: AppColors.accent),
+            style: AppText.sans(size: 13, weight: FontWeight.w500, color: AppColors.accentText),
           ),
         ),
       ],

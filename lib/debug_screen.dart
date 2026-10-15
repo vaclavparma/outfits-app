@@ -354,7 +354,7 @@ class _Action extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           alignment: Alignment.centerLeft,
           decoration: BoxDecoration(border: last ? null : Border(bottom: BorderSide(color: AppColors.rowBorder))),
-          child: Text(label, style: AppText.sans(size: 15, color: danger ? AppColors.danger : AppColors.accent)),
+          child: Text(label, style: AppText.sans(size: 15, color: danger ? AppColors.danger : AppColors.accentText)),
         ),
       ),
     );

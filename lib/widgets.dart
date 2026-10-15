@@ -132,25 +132,31 @@ class GarmentCard extends StatelessWidget {
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
+                  // Dark enough under the caption for white text to keep
+                  // 4.5:1 even over a white product shot.
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.45)],
-                    stops: const [0.55, 1],
+                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.55), Colors.black.withValues(alpha: 0.65)],
+                    stops: const [0.4, 0.68, 1],
                   ),
                 ),
               ),
             ),
           if (slotLabel != null)
             Positioned(
-              top: 11,
-              left: 12,
-              child: Text(
-                slotLabel!,
-                style: AppText.mono(
-                  size: 8,
-                  letterSpacing: 1.1,
-                  color: hasImage ? Colors.white.withValues(alpha: 0.85) : AppColors.mutedLabel,
+              top: hasImage ? 9 : 11,
+              left: hasImage ? 7 : 12,
+              // On a photo, white on a dark tag, which reads whatever the
+              // photo is like behind it.
+              child: Container(
+                padding: hasImage ? const EdgeInsets.symmetric(horizontal: 5, vertical: 2) : EdgeInsets.zero,
+                decoration: hasImage
+                    ? BoxDecoration(color: Colors.black.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(4))
+                    : null,
+                child: Text(
+                  slotLabel!,
+                  style: AppText.mono(size: 8, letterSpacing: 1.1, color: hasImage ? Colors.white : AppColors.mutedLabel),
                 ),
               ),
             ),
@@ -180,7 +186,7 @@ class GarmentCard extends StatelessWidget {
                         style: AppText.mono(
                           size: 8.5,
                           letterSpacing: 0.6,
-                          color: hasImage ? Colors.white.withValues(alpha: 0.75) : AppColors.mutedTag,
+                          color: hasImage ? Colors.white : AppColors.mutedTag,
                         ),
                       ),
                     ),
@@ -457,7 +463,7 @@ Future<bool> confirmDialog(
           onPressed: () => Navigator.of(dialogContext).pop(true),
           child: Text(
             confirmLabel,
-            style: AppText.sans(size: 13, weight: FontWeight.w500, color: AppColors.accent),
+            style: AppText.sans(size: 13, weight: FontWeight.w500, color: AppColors.accentText),
           ),
         ),
       ],
@@ -479,7 +485,7 @@ Future<void> infoDialog(BuildContext context, {required String title, required S
           onPressed: () => Navigator.of(dialogContext).pop(),
           child: Text(
             AppLocalizations.of(dialogContext)!.ok,
-            style: AppText.sans(size: 13, weight: FontWeight.w500, color: AppColors.accent),
+            style: AppText.sans(size: 13, weight: FontWeight.w500, color: AppColors.accentText),
           ),
         ),
       ],
@@ -577,7 +583,7 @@ class _TextPromptDialogState extends State<_TextPromptDialog> {
             style: AppText.sans(
               size: 13,
               weight: FontWeight.w500,
-              color: canConfirm ? AppColors.accent : AppColors.mutedSoft,
+              color: canConfirm ? AppColors.accentText : AppColors.mutedSoft,
             ),
           ),
         ),

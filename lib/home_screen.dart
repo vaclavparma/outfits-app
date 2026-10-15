@@ -414,7 +414,7 @@ class _WardrobeSwitcherState extends State<_WardrobeSwitcher> {
             SizedBox(
               width: 28,
               child: active
-                  ? Align(alignment: Alignment.centerRight, child: Icon(Icons.check, size: 17, color: AppColors.accent))
+                  ? Align(alignment: Alignment.centerRight, child: Icon(Icons.check, size: 17, color: AppColors.accentText))
                   : null,
             ),
           ],

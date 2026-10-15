@@ -268,7 +268,7 @@ class _WardrobesCard extends StatelessWidget {
                   child: Row(
                     children: [
                       const SizedBox(width: 32),
-                      Text('+ ${l10n.newWardrobe}', style: AppText.sans(size: 15, color: AppColors.accent)),
+                      Text('+ ${l10n.newWardrobe}', style: AppText.sans(size: 15, color: AppColors.accentText)),
                     ],
                   ),
                 ),
@@ -318,7 +318,7 @@ class _WardrobeRow extends StatelessWidget {
               children: [
                 SizedBox(
                   width: 32,
-                  child: active ? Icon(Icons.check, size: 18, color: AppColors.accent) : null,
+                  child: active ? Icon(Icons.check, size: 18, color: AppColors.accentText) : null,
                 ),
                 Expanded(
                   child: Text(
@@ -462,7 +462,7 @@ class _KindsCardState extends State<_KindsCard> {
                   height: 56,
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: Text('+ ${l10n.newKind}', style: AppText.sans(size: 15, color: AppColors.accent)),
+                    child: Text('+ ${l10n.newKind}', style: AppText.sans(size: 15, color: AppColors.accentText)),
                   ),
                 ),
               ),
@@ -706,7 +706,7 @@ class _TypeList extends StatelessWidget {
                   height: 44,
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: Text('+ ${l10n.newTypeTitle}', style: AppText.sans(size: 14, color: AppColors.accent)),
+                    child: Text('+ ${l10n.newTypeTitle}', style: AppText.sans(size: 14, color: AppColors.accentText)),
                   ),
                 ),
               ),
@@ -823,7 +823,7 @@ class ReminderCard extends StatelessWidget {
                             time,
                             alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
                           ),
-                          style: AppText.sans(size: 16, color: AppColors.accent),
+                          style: AppText.sans(size: 16, color: AppColors.accentText),
                         ),
                       ],
                     ),

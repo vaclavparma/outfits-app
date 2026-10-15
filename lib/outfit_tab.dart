@@ -427,7 +427,7 @@ class _PinButton extends StatelessWidget {
       child: Icon(
         pinned ? Icons.push_pin : Icons.push_pin_outlined,
         size: 14,
-        color: pinned ? AppColors.accent : AppColors.muted,
+        color: pinned ? AppColors.accentText : AppColors.muted,
       ),
     );
   }
