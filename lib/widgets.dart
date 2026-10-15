@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import 'l10n/app_localizations.dart';
@@ -239,8 +240,12 @@ class SelectChip extends StatelessWidget {
     this.mono = true,
   });
 
+  /// Chips are never drawn shorter than this — big enough to hit.
+  static const minHeight = 36.0;
+
   @override
   Widget build(BuildContext context) {
+    final height = math.max(this.height, minHeight);
     final bg = active ? AppColors.accentDark : AppColors.surface;
     final border = active ? AppColors.accentDark : AppColors.chipBorderIdle;
     final color = active ? Colors.white : AppColors.chipTextIdle;
@@ -308,18 +313,20 @@ class RoundIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: background ?? AppColors.ink,
-          shape: BoxShape.circle,
-          border: borderColor != null ? Border.all(color: borderColor!) : null,
+    return TapArea(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: background ?? AppColors.ink,
+            shape: BoxShape.circle,
+            border: borderColor != null ? Border.all(color: borderColor!) : null,
+          ),
+          alignment: Alignment.center,
+          child: child,
         ),
-        alignment: Alignment.center,
-        child: child,
       ),
     );
   }
@@ -895,7 +902,7 @@ class TypeTabs extends StatelessWidget {
                 onTap: () => onSelect(t.key),
                 child: Container(
                   margin: const EdgeInsets.only(right: 18),
-                  padding: const EdgeInsets.symmetric(vertical: 7),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
                     border: Border(
                       bottom: BorderSide(
@@ -1001,5 +1008,46 @@ class OutfitPreview extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+/// Makes [child] easier to hit: taps up to [minSize] wide/tall (centered on
+/// it) count as on it, without changing how it looks or takes up space.
+/// For small controls — chips, pins, icons — where the drawn size is well
+/// under the ~44 pt a finger needs.
+///
+/// The extra area only works inside whatever bounds the parent hit-tests
+/// (e.g. not past the edge of a Stack it overhangs).
+class TapArea extends SingleChildRenderObjectWidget {
+  final double minSize;
+  const TapArea({super.key, this.minSize = 44, required super.child});
+
+  @override
+  RenderTapArea createRenderObject(BuildContext context) => RenderTapArea(minSize);
+
+  @override
+  void updateRenderObject(BuildContext context, RenderTapArea renderObject) => renderObject.minSize = minSize;
+}
+
+/// The render object behind [TapArea].
+class RenderTapArea extends RenderProxyBox {
+  RenderTapArea(this.minSize);
+
+  double minSize;
+
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    final dx = math.max(0.0, (minSize - size.width) / 2);
+    final dy = math.max(0.0, (minSize - size.height) / 2);
+    if (!Rect.fromLTRB(-dx, -dy, size.width + dx, size.height + dy).contains(position)) return false;
+    // A tap off the child is handed to it at its center — inside it even if
+    // it's round — so its gesture detectors take it; the pointer events
+    // still carry the real position.
+    final inside = size.contains(position) ? position : size.center(Offset.zero);
+    if (hitTestChildren(result, position: inside)) {
+      result.add(BoxHitTestEntry(this, position));
+      return true;
+    }
+    return false;
   }
 }

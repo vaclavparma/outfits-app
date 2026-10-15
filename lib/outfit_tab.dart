@@ -131,12 +131,7 @@ class _OutfitTabState extends State<OutfitTab> {
 
     return Column(
       children: [
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
-            child: _canvas(context, store, l10n),
-          ),
-        ),
+        Expanded(child: _canvas(context, store, l10n)),
         SizedBox(
           height: 52,
           child: AnimatedSwitcher(
@@ -241,13 +236,18 @@ class _OutfitTabState extends State<OutfitTab> {
     // The card being handled paints on top.
     final ordered = [...slots.where((s) => s.id != _active), ...slots.where((s) => s.id == _active)];
 
+    // The cards keep clear of the edges by [_inset], but the Stack spans
+    // the whole area: a pin overhanging a card at the edge still gets taps
+    // (they only reach what's inside the Stack).
     return LayoutBuilder(
       builder: (context, constraints) {
-        _size = constraints.biggest;
+        _size = _inset.deflateSize(constraints.biggest);
         _unit = CanvasGeometry.unitFor(_size.width, _size.height);
         return Stack(
           clipBehavior: Clip.none,
-          children: [for (final s in ordered) _card(store, s, _boxFor(s))],
+          children: [
+            for (final s in ordered) _card(store, s, _boxFor(s).shift(Offset(_inset.left, _inset.top))),
+          ],
         );
       },
     );
@@ -339,26 +339,39 @@ class _OutfitTabState extends State<OutfitTab> {
       child: card,
     );
 
+    // Laid out with a margin around the card: the pin overhangs its corner,
+    // and taps only reach what's inside the box the card is given. The
+    // margin itself lets taps through to whatever is below.
+    const m = _pinMargin;
     return Positioned.fromRect(
       key: ValueKey(s.id),
-      rect: box,
-      child: Listener(
-        onPointerDown: _trackCardTouch,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            gestures,
-            if (item != null && !lifted)
-              Positioned(
-                top: -8,
-                left: -8,
-                child: _PinButton(pinned: item.pinned, onTap: () => store.togglePinned(item.id)),
-              ),
-          ],
-        ),
+      rect: box.inflate(m),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: m,
+            top: m,
+            width: box.width,
+            height: box.height,
+            child: Listener(onPointerDown: _trackCardTouch, child: gestures),
+          ),
+          if (item != null && !lifted)
+            Positioned(
+              top: m - 8,
+              left: m - 8,
+              child: _PinButton(pinned: item.pinned, onTap: () => store.togglePinned(item.id)),
+            ),
+        ],
       ),
     );
   }
+
+  /// The canvas's margin, which cards are kept inside of.
+  static const _inset = EdgeInsets.fromLTRB(16, 14, 16, 8);
+
+  /// Room around a card for its pin's full tap area (see [TapArea]).
+  static const _pinMargin = 18.0;
 }
 
 class _PillButton extends StatelessWidget {

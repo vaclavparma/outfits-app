@@ -254,14 +254,24 @@ class _TabRoot extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                GestureDetector(
-                  onTap: () => openSettingsScreen(context),
-                  child: Padding(
-                    padding: EdgeInsets.all(4),
-                    child: Icon(
-                      Icons.settings_outlined,
-                      size: 20,
-                      color: AppColors.mutedSoft,
+                Semantics(
+                  button: true,
+                  label: AppLocalizations.of(context)!.settingsTitle,
+                  // 40 × 40 to tap; pulled out by the extra padding so the
+                  // icon stays where it was.
+                  child: Transform.translate(
+                    offset: const Offset(6, 0),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => openSettingsScreen(context),
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Icon(
+                          Icons.settings_outlined,
+                          size: 20,
+                          color: AppColors.mutedSoft,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -306,60 +316,63 @@ class _WardrobeSwitcherState extends State<_WardrobeSwitcher> {
     final l10n = AppLocalizations.of(context)!;
     final canSwitch = store.wardrobes.length > 1;
 
-    return PopupMenuButton<String>(
-      enabled: canSwitch,
-      tooltip: '',
-      position: PopupMenuPosition.under,
-      offset: const Offset(-10, 8),
-      constraints: const BoxConstraints(minWidth: 250, maxWidth: 320),
-      menuPadding: const EdgeInsets.fromLTRB(6, 4, 6, 6),
-      color: AppColors.surface,
-      elevation: 6,
-      shadowColor: const Color(0x29000000),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: AppColors.rowBorder),
-      ),
-      onOpened: () => setState(() => _open = true),
-      onCanceled: () => setState(() => _open = false),
-      onSelected: (id) {
-        setState(() => _open = false);
-        store.switchWardrobe(id);
-      },
-      itemBuilder: (context) => [
-        PopupMenuItem<String>(
-          enabled: false,
-          height: 34,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            l10n.sectionWardrobes.toUpperCase(),
-            style: AppText.mono(size: 9.5, letterSpacing: 1.3, color: AppColors.mutedSoft),
-          ),
+    // A bigger target than the name and chevron alone.
+    return TapArea(
+      child: PopupMenuButton<String>(
+        enabled: canSwitch,
+        tooltip: '',
+        position: PopupMenuPosition.under,
+        offset: const Offset(-10, 8),
+        constraints: const BoxConstraints(minWidth: 250, maxWidth: 320),
+        menuPadding: const EdgeInsets.fromLTRB(6, 4, 6, 6),
+        color: AppColors.surface,
+        elevation: 6,
+        shadowColor: const Color(0x29000000),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: AppColors.rowBorder),
         ),
-        for (final w in store.wardrobes) _item(store, w, l10n),
-      ],
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: Text(
-                store.activeWardrobe.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppText.sans(size: 14, weight: FontWeight.w500, color: AppColors.ink),
-              ),
+        onOpened: () => setState(() => _open = true),
+        onCanceled: () => setState(() => _open = false),
+        onSelected: (id) {
+          setState(() => _open = false);
+          store.switchWardrobe(id);
+        },
+        itemBuilder: (context) => [
+          PopupMenuItem<String>(
+            enabled: false,
+            height: 34,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              l10n.sectionWardrobes.toUpperCase(),
+              style: AppText.mono(size: 9.5, letterSpacing: 1.3, color: AppColors.mutedSoft),
             ),
-            if (canSwitch) ...[
-              const SizedBox(width: 2),
-              AnimatedRotation(
-                turns: _open ? 0.5 : 0,
-                duration: const Duration(milliseconds: 180),
-                child: Icon(Icons.keyboard_arrow_down, size: 20, color: AppColors.mutedSoft),
+          ),
+          for (final w in store.wardrobes) _item(store, w, l10n),
+        ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  store.activeWardrobe.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.sans(size: 14, weight: FontWeight.w500, color: AppColors.ink),
+                ),
               ),
+              if (canSwitch) ...[
+                const SizedBox(width: 2),
+                AnimatedRotation(
+                  turns: _open ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 180),
+                  child: Icon(Icons.keyboard_arrow_down, size: 20, color: AppColors.mutedSoft),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -479,7 +492,7 @@ class _TourCard extends StatelessWidget {
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: store.endTour,
-                      child: SizedBox(width: 36, height: 28, child: Icon(Icons.close, size: 17, color: ink.withValues(alpha: 0.7))),
+                      child: SizedBox(width: 40, height: 36, child: Icon(Icons.close, size: 17, color: ink.withValues(alpha: 0.7))),
                     ),
                   ),
                 ],
@@ -605,7 +618,8 @@ class _BottomTabs extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: AppColors.hairline)),
       ),
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+      // No vertical padding here: each tab takes the bar's full height to tap.
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: ContentWidth(
         maxWidth: kMaxContentWidth - 40,
         child: Row(
@@ -616,7 +630,7 @@ class _BottomTabs extends StatelessWidget {
                 onTap: () => onSelect(kind),
                 behavior: HitTestBehavior.opaque,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                   child: Column(
                     children: [
                       Text(

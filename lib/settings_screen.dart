@@ -376,7 +376,7 @@ class _WardrobeRow extends StatelessWidget {
   }
 }
 
-/// A muted icon button in a wardrobe row (34 wide, so a pencil and a bin
+/// A muted icon button in a wardrobe row (40 wide, so a pencil and a bin
 /// sit close together, full row height to tap); disabled when [onTap] is
 /// null.
 class _RowIcon extends StatelessWidget {
@@ -395,7 +395,7 @@ class _RowIcon extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: SizedBox(
-          width: 34,
+          width: 40,
           height: 48,
           child: Icon(
             icon,
