@@ -208,20 +208,21 @@ class _LinkButton extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: _open,
         child: Container(
-          height: 46,
+          constraints: const BoxConstraints(minHeight: 46),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(23),
             border: Border.all(color: AppColors.cardBorder),
           ),
           alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Flexible(
                 child: Text(
                   label,
-                  maxLines: 1,
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
                   style: AppText.sans(size: 14, color: AppColors.ink),
                 ),
@@ -310,8 +311,9 @@ class _WardrobeRow extends StatelessWidget {
         onTap: () => store.switchWardrobe(wardrobe.id),
         child: Padding(
           padding: _WardrobesCard._rowPadding,
-          child: SizedBox(
-            height: 56,
+          // At least 56 tall; a long name with large text wraps.
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 56),
             child: Row(
               children: [
                 SizedBox(
@@ -321,7 +323,7 @@ class _WardrobeRow extends StatelessWidget {
                 Expanded(
                   child: Text(
                     wardrobe.name,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppText.sans(size: 16, color: AppColors.ink),
                   ),

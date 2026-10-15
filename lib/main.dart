@@ -9,6 +9,9 @@ import 'reminders.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
 
+/// The most the system text size setting enlarges text in the app.
+const maxTextScale = 2.0;
+
 void main() {
   runApp(const SatnikApp());
 }
@@ -53,7 +56,10 @@ class SatnikApp extends StatelessWidget {
             supportedLocales: AppLocalizations.supportedLocales,
             builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
               value: dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
-              child: child!,
+              // The system text size applies everywhere, up to double —
+              // enough to read comfortably (the 200% Apple asks for), while
+              // dense spots (the calendar, the tab bar) still hold together.
+              child: MediaQuery.withClampedTextScaling(maxScaleFactor: maxTextScale, child: child!),
             ),
             // Before `load()` resolves, stay on a bare background rather than
             // flashing onboarding (or the home screen) with pre-load defaults.

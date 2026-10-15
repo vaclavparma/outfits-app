@@ -25,24 +25,32 @@ class _DiaryTabState extends State<DiaryTab> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final stacked = MediaQuery.textScalerOf(context).scale(1) > 1.3;
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
+          // With large text the toggle goes below the title rather than
+          // squeezing it.
+          child: SizedBox(
+            width: double.infinity,
+            child: Flex(
+              direction: stacked ? Axis.vertical : Axis.horizontal,
+              crossAxisAlignment: stacked ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              spacing: 8,
+              children: [
+                Text(
                   l10n.tabDiary,
                   style: AppText.sans(size: 26, weight: FontWeight.w300, color: AppColors.ink, letterSpacing: -0.4),
                 ),
-              ),
-              _Segmented(
-                labels: [l10n.diaryCalendar, l10n.diaryStats],
-                selected: _stats ? 1 : 0,
-                onSelect: (i) => setState(() => _stats = i == 1),
-              ),
-            ],
+                _Segmented(
+                  labels: [l10n.diaryCalendar, l10n.diaryStats],
+                  selected: _stats ? 1 : 0,
+                  onSelect: (i) => setState(() => _stats = i == 1),
+                ),
+              ],
+            ),
           ),
         ),
         Expanded(
@@ -256,12 +264,17 @@ class _DayCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = Text(
-      '${day.day}',
-      style: AppText.sans(
-        size: 17,
-        weight: isToday ? FontWeight.w500 : FontWeight.w400,
-        color: isFuture ? AppColors.mutedSoft.withValues(alpha: 0.6) : AppColors.ink,
+    // Seven to a row: with large text a number shrinks to fit its cell
+    // rather than being cut off.
+    final label = FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Text(
+        '${day.day}',
+        style: AppText.sans(
+          size: 17,
+          weight: isToday ? FontWeight.w500 : FontWeight.w400,
+          color: isFuture ? AppColors.mutedSoft.withValues(alpha: 0.6) : AppColors.ink,
+        ),
       ),
     );
     return Semantics(
@@ -600,6 +613,10 @@ class _ColorStats extends StatelessWidget {
     final month = DateFormat.LLLL(Localizations.localeOf(context).toString()).format(now);
 
     final mono = AppText.mono(size: 9.5, letterSpacing: 0.6, color: AppColors.mutedSoft);
+    // Number columns grow with the text size — only so far, leaving the
+    // color names room; the figures shrink to fit past that.
+    final scaler = MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1.4);
+    final col1 = scaler.scale(70), col2 = scaler.scale(80);
     return Padding(
       padding: const EdgeInsets.only(bottom: 26),
       child: Column(
@@ -616,8 +633,8 @@ class _ColorStats extends StatelessWidget {
             child: Row(
               children: [
                 const Spacer(),
-                SizedBox(width: 70, child: Text(l10n.statsColWardrobe.toUpperCase(), textAlign: TextAlign.right, style: mono)),
-                SizedBox(width: 80, child: Text(l10n.statsWornLabel.toUpperCase(), textAlign: TextAlign.right, style: mono)),
+                SizedBox(width: col1, child: _FitRight(Text(l10n.statsColWardrobe.toUpperCase(), style: mono))),
+                SizedBox(width: col2, child: _FitRight(Text(l10n.statsWornLabel.toUpperCase(), style: mono))),
               ],
             ),
           ),
@@ -639,19 +656,16 @@ class _ColorStats extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(child: Text(l10n.colorFamily(f.name), style: AppText.sans(size: 15, color: AppColors.ink))),
                   SizedBox(
-                    width: 70,
-                    child: Text(
-                      '${owned[f] ?? 0} %',
-                      textAlign: TextAlign.right,
-                      style: AppText.mono(size: 12, color: AppColors.mutedTag),
-                    ),
+                    width: col1,
+                    child: _FitRight(Text('${owned[f] ?? 0} %', style: AppText.mono(size: 12, color: AppColors.mutedTag))),
                   ),
                   SizedBox(
-                    width: 80,
-                    child: Text(
-                      wornCounts.isEmpty ? '–' : '${worn[f] ?? 0} %',
-                      textAlign: TextAlign.right,
-                      style: AppText.mono(size: 12, color: wornCounts.isEmpty ? AppColors.mutedTag : AppColors.ink),
+                    width: col2,
+                    child: _FitRight(
+                      Text(
+                        wornCounts.isEmpty ? '–' : '${worn[f] ?? 0} %',
+                        style: AppText.mono(size: 12, color: wornCounts.isEmpty ? AppColors.mutedTag : AppColors.ink),
+                      ),
                     ),
                   ),
                 ],
@@ -677,7 +691,7 @@ class _ShareBar extends StatelessWidget {
     return Row(
       children: [
         SizedBox(
-          width: 76,
+          width: MediaQuery.textScalerOf(context).scale(76),
           child: Text(label, style: AppText.mono(size: 9.5, letterSpacing: 0.4, color: AppColors.mutedTag)),
         ),
         Expanded(
@@ -705,4 +719,15 @@ class _ShareBar extends StatelessWidget {
       ],
     );
   }
+}
+
+/// [child] right-aligned on one line, shrunk if the column is too narrow
+/// for it (large text).
+class _FitRight extends StatelessWidget {
+  final Widget child;
+  const _FitRight(this.child);
+
+  @override
+  Widget build(BuildContext context) =>
+      FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerRight, child: child);
 }

@@ -939,7 +939,8 @@ class _WearTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 72,
+      // At least this tall; more with large text.
+      constraints: const BoxConstraints(minHeight: 72),
       padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
       decoration: BoxDecoration(
         color: AppColors.background,
@@ -948,7 +949,7 @@ class _WearTile extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         children: [
           FittedBox(
             fit: BoxFit.scaleDown,
@@ -959,7 +960,8 @@ class _WearTile extends StatelessWidget {
               style: AppText.sans(size: small ? 16 : 24, weight: FontWeight.w300, color: AppColors.ink),
             ),
           ),
-          Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.mono(size: 9, letterSpacing: 0.3, color: AppColors.mutedTag)),
+          const SizedBox(height: 6),
+          Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.mono(size: 9, letterSpacing: 0.3, color: AppColors.mutedTag)),
         ],
       ),
     );
@@ -1382,8 +1384,9 @@ class _DetailAction extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 46,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        // Grows for a label that wraps with large text.
+        constraints: const BoxConstraints(minHeight: 46),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: filled ? AppColors.accent : null,
           borderRadius: BorderRadius.circular(23),

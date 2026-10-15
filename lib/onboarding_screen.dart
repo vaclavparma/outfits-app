@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -114,8 +116,9 @@ class _Welcome extends StatelessWidget {
           Expanded(
             child: LayoutBuilder(
               builder: (context, box) {
-                // The collage keeps its proportions, scaled to the space.
-                final u = (box.maxWidth / 340).clamp(0.6, 1.4);
+                // The collage keeps its proportions, scaled to the space
+                // the text below leaves it (less with large text).
+                final u = math.min(box.maxWidth / 340, box.maxHeight / 380).clamp(0.3, 1.4);
                 return Center(
                   child: SizedBox(
                     width: 340 * u,
