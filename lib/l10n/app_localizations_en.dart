@@ -348,6 +348,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get rateAppHint => 'It helps other people find the app';
+
+  @override
+  String get rateApp => 'Rate Outfits';
+
+  @override
   String get dropToRemove => 'Drop here to remove';
 
   @override

@@ -351,6 +351,12 @@ class AppLocalizationsCs extends AppLocalizations {
   }
 
   @override
+  String get rateAppHint => 'Pomůžeš tím ostatním appku najít';
+
+  @override
+  String get rateApp => 'Ohodnotit Outfits';
+
+  @override
   String get dropToRemove => 'Pusť sem pro odebrání';
 
   @override

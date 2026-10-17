@@ -7,6 +7,7 @@ import 'debug_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'models.dart';
 import 'reminders.dart';
+import 'review_prompt.dart';
 import 'sheets.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
@@ -128,6 +129,8 @@ class _AppCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 18),
+              const _RateBanner(),
+              const SizedBox(height: 10),
               Row(
                 children: [
                   // Brand names — not translated.
@@ -136,9 +139,66 @@ class _AppCard extends StatelessWidget {
                   const Expanded(child: _LinkButton(label: 'Buy Me a Coffee', url: _buyMeACoffeeUrl)),
                 ],
               ),
+
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// "Rate Outfits": five stars, a line on why it helps, and off to the
+/// store's review page. Going there counts as rated — the app stops asking
+/// with the system popup.
+class _RateBanner extends StatelessWidget {
+  const _RateBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Semantics(
+      button: true,
+      link: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          context.read<WardrobeStore>().markRated();
+          ReviewPrompt.openStore();
+        },
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 20, 12, 20),
+          decoration: BoxDecoration(color: AppColors.cardFill, borderRadius: BorderRadius.circular(18)),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ExcludeSemantics(
+                      child: Row(
+                        children: [
+                          for (var i = 0; i < 5; i++) Icon(Icons.star_rounded, size: 18, color: AppColors.warn),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(l10n.rateApp, style: AppText.sans(size: 15, weight: FontWeight.w500, color: AppColors.ink)),
+                    const SizedBox(height: 2),
+                    Text(l10n.rateAppHint, style: AppText.sans(size: 13, color: AppColors.muted, height: 1.3)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
+                child: const Icon(Icons.north_east, size: 17, color: Colors.white),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

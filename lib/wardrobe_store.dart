@@ -14,6 +14,7 @@ import 'color_detect.dart';
 import 'color_names.dart';
 import 'l10n/app_localizations.dart';
 import 'models.dart';
+import 'review_prompt.dart';
 
 /// Holds the entire app state: the wardrobes and their clothing, the kinds
 /// and types it's sorted into, the outfit canvas with what's currently on
@@ -209,6 +210,16 @@ class WardrobeStore extends ChangeNotifier {
   int? tourStep;
   static const tourSteps = 4;
 
+  /// When the app was first opened (or first opened since this was
+  /// recorded), and when it last asked for a store rating — see
+  /// [maybeAskForReview].
+  DateTime? firstUsedAt;
+  DateTime? reviewAskedAt;
+
+  /// Went to the store to rate the app (from settings) — then the system
+  /// popup isn't asked for any more.
+  bool reviewRated = false;
+
   /// Whether [load] has finished at least once. Distinct from
   /// [onboardingDone] — this just guards against briefly showing onboarding
   /// (or the home screen) with pre-load default values before the real,
@@ -252,6 +263,8 @@ class WardrobeStore extends ChangeNotifier {
       fixed = _ensureTypes() || fixed;
     }
 
+    final firstUse = firstUsedAt == null;
+    firstUsedAt ??= DateTime.now();
     loaded = true;
     _applyFirstLaunchScreen();
     // A tour left unfinished picks up where it was.
@@ -263,7 +276,7 @@ class WardrobeStore extends ChangeNotifier {
     notifyListeners();
     // Write the migrated/fixed data right away, so it isn't redone (with
     // fresh type ids) on every launch until something else happens to save.
-    if (migrated || fixed) await _persist();
+    if (migrated || fixed || firstUse) await _persist();
   }
 
   /// Whether saved outfits still need converting: kept in named
@@ -308,6 +321,9 @@ class WardrobeStore extends ChangeNotifier {
       onboardingDone = data['onboardingDone'] as bool? ?? false;
       tourStep = (data['tourStep'] as num?)?.toInt();
     } catch (_) {}
+    firstUsedAt = DateTime.tryParse('${data['firstUsedAt'] ?? ''}');
+    reviewAskedAt = DateTime.tryParse('${data['reviewAskedAt'] ?? ''}');
+    reviewRated = data['reviewRated'] == true;
 
     String? docsPath;
     try {
@@ -570,6 +586,9 @@ class WardrobeStore extends ChangeNotifier {
     'reminderMinutes': reminderMinutes,
     'onboardingDone': onboardingDone,
     'tourStep': ?tourStep,
+    'firstUsedAt': ?firstUsedAt?.toIso8601String(),
+    'reviewAskedAt': ?reviewAskedAt?.toIso8601String(),
+    if (reviewRated) 'reviewRated': true,
   };
 
   Future<void> _write() async {
@@ -1208,6 +1227,7 @@ class WardrobeStore extends ChangeNotifier {
     ];
     notifyListeners();
     await _persist();
+    maybeAskForReview();
     return true;
   }
 
@@ -1276,6 +1296,62 @@ class WardrobeStore extends ChangeNotifier {
   void _addDiaryEntry(DateTime day, List<SavedSlot> slots) {
     final entry = DiaryEntry(id: _newId('d'), day: day, loggedAt: DateTime.now(), slots: slots);
     diary = [...diary, entry]..sort((a, b) => a.day.compareTo(b.day));
+    notifyListeners();
+    _persist();
+    maybeAskForReview();
+  }
+
+  // ---------------------------------------------------------------------
+  // Store rating
+
+  /// Outfits saved and written down, in every wardrobe, before the app asks
+  /// for a rating — someone who got this far has something to rate.
+  static const reviewAfterMoments = 5;
+  static const reviewAfterDays = 3;
+
+  /// Asked again at most this often (the platform caps it further).
+  static const reviewEvery = Duration(days: 120);
+
+  /// Outfits saved plus diary entries, across wardrobes.
+  int get reviewMoments => wardrobeSummaries.fold(0, (n, w) => n + w.outfits + w.diary);
+
+  /// Whether this is a good moment to ask for a rating: right after saving
+  /// or logging an outfit, once the app has been in use a few days and a
+  /// few outfits in, the tour is over, and it hasn't asked lately (or been
+  /// rated already).
+  bool get shouldAskForReview {
+    final now = DateTime.now();
+    final first = firstUsedAt;
+    final asked = reviewAskedAt;
+    return !reviewRated &&
+        onboardingDone &&
+        tourStep == null &&
+        first != null &&
+        now.difference(first) >= const Duration(days: reviewAfterDays) &&
+        reviewMoments >= reviewAfterMoments &&
+        (asked == null || now.difference(asked) >= reviewEvery);
+  }
+
+  /// Asks for the system's rating popup if [shouldAskForReview] — a moment
+  /// later, once the sheet that saved the outfit has closed.
+  void maybeAskForReview() {
+    if (!shouldAskForReview) return;
+    reviewAskedAt = DateTime.now();
+    _persist();
+    Timer(const Duration(milliseconds: 1200), ReviewPrompt.request);
+  }
+
+  /// Went to the store to rate the app — no more asking.
+  void markRated() {
+    reviewRated = true;
+    _persist();
+  }
+
+  /// Forgets that it asked (and any rating), so it can ask again (debug
+  /// screen).
+  void resetReviewPrompt() {
+    reviewAskedAt = null;
+    reviewRated = false;
     notifyListeners();
     _persist();
   }
@@ -1482,6 +1558,9 @@ class WardrobeStore extends ChangeNotifier {
     reminderMinutes = defaultReminderMinutes;
     onboardingDone = false;
     tourStep = null;
+    firstUsedAt = null;
+    reviewAskedAt = null;
+    reviewRated = false;
     screen = WardrobeTabKind.outfit;
     await load();
   }

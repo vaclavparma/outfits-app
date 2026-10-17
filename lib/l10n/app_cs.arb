@@ -159,6 +159,8 @@
   "@deleteTypeMoveMessage": {"placeholders": {"name": {"type": "String"}, "items": {"type": "String"}}},
   "canvasFull": "Na plátně může být nejvýš {count} karet. Nějakou odeber — podrž ji a přetáhni do koše.",
   "@canvasFull": {"placeholders": {"count": {"type": "int"}}},
+  "rateAppHint": "Pomůžeš tím ostatním appku najít",
+  "rateApp": "Ohodnotit Outfits",
   "dropToRemove": "Pusť sem pro odebrání",
   "reorder": "Změnit pořadí",
   "newTypeTile": "nový typ",

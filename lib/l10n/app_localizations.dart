@@ -680,6 +680,18 @@ abstract class AppLocalizations {
   /// **'Na plátně může být nejvýš {count} karet. Nějakou odeber — podrž ji a přetáhni do koše.'**
   String canvasFull(int count);
 
+  /// No description provided for @rateAppHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'Pomůžeš tím ostatním appku najít'**
+  String get rateAppHint;
+
+  /// No description provided for @rateApp.
+  ///
+  /// In cs, this message translates to:
+  /// **'Ohodnotit Outfits'**
+  String get rateApp;
+
   /// No description provided for @dropToRemove.
   ///
   /// In cs, this message translates to:

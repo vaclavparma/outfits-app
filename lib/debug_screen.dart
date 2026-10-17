@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'reminders.dart';
+import 'review_prompt.dart';
 import 'sheets.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
@@ -90,6 +91,10 @@ class _DebugScreenState extends State<DebugScreen> {
 
   static String _count(int n, String one, [String? many]) => '$n ${n == 1 ? one : many ?? '${one}s'}';
 
+  static String _date(DateTime? d) => d == null
+      ? 'never'
+      : '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
   static String _size(int bytes) => bytes < 1024 * 1024
       ? '${(bytes / 1024).toStringAsFixed(1)} KB'
       : '${(bytes / 1024 / 1024).toStringAsFixed(1)} MB';
@@ -165,6 +170,14 @@ class _DebugScreenState extends State<DebugScreen> {
                                   '${(store.reminderMinutes % 60).toString().padLeft(2, '0')} · '
                                   '${info?.pendingReminders ?? '?'} scheduled',
                             ),
+                            _Row(
+                              'Rating prompt',
+                              '${store.shouldAskForReview ? 'due' : 'not due'} · '
+                                  '${store.reviewMoments}/${WardrobeStore.reviewAfterMoments} outfits · '
+                                  'since ${_date(store.firstUsedAt)} · '
+                                  'asked ${_date(store.reviewAskedAt)}'
+                                  '${store.reviewRated ? ' · rated' : ''}',
+                            ),
                           ],
                         ),
                       ),
@@ -186,6 +199,22 @@ class _DebugScreenState extends State<DebugScreen> {
                                   channelName: t.reminderChannel,
                                 );
                                 return ok ? 'Sent' : 'Notifications not allowed (or not available)';
+                              }),
+                            ),
+                            _Action(
+                              'Show the system rating popup',
+                              onTap: () => _run(() async {
+                                final ok = await ReviewPrompt.request();
+                                return ok
+                                    ? 'Requested — the system decides whether it shows (never in TestFlight)'
+                                    : 'Not available here';
+                              }),
+                            ),
+                            _Action(
+                              'Forget the rating was asked',
+                              onTap: () => _run(() async {
+                                store.resetReviewPrompt();
+                                return 'It can ask again';
                               }),
                             ),
                             _Action(
