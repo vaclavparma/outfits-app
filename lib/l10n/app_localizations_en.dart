@@ -343,6 +343,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String canvasFull(int count) {
+    return 'The canvas holds at most $count cards. Remove one first — hold it and drag it to the bin.';
+  }
+
+  @override
   String get dropToRemove => 'Drop here to remove';
 
   @override

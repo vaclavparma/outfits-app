@@ -157,6 +157,8 @@
   "defaultTypesDress": "Letní, Společenské",
   "deleteTypeMoveMessage": "V typu „{name}“ je {items}. Kam je přesunout?",
   "@deleteTypeMoveMessage": {"placeholders": {"name": {"type": "String"}, "items": {"type": "String"}}},
+  "canvasFull": "Na plátně může být nejvýš {count} karet. Nějakou odeber — podrž ji a přetáhni do koše.",
+  "@canvasFull": {"placeholders": {"count": {"type": "int"}}},
   "dropToRemove": "Pusť sem pro odebrání",
   "reorder": "Změnit pořadí",
   "newTypeTile": "nový typ",

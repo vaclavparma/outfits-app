@@ -124,6 +124,9 @@ class CanvasSlot {
   static const minScale = 0.6;
   static const maxScale = 1.8;
 
+  /// The most cards the canvas takes — more and they only bury each other.
+  static const maxCount = 8;
+
   final String id;
   final String kindId;
   double x;

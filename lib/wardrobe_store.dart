@@ -149,6 +149,9 @@ class WardrobeStore extends ChangeNotifier {
   List<CanvasSlot> get visibleSlots =>
       canvas.where((s) => kindById(s.kindId) != null).toList();
 
+  /// No room for another card (see [CanvasSlot.maxCount]).
+  bool get canvasFull => visibleSlots.length >= CanvasSlot.maxCount;
+
   /// Which item each canvas slot shows, by slot id. Not persisted — every
   /// launch (and wardrobe switch) opens on a fresh random outfit.
   Map<String, String> _worn = {};
@@ -935,8 +938,10 @@ class WardrobeStore extends ChangeNotifier {
 
   /// Adds a card of [kindId] — at [x], [y] if given, otherwise wherever
   /// there's the most room — showing [itemId] or, by default, a random
-  /// item of that kind not on the canvas yet. Returns the new slot.
-  CanvasSlot addSlot(String kindId, {String? itemId, double? x, double? y, double scale = 1}) {
+  /// item of that kind not on the canvas yet. Returns the new slot, or null
+  /// if the canvas already has [CanvasSlot.maxCount] cards.
+  CanvasSlot? addSlot(String kindId, {String? itemId, double? x, double? y, double scale = 1}) {
+    if (canvasFull) return null;
     final spot = x != null && y != null ? (x: x, y: y) : _freeSpot();
     final slot = CanvasSlot(id: _newId('s'), kindId: kindId, x: spot.x, y: spot.y, scale: scale);
     canvas = [...canvas, slot];

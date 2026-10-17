@@ -2,7 +2,7 @@
 
 A local-first wardrobe app for planning outfits: photograph what you own, mix tops, bottoms, shoes and layers into an outfit, save the combinations you like, and keep a diary of what you wore. Everything lives on your device — there's no account, no backend and no network access.
 
-[Google Play](https://play.google.com/store/apps/details?id=eu.oscillator.outfits&pcampaignid=web_share) · [App Store](#) <!-- TODO: add App Store link once live -->
+[Google Play](https://play.google.com/store/apps/details?id=eu.oscillator.outfits&pcampaignid=web_share) · [App Store](https://apps.apple.com/us/app/outfits-app/id6802752111)
 
 ## Features
 

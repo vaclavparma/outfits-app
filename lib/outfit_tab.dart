@@ -49,7 +49,7 @@ class OutfitTab extends StatefulWidget {
 class _OutfitTabState extends State<OutfitTab> {
   /// How long a card is held before it lifts to be moved — short, since a
   /// tap is over well before it.
-  static const _holdToMove = Duration(milliseconds: 250);
+  static const _holdToMove = Duration(milliseconds: 125);
 
   /// The card being moved or resized, and where it is so far — committed to
   /// the store when the gesture ends, not on every frame.
@@ -136,7 +136,7 @@ class _OutfitTabState extends State<OutfitTab> {
           height: 52,
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 160),
-            child: _moving ? _bin(l10n) : _addChips(store),
+            child: _moving ? _bin(l10n) : _addChips(store, l10n),
           ),
         ),
         Padding(
@@ -154,7 +154,7 @@ class _OutfitTabState extends State<OutfitTab> {
   }
 
   /// A chip per kind, to add a card of it.
-  Widget _addChips(WardrobeStore store) {
+  Widget _addChips(WardrobeStore store, AppLocalizations l10n) {
     return SingleChildScrollView(
       key: const ValueKey('chips'),
       scrollDirection: Axis.horizontal,
@@ -170,6 +170,10 @@ class _OutfitTabState extends State<OutfitTab> {
                 mono: false,
                 height: 34,
                 onTap: () {
+                  if (store.canvasFull) {
+                    store.flash(l10n.canvasFull(CanvasSlot.maxCount));
+                    return;
+                  }
                   HapticFeedback.selectionClick();
                   store.addSlot(k.id);
                 },

@@ -674,6 +674,12 @@ abstract class AppLocalizations {
   /// **'V typu „{name}“ je {items}. Kam je přesunout?'**
   String deleteTypeMoveMessage(String name, String items);
 
+  /// No description provided for @canvasFull.
+  ///
+  /// In cs, this message translates to:
+  /// **'Na plátně může být nejvýš {count} karet. Nějakou odeber — podrž ji a přetáhni do koše.'**
+  String canvasFull(int count);
+
   /// No description provided for @dropToRemove.
   ///
   /// In cs, this message translates to:

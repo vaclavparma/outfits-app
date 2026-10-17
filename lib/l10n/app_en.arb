@@ -152,6 +152,8 @@
   "otherTypeName": "Other",
   "defaultTypesDress": "Summer, Formal",
   "deleteTypeMoveMessage": "“{name}” has {items}. Where should they go?",
+  "canvasFull": "The canvas holds at most {count} cards. Remove one first — hold it and drag it to the bin.",
+  "@canvasFull": {"placeholders": {"count": {"type": "int"}}},
   "dropToRemove": "Drop here to remove",
   "reorder": "Reorder",
   "newTypeTile": "new type",

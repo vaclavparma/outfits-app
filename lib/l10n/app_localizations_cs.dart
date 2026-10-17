@@ -346,6 +346,11 @@ class AppLocalizationsCs extends AppLocalizations {
   }
 
   @override
+  String canvasFull(int count) {
+    return 'Na plátně může být nejvýš $count karet. Nějakou odeber — podrž ji a přetáhni do koše.';
+  }
+
+  @override
   String get dropToRemove => 'Pusť sem pro odebrání';
 
   @override
