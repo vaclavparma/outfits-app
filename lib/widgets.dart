@@ -117,9 +117,14 @@ class GarmentCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.cardFill,
         borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: borderColor ?? AppColors.cardBorder),
+        border: borderColor == null ? Border.all(color: AppColors.cardBorder) : null,
         boxShadow: shadow,
       ),
+      // A border that marks the card (lifted, selected) goes on top: under
+      // the photo it would only peek out at the clipped corners.
+      foregroundDecoration: borderColor == null
+          ? null
+          : BoxDecoration(borderRadius: BorderRadius.circular(17), border: Border.all(color: borderColor!)),
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [

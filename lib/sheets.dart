@@ -22,7 +22,9 @@ import 'widgets.dart';
 /// one sheet stacked on top of another.
 Future<T?> _showSheet<T>(
   BuildContext context,
-  String Function(BuildContext) title,
+  // Null leaves the header out — the content then has its own close
+  // button.
+  String Function(BuildContext)? title,
   Widget content, {
   double maxHeightFactor = 0.85,
   ValueChanged<int>? onSwipe,
@@ -65,14 +67,16 @@ Future<T?> _showSheet<T>(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(child: Text(title(sheetContext), style: _sheetTitleStyle)),
-                      const SizedBox(width: 8),
-                      const _SheetCloseButton(),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
+                  if (title != null) ...[
+                    Row(
+                      children: [
+                        Expanded(child: Text(title(sheetContext), style: _sheetTitleStyle)),
+                        const SizedBox(width: 8),
+                        const _SheetCloseButton(),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                   content,
                 ],
               ),
@@ -1997,7 +2001,8 @@ class _LogOutfitState extends State<_LogOutfit> {
 /// layout, and wearing it today, editing it on the canvas or deleting it.
 void openOutfitDetail(BuildContext context, SavedOutfit outfit) {
   // No title: the outfit speaks for itself, the stats are in the sheet.
-  _showSheet(context, (_) => '', _OutfitDetail(outfitId: outfit.id), maxHeightFactor: 0.92);
+  // The close button sits next to what's in it instead.
+  _showSheet(context, null, _OutfitDetail(outfitId: outfit.id), maxHeightFactor: 0.92);
 }
 
 class _OutfitDetail extends StatelessWidget {
@@ -2038,9 +2043,19 @@ class _OutfitDetail extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (pieces.isNotEmpty)
-          Text(pieces.join(' · '), style: AppText.mono(size: 10, letterSpacing: 0.3, color: AppColors.mutedTag, height: 1.4)),
-        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                pieces.join(' · '),
+                style: AppText.mono(size: 10, letterSpacing: 0.3, color: AppColors.mutedTag, height: 1.4),
+              ),
+            ),
+            const SizedBox(width: 8),
+            const _SheetCloseButton(),
+          ],
+        ),
+        const SizedBox(height: 6),
         Container(
           height: 340,
           decoration: BoxDecoration(
