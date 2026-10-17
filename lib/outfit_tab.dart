@@ -143,7 +143,7 @@ class _OutfitTabState extends State<OutfitTab> {
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
           child: Row(
             children: [
-              _PillButton(label: l10n.shuffleButton, onTap: store.shuffle),
+              _ShuffleButton(label: l10n.shuffleButton, onTap: store.shuffle),
               const SizedBox(width: 10),
               Expanded(child: _PillButton(label: l10n.saveOutfitButton, filled: true, onTap: widget.onOpenSave)),
             ],
@@ -410,6 +410,87 @@ class _PillButton extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Shuffle, as an icon in a round outlined button — the same height as the
+/// pills next to it; the word is its tooltip and what VoiceOver reads.
+class _ShuffleButton extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  const _ShuffleButton({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: label,
+      excludeFromSemantics: true,
+      child: Semantics(
+        button: true,
+        label: label,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.cardBorder)),
+            alignment: Alignment.center,
+            child: CustomPaint(size: const Size.square(22), painter: _ShuffleGlyph(AppColors.label)),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Two arrows that swap sides in smooth curves, one passing over the other
+/// (the material shuffle icon's are straight). Drawn in a 24 × 24 box.
+class _ShuffleGlyph extends CustomPainter {
+  final Color color;
+  _ShuffleGlyph(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.scale(size.width / 24, size.height / 24);
+    final stroke = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    // Bottom left → top right, then top left → bottom right over it.
+    final under = Path()
+      ..moveTo(3, 17)
+      ..lineTo(6, 17)
+      ..cubicTo(11, 17, 13, 7, 18, 7)
+      ..lineTo(20.5, 7);
+    final over = Path()
+      ..moveTo(3, 7)
+      ..lineTo(6, 7)
+      ..cubicTo(11, 7, 13, 17, 18, 17)
+      ..lineTo(20.5, 17);
+    Path head(double y) => Path()
+      ..moveTo(18, y - 2.6)
+      ..lineTo(20.6, y)
+      ..lineTo(18, y + 2.6);
+    canvas.saveLayer(Offset.zero & const Size(24, 24), Paint());
+    canvas.drawPath(under, stroke);
+    canvas.drawPath(head(7), stroke);
+    // A gap in the lower arrow where the other crosses it.
+    canvas.drawPath(
+      over,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 5
+        ..blendMode = BlendMode.clear,
+    );
+    canvas.drawPath(over, stroke);
+    canvas.drawPath(head(17), stroke);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_ShuffleGlyph old) => old.color != color;
 }
 
 /// Small round toggle — filled pin in the accent color once pinned, a
