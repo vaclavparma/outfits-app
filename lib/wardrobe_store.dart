@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:ui' show Locale, PlatformDispatcher;
 
+import 'package:archive/archive_io.dart';
 import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
@@ -21,6 +22,10 @@ import 'review_prompt.dart';
 /// it, saved outfits, the diary, settings — and persistence to disk.
 class WardrobeStore extends ChangeNotifier {
   static const _fileName = 'satnik_v1.json';
+
+  /// The state file's format, written as its `version`. An import from a
+  /// newer one is refused.
+  static const _stateVersion = 3;
 
   /// A copy of the state file as it was before kinds and types replaced the
   /// fixed categories and folders — kept in case that migration ever needs
@@ -565,7 +570,7 @@ class WardrobeStore extends ChangeNotifier {
 
   /// Everything that's saved, as written to the state file.
   Map<String, dynamic> get stateJson => {
-    'version': 3,
+    'version': _stateVersion,
     'kinds': kinds.map((k) => k.toJson()).toList(),
     'canvas': canvas.map((s) => s.toJson()).toList(),
     'wardrobes': [
@@ -1550,6 +1555,13 @@ class WardrobeStore extends ChangeNotifier {
     try {
       await Directory(p.join(dir.path, 'satnik_images')).delete(recursive: true);
     } catch (_) {}
+    _forgetAll();
+    await load();
+  }
+
+  /// Back to the in-memory state of a fresh install, before [load] reads
+  /// the state file (whatever it now holds) again.
+  void _forgetAll() {
     wardrobes = [];
     _stash.clear();
     localeCode = null;
@@ -1562,7 +1574,124 @@ class WardrobeStore extends ChangeNotifier {
     reviewAskedAt = null;
     reviewRated = false;
     screen = WardrobeTabKind.outfit;
+  }
+
+  // ---------------------------------------------------------------------
+  // Export and import
+
+  static const _imagesDir = 'satnik_images';
+
+  /// Everything — the state and every photo an item uses — as one zip in
+  /// the temp folder, ready to share. Inside: `satnik_v1.json` and
+  /// `satnik_images/…`, laid out as in the app's own folder.
+  Future<File> exportArchive() async {
+    final tmp = await getTemporaryDirectory();
+    final now = DateTime.now();
+    String two(int n) => n.toString().padLeft(2, '0');
+    final zip = File(p.join(tmp.path, 'Outfits ${now.year}-${two(now.month)}-${two(now.day)}.zip'));
+    final state = File(p.join(tmp.path, _fileName));
+    await state.writeAsString(jsonEncode(stateJson));
+    final encoder = ZipFileEncoder()..create(zip.path);
+    try {
+      await encoder.addFile(state, _fileName);
+      for (final path in {for (final it in _allItems) ?it.imagePath}) {
+        final photo = File(path);
+        if (await photo.exists()) await encoder.addFile(photo, '$_imagesDir/${p.basename(path)}');
+      }
+    } finally {
+      await encoder.close();
+      try {
+        await state.delete();
+      } catch (_) {}
+    }
+    return zip;
+  }
+
+  /// Reads the zip at [zipPath] (made by [exportArchive], here or on
+  /// another device) and checks it's a backup this version can import —
+  /// without changing anything yet. Either a [Backup] or why not.
+  static Future<(Backup?, ImportResult)> openArchive(String zipPath) async {
+    try {
+      final archive = ZipDecoder().decodeStream(InputFileStream(zipPath));
+      final state = archive.findFile(_fileName);
+      if (state == null) return (null, ImportResult.notABackup);
+      final data = jsonDecode(utf8.decode(state.content)) as Map<String, dynamic>;
+      if (data['wardrobes'] is! List) return (null, ImportResult.notABackup);
+      if (((data['version'] as num?) ?? 0) > _stateVersion) return (null, ImportResult.newerVersion);
+      return (Backup._(archive, data), ImportResult.done);
+    } catch (_) {
+      return (null, ImportResult.notABackup);
+    }
+  }
+
+  /// Replaces everything in the app with [backup]. Unpacked beside the
+  /// current data first and only then swapped in, so a failure leaves the
+  /// app as it was.
+  Future<ImportResult> importArchive(Backup backup) async {
+    final archive = backup._archive;
+    final data = backup._data;
+
+    final dir = await dataDirectory();
+    final staging = Directory(p.join(dir.path, 'import.tmp'));
+    final images = Directory(p.join(dir.path, _imagesDir));
+    final oldImages = Directory(p.join(dir.path, '$_imagesDir.old'));
+    final state = File(p.join(dir.path, _fileName));
+    final oldState = File('${state.path}.old');
+    Future<void> remove(FileSystemEntity e) async {
+      try {
+        if (await e.exists()) await e.delete(recursive: true);
+      } catch (_) {}
+    }
+
+    try {
+      await remove(staging);
+      await Directory(p.join(staging.path, _imagesDir)).create(recursive: true);
+      for (final f in archive.files) {
+        if (!f.isFile) continue;
+        // Only photos straight inside the photos folder — nothing that
+        // could land outside it.
+        final parts = p.posix.split(f.name);
+        if (parts.length != 2 || parts[0] != _imagesDir || parts[1].startsWith('.')) continue;
+        await File(p.join(staging.path, _imagesDir, parts[1])).writeAsBytes(f.content);
+      }
+      await File(p.join(staging.path, _fileName)).writeAsString(jsonEncode(data));
+    } catch (_) {
+      await remove(staging);
+      return ImportResult.failed;
+    }
+
+    // No more saves of the current state: the one queued would land on
+    // top of the imported file.
+    loaded = false;
+    _canvasPersistTimer?.cancel();
+    _persistTimer?.cancel();
+    await _saving;
+    try {
+      await remove(oldImages);
+      await remove(oldState);
+      if (await images.exists()) await images.rename(oldImages.path);
+      if (await state.exists()) await state.rename(oldState.path);
+      await Directory(p.join(staging.path, _imagesDir)).rename(images.path);
+      await File(p.join(staging.path, _fileName)).rename(state.path);
+    } catch (_) {
+      // Put back what was there.
+      await remove(images);
+      await remove(state);
+      try {
+        if (await oldImages.exists()) await oldImages.rename(images.path);
+        if (await oldState.exists()) await oldState.rename(state.path);
+      } catch (_) {}
+      await remove(staging);
+      loaded = true;
+      return ImportResult.failed;
+    }
+    await remove(staging);
+    await remove(oldImages);
+    await remove(oldState);
+    _forgetAll();
     await load();
+    detectMissingColors();
+    return ImportResult.done;
   }
 
   // ---------------------------------------------------------------------
@@ -1835,4 +1964,25 @@ class _WardrobeContent {
     'outfits': outfits.map((e) => e.toJson()).toList(),
     'diary': diary.map((e) => e.toJson()).toList(),
   };
+}
+
+/// How [WardrobeStore.importArchive] went.
+enum ImportResult { done, notABackup, newerVersion, failed }
+
+/// A backup zip, read and checked by [WardrobeStore.openArchive], ready to
+/// import.
+class Backup {
+  final Archive _archive;
+  final Map<String, dynamic> _data;
+  Backup._(this._archive, this._data);
+
+  List<Map<dynamic, dynamic>> get _wardrobes => [
+    for (final w in _data['wardrobes'] as List) if (w is Map) w,
+  ];
+
+  int get wardrobeCount => _wardrobes.length;
+
+  int _count(String key) => _wardrobes.fold(0, (n, w) => n + ((w[key] as List?)?.length ?? 0));
+  int get itemCount => _count('items');
+  int get outfitCount => _count('outfits');
 }

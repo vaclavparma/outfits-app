@@ -357,6 +357,66 @@ class AppLocalizationsCs extends AppLocalizations {
   String get rateApp => 'Ohodnotit Outfits';
 
   @override
+  String get sectionData => 'Data';
+
+  @override
+  String get exportData => 'Exportovat data';
+
+  @override
+  String get exportDataHint =>
+      'Šatníky, fotky, outfity, deník i nastavení v jednom souboru .zip';
+
+  @override
+  String get importData => 'Importovat data';
+
+  @override
+  String get importDataHint =>
+      'Ze zálohy .zip — nahradí všechno, co je teď v aplikaci';
+
+  @override
+  String wardrobeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count šatníků',
+      few: '$count šatníky',
+      one: '$count šatník',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importConfirmTitle => 'Nahradit všechna data?';
+
+  @override
+  String importConfirmMessage(String wardrobes, String items, String outfits) {
+    return 'Záloha obsahuje $wardrobes, $items a $outfits. Nahradí všechno, co je teď v aplikaci — šatníky, fotky, outfity, deník i nastavení. Jestli chceš mít současný stav schovaný, nejdřív ho exportuj.';
+  }
+
+  @override
+  String get importConfirm => 'Nahradit';
+
+  @override
+  String get importDone => 'Data jsou naimportovaná';
+
+  @override
+  String get importFailedTitle => 'Import se nepovedl';
+
+  @override
+  String get importNotABackup => 'Tenhle soubor není záloha z Outfits.';
+
+  @override
+  String get importNewerVersion =>
+      'Záloha je z novější verze Outfits. Aktualizuj aplikaci a zkus to znovu.';
+
+  @override
+  String get importFailed =>
+      'Data se nepodařilo naimportovat. V aplikaci zůstalo všechno, jak bylo.';
+
+  @override
+  String get exportFailed => 'Data se nepodařilo vyexportovat.';
+
+  @override
   String get dropToRemove => 'Pusť sem pro odebrání';
 
   @override

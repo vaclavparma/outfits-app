@@ -692,6 +692,96 @@ abstract class AppLocalizations {
   /// **'Ohodnotit Outfits'**
   String get rateApp;
 
+  /// No description provided for @sectionData.
+  ///
+  /// In cs, this message translates to:
+  /// **'Data'**
+  String get sectionData;
+
+  /// No description provided for @exportData.
+  ///
+  /// In cs, this message translates to:
+  /// **'Exportovat data'**
+  String get exportData;
+
+  /// No description provided for @exportDataHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'Šatníky, fotky, outfity, deník i nastavení v jednom souboru .zip'**
+  String get exportDataHint;
+
+  /// No description provided for @importData.
+  ///
+  /// In cs, this message translates to:
+  /// **'Importovat data'**
+  String get importData;
+
+  /// No description provided for @importDataHint.
+  ///
+  /// In cs, this message translates to:
+  /// **'Ze zálohy .zip — nahradí všechno, co je teď v aplikaci'**
+  String get importDataHint;
+
+  /// No description provided for @wardrobeCount.
+  ///
+  /// In cs, this message translates to:
+  /// **'{count, plural, one{{count} šatník} few{{count} šatníky} other{{count} šatníků}}'**
+  String wardrobeCount(int count);
+
+  /// No description provided for @importConfirmTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nahradit všechna data?'**
+  String get importConfirmTitle;
+
+  /// No description provided for @importConfirmMessage.
+  ///
+  /// In cs, this message translates to:
+  /// **'Záloha obsahuje {wardrobes}, {items} a {outfits}. Nahradí všechno, co je teď v aplikaci — šatníky, fotky, outfity, deník i nastavení. Jestli chceš mít současný stav schovaný, nejdřív ho exportuj.'**
+  String importConfirmMessage(String wardrobes, String items, String outfits);
+
+  /// No description provided for @importConfirm.
+  ///
+  /// In cs, this message translates to:
+  /// **'Nahradit'**
+  String get importConfirm;
+
+  /// No description provided for @importDone.
+  ///
+  /// In cs, this message translates to:
+  /// **'Data jsou naimportovaná'**
+  String get importDone;
+
+  /// No description provided for @importFailedTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Import se nepovedl'**
+  String get importFailedTitle;
+
+  /// No description provided for @importNotABackup.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tenhle soubor není záloha z Outfits.'**
+  String get importNotABackup;
+
+  /// No description provided for @importNewerVersion.
+  ///
+  /// In cs, this message translates to:
+  /// **'Záloha je z novější verze Outfits. Aktualizuj aplikaci a zkus to znovu.'**
+  String get importNewerVersion;
+
+  /// No description provided for @importFailed.
+  ///
+  /// In cs, this message translates to:
+  /// **'Data se nepodařilo naimportovat. V aplikaci zůstalo všechno, jak bylo.'**
+  String get importFailed;
+
+  /// No description provided for @exportFailed.
+  ///
+  /// In cs, this message translates to:
+  /// **'Data se nepodařilo vyexportovat.'**
+  String get exportFailed;
+
   /// No description provided for @dropToRemove.
   ///
   /// In cs, this message translates to:

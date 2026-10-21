@@ -1,6 +1,8 @@
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'debug_screen.dart';
@@ -79,8 +81,192 @@ class SettingsScreen extends StatelessWidget {
                     const ReminderCard(),
                     const SizedBox(height: 22),
                     const SettingsContent(uppercaseLabels: true),
+                    const SizedBox(height: 22),
+                    SettingsSectionLabel(l10n.sectionData, uppercase: true),
+                    const SizedBox(height: 8),
+                    const _DataCard(),
                   ],
                 ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Export everything as a zip (to share or keep wherever), or import one —
+/// e.g. on a new phone.
+class _DataCard extends StatefulWidget {
+  const _DataCard();
+
+  @override
+  State<_DataCard> createState() => _DataCardState();
+}
+
+class _DataCardState extends State<_DataCard> {
+  /// Which row is working (zipping, unpacking), if either.
+  bool _exporting = false;
+  bool _importing = false;
+
+  final _exportKey = GlobalKey();
+
+  Future<void> _export() async {
+    if (_exporting || _importing) return;
+    final l10n = AppLocalizations.of(context)!;
+    final store = context.read<WardrobeStore>();
+    // Where the share popover points from on iPad.
+    final box = _exportKey.currentContext?.findRenderObject() as RenderBox?;
+    final origin = box == null ? null : box.localToGlobal(Offset.zero) & box.size;
+    setState(() => _exporting = true);
+    try {
+      final zip = await store.exportArchive();
+      await SharePlus.instance.share(
+        ShareParams(files: [XFile(zip.path, mimeType: 'application/zip')], sharePositionOrigin: origin),
+      );
+    } catch (_) {
+      if (mounted) await infoDialog(context, title: l10n.exportData, message: l10n.exportFailed);
+    } finally {
+      if (mounted) setState(() => _exporting = false);
+    }
+  }
+
+  Future<void> _import() async {
+    if (_exporting || _importing) return;
+    final l10n = AppLocalizations.of(context)!;
+    final store = context.read<WardrobeStore>();
+    final file = await openFile(
+      acceptedTypeGroups: const [
+        XTypeGroup(
+          label: 'zip',
+          extensions: ['zip'],
+          mimeTypes: ['application/zip'],
+          uniformTypeIdentifiers: ['public.zip-archive'],
+        ),
+      ],
+    );
+    if (file == null || !mounted) return;
+    setState(() => _importing = true);
+    final (backup, problem) = await WardrobeStore.openArchive(file.path);
+    if (!mounted) return;
+    setState(() => _importing = false);
+    if (backup == null) {
+      await _fail(problem);
+      return;
+    }
+    final confirmed = await confirmDialog(
+      context,
+      title: l10n.importConfirmTitle,
+      message: l10n.importConfirmMessage(
+        l10n.wardrobeCount(backup.wardrobeCount),
+        l10n.itemCount(backup.itemCount),
+        l10n.outfitCount(backup.outfitCount),
+      ),
+      confirmLabel: l10n.importConfirm,
+    );
+    if (!confirmed || !mounted) return;
+    setState(() => _importing = true);
+    final result = await store.importArchive(backup);
+    if (!mounted) return;
+    setState(() => _importing = false);
+    if (result != ImportResult.done) {
+      await _fail(result);
+      return;
+    }
+    // Back to the start: screens open underneath may show what's gone.
+    Navigator.of(context, rootNavigator: true).popUntil((r) => r.isFirst);
+    store.flash(l10n.importDone);
+  }
+
+  Future<void> _fail(ImportResult result) {
+    final l10n = AppLocalizations.of(context)!;
+    return infoDialog(
+      context,
+      title: l10n.importFailedTitle,
+      message: switch (result) {
+        ImportResult.notABackup => l10n.importNotABackup,
+        ImportResult.newerVersion => l10n.importNewerVersion,
+        _ => l10n.importFailed,
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return SettingsCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          _DataRow(
+            key: _exportKey,
+            icon: Icons.ios_share_rounded,
+            label: l10n.exportData,
+            hint: l10n.exportDataHint,
+            busy: _exporting,
+            onTap: _export,
+          ),
+          Divider(height: 1, thickness: 1, color: AppColors.rowBorder),
+          _DataRow(
+            icon: Icons.download_rounded,
+            label: l10n.importData,
+            hint: l10n.importDataHint,
+            busy: _importing,
+            onTap: _import,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DataRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String hint;
+  final bool busy;
+  final VoidCallback onTap;
+
+  const _DataRow({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.hint,
+    required this.busy,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 12, 16, 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: AppText.sans(size: 16, color: AppColors.ink)),
+                    const SizedBox(height: 3),
+                    Text(hint, style: AppText.sans(size: 12, color: AppColors.mutedTag, height: 1.4)),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox.square(
+                dimension: 22,
+                child: busy
+                    ? Padding(
+                        padding: const EdgeInsets.all(2),
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accentText),
+                      )
+                    : Icon(icon, size: 21, color: AppColors.accentText),
               ),
             ],
           ),

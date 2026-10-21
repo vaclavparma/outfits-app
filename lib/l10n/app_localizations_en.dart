@@ -354,6 +354,65 @@ class AppLocalizationsEn extends AppLocalizations {
   String get rateApp => 'Rate Outfits';
 
   @override
+  String get sectionData => 'Data';
+
+  @override
+  String get exportData => 'Export data';
+
+  @override
+  String get exportDataHint =>
+      'Wardrobes, photos, outfits, diary and settings in one .zip file';
+
+  @override
+  String get importData => 'Import data';
+
+  @override
+  String get importDataHint =>
+      'From a .zip backup — replaces everything in the app now';
+
+  @override
+  String wardrobeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count wardrobes',
+      one: '$count wardrobe',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importConfirmTitle => 'Replace all data?';
+
+  @override
+  String importConfirmMessage(String wardrobes, String items, String outfits) {
+    return 'The backup has $wardrobes, $items and $outfits. It replaces everything in the app now — wardrobes, photos, outfits, diary and settings. To keep what’s here, export it first.';
+  }
+
+  @override
+  String get importConfirm => 'Replace';
+
+  @override
+  String get importDone => 'Data imported';
+
+  @override
+  String get importFailedTitle => 'Import failed';
+
+  @override
+  String get importNotABackup => 'This file isn’t an Outfits backup.';
+
+  @override
+  String get importNewerVersion =>
+      'The backup is from a newer version of Outfits. Update the app and try again.';
+
+  @override
+  String get importFailed =>
+      'The data couldn’t be imported. Everything in the app is as it was.';
+
+  @override
+  String get exportFailed => 'The data couldn’t be exported.';
+
+  @override
   String get dropToRemove => 'Drop here to remove';
 
   @override
