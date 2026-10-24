@@ -62,13 +62,14 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
 
 flutter_native_splash:
+  # The icon with rounded corners, as on the home screen — a plain square
+  # would sit there as a block of its own background.
   color: "#faf8f5"
-  image: assets/icon/app_icon.png
+  image: assets/icon/splash_icon.png
   # Dark mode: the app's own dark background (AppPalette.dark), so there's
-  # no white flash before it — and the icon with rounded corners, which
-  # would otherwise sit there as a stark light square.
+  # no white flash before it.
   color_dark: "#141413"
-  image_dark: assets/icon/splash_dark.png
+  image_dark: assets/icon/splash_icon.png
   android_12:
     color: "#faf8f5"
     image: assets/icon/app_icon.png
