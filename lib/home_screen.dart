@@ -176,9 +176,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 left: 20,
                 right: 20,
                 top: 2,
-                child: ContentWidth(
-                  maxWidth: kMaxContentWidth - 40,
-                  child: _Toast(message: store.toast),
+                // Only says something — taps go through to whatever is
+                // under it (the wardrobe switcher, settings...).
+                child: IgnorePointer(
+                  child: Semantics(
+                    liveRegion: true,
+                    child: ContentWidth(
+                      maxWidth: kMaxContentWidth - 40,
+                      child: _Toast(message: store.toast),
+                    ),
+                  ),
                 ),
               ),
           ],

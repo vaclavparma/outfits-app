@@ -132,7 +132,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sectionSeller => 'seller';
 
   @override
-  String get sellerHint => 'e.g. Zara';
+  String get sellerHint => 'Your favourite shop';
 
   @override
   String get sectionSize => 'size';
@@ -413,6 +413,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportFailed => 'The data couldn’t be exported.';
 
   @override
+  String get deleteForGood => 'Delete for good';
+
+  @override
   String get dropToRemove => 'Drop here to remove';
 
   @override
@@ -674,7 +677,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get outfitWornToday => 'Logged today';
 
   @override
-  String get editOnCanvas => 'Edit on canvas';
+  String get editOnCanvas => 'Put on canvas';
 
   @override
   String get diaryRemoveEntryTitle => 'Remove from the diary?';

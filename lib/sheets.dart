@@ -22,9 +22,7 @@ import 'widgets.dart';
 /// one sheet stacked on top of another.
 Future<T?> _showSheet<T>(
   BuildContext context,
-  // Null leaves the header out — the content then has its own close
-  // button.
-  String Function(BuildContext)? title,
+  String Function(BuildContext) title,
   Widget content, {
   double maxHeightFactor = 0.85,
   ValueChanged<int>? onSwipe,
@@ -67,16 +65,14 @@ Future<T?> _showSheet<T>(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (title != null) ...[
-                    Row(
-                      children: [
-                        Expanded(child: Text(title(sheetContext), style: _sheetTitleStyle)),
-                        const SizedBox(width: 8),
-                        const _SheetCloseButton(),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                  ],
+                  Row(
+                    children: [
+                      Expanded(child: Text(title(sheetContext), style: _sheetTitleStyle)),
+                      const SizedBox(width: 8),
+                      const _SheetCloseButton(),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
                   content,
                 ],
               ),
@@ -628,37 +624,37 @@ class _ItemPageState extends State<_ItemPage> {
                   ),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
-                decoration: BoxDecoration(border: Border(top: BorderSide(color: AppColors.hairline))),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _DetailAction(
-                        label: l10n.done,
-                        filled: true,
-                        textColor: Colors.white,
-                        onTap: () => Navigator.of(context).pop(),
-                      ),
+              _DetailActionBar(
+                // A fresh question for each item browsed to.
+                key: ValueKey(cur.id),
+                deleteMessage: l10n.deleteItemMessage,
+                onDelete: () async {
+                  // Close the page first: once the item is gone, it would
+                  // close itself too — and a second pop after that would
+                  // close the home screen.
+                  Navigator.of(context).pop();
+                  await store.deleteItem(cur);
+                },
+                actions: [
+                  Expanded(
+                    child: _DetailAction(
+                      label: l10n.done,
+                      filled: true,
+                      textColor: Colors.white,
+                      onTap: () => Navigator.of(context).pop(),
                     ),
-                    const SizedBox(width: 9),
-                    _DetailIconAction(
-                      icon: Icons.drive_file_move_outline,
-                      label: l10n.moveTitle,
-                      onTap: () => _showSheet(
-                        context,
-                        (ctx) => AppLocalizations.of(ctx)!.moveTitle,
-                        _MoveItem(itemId: cur.id),
-                      ),
+                  ),
+                  const SizedBox(width: 9),
+                  _DetailIconAction(
+                    icon: Icons.drive_file_move_outline,
+                    label: l10n.moveTitle,
+                    onTap: () => _showSheet(
+                      context,
+                      (ctx) => AppLocalizations.of(ctx)!.moveTitle,
+                      _MoveItem(itemId: cur.id),
                     ),
-                    const SizedBox(width: 9),
-                    _DetailIconAction(
-                      icon: Icons.delete_outline,
-                      label: l10n.delete,
-                      onTap: () => _confirmDeleteItem(context, store, cur),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -848,26 +844,20 @@ class _ItemWearStats extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(child: _WearTile(value: l10n.timesWorn(count), label: l10n.itemWornLabel)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _WearTile(
-                value: switch (ago) {
-                  null => l10n.statsNever,
-                  0 => l10n.itemLastToday,
-                  1 => l10n.itemLastYesterday,
-                  final n => l10n.statsDaysAgo(n),
-                },
-                label: l10n.itemLastWornLabel,
-                small: true,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(child: _WearTile(value: perWear ?? '–', label: l10n.itemPerWearLabel)),
-          ],
-        ),
+        _WearTiles([
+          _WearTile(value: l10n.timesWorn(count), label: l10n.itemWornLabel),
+          _WearTile(
+            value: switch (ago) {
+              null => l10n.statsNever,
+              0 => l10n.itemLastToday,
+              1 => l10n.itemLastYesterday,
+              final n => l10n.statsDaysAgo(n),
+            },
+            label: l10n.itemLastWornLabel,
+            small: true,
+          ),
+          _WearTile(value: perWear ?? '–', label: l10n.itemPerWearLabel),
+        ]),
         const SizedBox(height: 14),
         Text(DateFormat.LLLL(locale).format(now).toUpperCase(), style: _sectionLabelStyle),
         const SizedBox(height: 6),
@@ -931,6 +921,27 @@ String? pricePerWear(String? price, int wears, String locale) {
   return price.replaceRange(match.start, match.start + match.group(0)!.trimRight().length, shown);
 }
 
+/// [_WearTile]s side by side, all as tall as the tallest.
+class _WearTiles extends StatelessWidget {
+  final List<Widget> tiles;
+  const _WearTiles(this.tiles);
+
+  @override
+  Widget build(BuildContext context) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final (i, t) in tiles.indexed) ...[
+            if (i > 0) const SizedBox(width: 8),
+            Expanded(child: t),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _WearTile extends StatelessWidget {
   final String value;
   final String label;
@@ -951,17 +962,23 @@ class _WearTile extends StatelessWidget {
         border: Border.all(color: AppColors.rowBorder),
         borderRadius: BorderRadius.circular(14),
       ),
+      // Values sit on one line across the row, whatever their size, and
+      // the labels along the bottom (the row makes its tiles equally tall —
+      // see [_WearTiles]).
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              maxLines: 1,
-              style: AppText.sans(size: small ? 16 : 24, weight: FontWeight.w300, color: AppColors.ink),
+          SizedBox(
+            height: MediaQuery.textScalerOf(context).scale(30),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.bottomLeft,
+              child: Text(
+                value,
+                maxLines: 1,
+                style: AppText.sans(size: small ? 16 : 24, weight: FontWeight.w300, color: AppColors.ink),
+              ),
             ),
           ),
           const SizedBox(height: 6),
@@ -1366,6 +1383,87 @@ class _DetailIconAction extends StatelessWidget {
   }
 }
 
+/// The actions pinned at the bottom of a detail page, ending with delete.
+/// Deleting asks right there rather than in a dialog: the row turns into
+/// "Cancel" and "Delete for good", under a line on what's about to go.
+class _DetailActionBar extends StatefulWidget {
+  final List<Widget> actions;
+  final String deleteMessage;
+  final Future<void> Function() onDelete;
+
+  const _DetailActionBar({super.key, required this.actions, required this.deleteMessage, required this.onDelete});
+
+  @override
+  State<_DetailActionBar> createState() => _DetailActionBarState();
+}
+
+class _DetailActionBarState extends State<_DetailActionBar> {
+  bool _confirming = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
+      decoration: BoxDecoration(border: Border(top: BorderSide(color: AppColors.hairline))),
+      child: AnimatedSize(
+        duration: const Duration(milliseconds: 160),
+        alignment: Alignment.bottomCenter,
+        child: _confirming
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      '${widget.deleteMessage} ${l10n.actionCannotBeUndone}',
+                      textAlign: TextAlign.center,
+                      style: AppText.sans(size: 13, color: AppColors.label, height: 1.4),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _DetailAction(
+                          label: l10n.cancel,
+                          textColor: AppColors.ink,
+                          onTap: () => setState(() => _confirming = false),
+                        ),
+                      ),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: _DetailAction(
+                          label: l10n.deleteForGood,
+                          filled: true,
+                          fill: AppColors.danger,
+                          textColor: Colors.white,
+                          onTap: () {
+                            HapticFeedback.mediumImpact();
+                            widget.onDelete();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  ...widget.actions,
+                  const SizedBox(width: 9),
+                  _DetailIconAction(
+                    icon: Icons.delete_outline,
+                    label: l10n.delete,
+                    onTap: () => setState(() => _confirming = true),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
 /// A pill button in the item detail's action row — filled accent, or
 /// outlined. A label too long for its share of the row wraps onto a second
 /// line rather than shrinking (scaling "Použít v outfitu" down to fit got
@@ -1376,11 +1474,15 @@ class _DetailAction extends StatelessWidget {
   final Color textColor;
   final bool filled;
 
+  /// The fill when [filled]; the accent by default.
+  final Color? fill;
+
   const _DetailAction({
     required this.label,
     required this.onTap,
     required this.textColor,
     this.filled = false,
+    this.fill,
   });
 
   @override
@@ -1392,7 +1494,7 @@ class _DetailAction extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 46),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: filled ? AppColors.accent : null,
+          color: filled ? fill ?? AppColors.accent : null,
           borderRadius: BorderRadius.circular(23),
           border: filled ? null : Border.all(color: AppColors.cardBorder),
         ),
@@ -1562,25 +1664,6 @@ class _MoveTypeItemsDialogState extends State<_MoveTypeItemsDialog> {
       ],
     );
   }
-}
-
-Future<void> _confirmDeleteItem(
-  BuildContext context,
-  WardrobeStore store,
-  ClothingItem item,
-) async {
-  final l10n = AppLocalizations.of(context)!;
-  final confirmed = await confirmDialog(
-    context,
-    title: l10n.deleteItemTitle,
-    message: '${l10n.deleteItemMessage} ${l10n.actionCannotBeUndone}',
-    confirmLabel: l10n.delete,
-  );
-  if (!confirmed || !context.mounted) return;
-  // Close the detail first: once the item is gone, the page would close
-  // itself too — and a second pop after that would close the home screen.
-  Navigator.of(context).pop();
-  await store.deleteItem(item);
 }
 
 class SettingsContent extends StatelessWidget {
@@ -2000,9 +2083,114 @@ class _LogOutfitState extends State<_LogOutfit> {
 /// A saved outfit up close: how much it's been worn, what's in it, its
 /// layout, and wearing it today, editing it on the canvas or deleting it.
 void openOutfitDetail(BuildContext context, SavedOutfit outfit) {
-  // No title: the outfit speaks for itself, the stats are in the sheet.
-  // The close button sits next to what's in it instead.
-  _showSheet(context, null, _OutfitDetail(outfitId: outfit.id), maxHeightFactor: 0.92);
+  Navigator.of(context, rootNavigator: true).push(
+    MaterialPageRoute(builder: (_) => _OutfitPage(outfitId: outfit.id)),
+  );
+}
+
+/// A saved outfit's page, laid out like an item's: back and favorite at the
+/// top, the outfit and how it's worn, and the actions pinned below.
+class _OutfitPage extends StatelessWidget {
+  final String outfitId;
+  const _OutfitPage({required this.outfitId});
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final outfit = store.outfits.where((o) => o.id == outfitId).firstOrNull;
+    if (outfit == null) {
+      // Deleted — nothing left to show (see [_ItemPage]).
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted && (ModalRoute.of(context)?.isCurrent ?? false)) Navigator.of(context).pop();
+      });
+      return Scaffold(backgroundColor: AppColors.background);
+    }
+    final today = DateUtils.dateOnly(DateTime.now());
+    final wornToday = store.outfitWearDays(outfit).contains(today);
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: ContentWidth(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 8, 8, 4),
+                child: Row(
+                  children: [
+                    const AppBackButton(),
+                    Expanded(
+                      child: Text(
+                        l10n.tabOutfit,
+                        style: AppText.sans(size: 16, weight: FontWeight.w500, color: AppColors.ink),
+                      ),
+                    ),
+                    Semantics(
+                      button: true,
+                      toggled: outfit.favorite,
+                      label: l10n.favorite,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => store.toggleFavorite(outfit.id),
+                        child: SizedBox(
+                          width: 44,
+                          height: 44,
+                          child: Icon(
+                            outfit.favorite ? Icons.favorite : Icons.favorite_border,
+                            size: 22,
+                            color: outfit.favorite ? AppColors.accentText : AppColors.muted,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                  child: _OutfitDetail(outfitId: outfitId),
+                ),
+              ),
+              _DetailActionBar(
+                deleteMessage: l10n.deleteOutfitPlain,
+                onDelete: () async {
+                  Navigator.of(context).pop();
+                  await store.deleteOutfit(outfit.id);
+                },
+                actions: [
+                  Expanded(
+                    child: _DetailAction(
+                      label: wornToday ? l10n.outfitWornToday : l10n.wearToday,
+                      filled: !wornToday,
+                      textColor: wornToday ? AppColors.mutedSoft : Colors.white,
+                      onTap: () {
+                        if (wornToday || !store.logSavedOutfit(today, outfit)) return;
+                        store.flash(l10n.toastLogged(_diaryDayTitle(context, today)));
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: _DetailAction(
+                      label: l10n.editOnCanvas,
+                      textColor: AppColors.ink,
+                      onTap: () {
+                        store.loadOutfit(outfit);
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _OutfitDetail extends StatelessWidget {
@@ -2034,7 +2222,6 @@ class _OutfitDetail extends StatelessWidget {
     final last = days.isEmpty ? null : days.reduce((a, b) => a.isAfter(b) ? a : b);
     final thisMonth = {for (final d in days) if (d.year == now.year && d.month == now.month) d.day};
     final weekday = _usualWeekday(days);
-    final wornToday = days.contains(today);
     final pieces = [
       for (final id in outfit.itemIds)
         if (store.itemById(id) case final it?) store.displayName(it).toLowerCase(),
@@ -2043,21 +2230,14 @@ class _OutfitDetail extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                pieces.join(' · '),
-                style: AppText.mono(size: 10, letterSpacing: 0.3, color: AppColors.mutedTag, height: 1.4),
-              ),
-            ),
-            const SizedBox(width: 8),
-            const _SheetCloseButton(),
-          ],
-        ),
-        const SizedBox(height: 6),
+        if (pieces.isNotEmpty)
+          Text(
+            pieces.join(' · '),
+            style: AppText.mono(size: 10, letterSpacing: 0.3, color: AppColors.mutedTag, height: 1.4),
+          ),
+        const SizedBox(height: 10),
         Container(
-          height: 340,
+          height: 420,
           decoration: BoxDecoration(
             color: AppColors.background,
             border: Border.all(color: AppColors.rowBorder),
@@ -2086,69 +2266,18 @@ class _OutfitDetail extends StatelessWidget {
         const SizedBox(height: 6),
         _MonthStrip(worn: thisMonth),
         const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(child: _WearTile(value: l10n.timesWorn(days.length), label: l10n.itemWornLabel)),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _WearTile(
-                value: switch (last == null ? null : daysBetween(last, today)) {
-                  null => l10n.statsNever,
-                  0 => l10n.itemLastToday,
-                  1 => l10n.itemLastYesterday,
-                  final n => l10n.statsDaysAgo(n),
-                },
-                label: l10n.itemLastWornLabel,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Row(
-          children: [
-            Expanded(
-              flex: 3,
-              child: _DetailAction(
-                label: wornToday ? l10n.outfitWornToday : l10n.wearToday,
-                filled: !wornToday,
-                textColor: wornToday ? AppColors.mutedSoft : Colors.white,
-                onTap: () {
-                  if (wornToday || !store.logSavedOutfit(today, outfit)) return;
-                  store.flash(l10n.toastLogged(_diaryDayTitle(context, today)));
-                  Navigator.of(context).pop();
-                },
-              ),
-            ),
-            const SizedBox(width: 9),
-            Expanded(
-              flex: 3,
-              child: _DetailAction(
-                label: l10n.editOnCanvas,
-                textColor: AppColors.ink,
-                onTap: () {
-                  store.loadOutfit(outfit);
-                  Navigator.of(context).pop();
-                },
-              ),
-            ),
-            const SizedBox(width: 9),
-            _DetailIconAction(
-              icon: Icons.delete_outline,
-              label: l10n.delete,
-              onTap: () async {
-                final confirmed = await confirmDialog(
-                  context,
-                  title: l10n.deleteOutfitTitle,
-                  message: l10n.deleteOutfitPlain,
-                  confirmLabel: l10n.delete,
-                );
-                if (!confirmed || !context.mounted) return;
-                Navigator.of(context).pop();
-                await store.deleteOutfit(outfit.id);
-              },
-            ),
-          ],
-        ),
+        _WearTiles([
+          _WearTile(value: l10n.timesWorn(days.length), label: l10n.itemWornLabel),
+          _WearTile(
+            value: switch (last == null ? null : daysBetween(last, today)) {
+              null => l10n.statsNever,
+              0 => l10n.itemLastToday,
+              1 => l10n.itemLastYesterday,
+              final n => l10n.statsDaysAgo(n),
+            },
+            label: l10n.itemLastWornLabel,
+          ),
+        ]),
       ],
     );
   }

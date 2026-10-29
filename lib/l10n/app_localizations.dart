@@ -311,7 +311,7 @@ abstract class AppLocalizations {
   /// No description provided for @sellerHint.
   ///
   /// In cs, this message translates to:
-  /// **'např. Zara'**
+  /// **'Tvůj oblíbený obchod'**
   String get sellerHint;
 
   /// No description provided for @sectionSize.
@@ -782,6 +782,12 @@ abstract class AppLocalizations {
   /// **'Data se nepodařilo vyexportovat.'**
   String get exportFailed;
 
+  /// No description provided for @deleteForGood.
+  ///
+  /// In cs, this message translates to:
+  /// **'Opravdu smazat'**
+  String get deleteForGood;
+
   /// No description provided for @dropToRemove.
   ///
   /// In cs, this message translates to:
@@ -1181,7 +1187,7 @@ abstract class AppLocalizations {
   /// No description provided for @editOnCanvas.
   ///
   /// In cs, this message translates to:
-  /// **'Upravit na plátně'**
+  /// **'Přenést na plátno'**
   String get editOnCanvas;
 
   /// No description provided for @diaryRemoveEntryTitle.

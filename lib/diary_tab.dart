@@ -389,14 +389,18 @@ class _StatsState extends State<_Stats> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 92),
       children: [
-        Row(
-          children: [
-            Expanded(child: _StatTile(value: '${store.daysLoggedIn(now)}', label: l10n.statsDaysLogged(store.daysLoggedIn(now)))),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _StatTile(value: '$wornThisMonth', suffix: ' / ${store.items.length}', label: l10n.statsItemsWorn),
-            ),
-          ],
+        // Both as tall as the taller (a label may take two lines).
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: _StatTile(value: '${store.daysLoggedIn(now)}', label: l10n.statsDaysLogged(store.daysLoggedIn(now)))),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _StatTile(value: '$wornThisMonth', suffix: ' / ${store.items.length}', label: l10n.statsItemsWorn),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 26),
         const _ColorStats(),

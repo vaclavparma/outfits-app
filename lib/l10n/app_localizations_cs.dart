@@ -134,7 +134,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get sectionSeller => 'prodejce';
 
   @override
-  String get sellerHint => 'např. Zara';
+  String get sellerHint => 'Tvůj oblíbený obchod';
 
   @override
   String get sectionSize => 'velikost';
@@ -417,6 +417,9 @@ class AppLocalizationsCs extends AppLocalizations {
   String get exportFailed => 'Data se nepodařilo vyexportovat.';
 
   @override
+  String get deleteForGood => 'Opravdu smazat';
+
+  @override
   String get dropToRemove => 'Pusť sem pro odebrání';
 
   @override
@@ -680,7 +683,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get outfitWornToday => 'Dnes zapsáno';
 
   @override
-  String get editOnCanvas => 'Upravit na plátně';
+  String get editOnCanvas => 'Přenést na plátno';
 
   @override
   String get diaryRemoveEntryTitle => 'Odebrat z deníku?';
