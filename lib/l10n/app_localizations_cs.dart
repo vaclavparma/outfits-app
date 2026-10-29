@@ -420,6 +420,9 @@ class AppLocalizationsCs extends AppLocalizations {
   String get deleteForGood => 'Opravdu smazat';
 
   @override
+  String get showPhoto => 'Zobrazit fotku';
+
+  @override
   String get dropToRemove => 'Pusť sem pro odebrání';
 
   @override

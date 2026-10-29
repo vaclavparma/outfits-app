@@ -179,6 +179,7 @@
   "importFailed": "Data se nepodařilo naimportovat. V aplikaci zůstalo všechno, jak bylo.",
   "exportFailed": "Data se nepodařilo vyexportovat.",
   "deleteForGood": "Opravdu smazat",
+  "showPhoto": "Zobrazit fotku",
   "dropToRemove": "Pusť sem pro odebrání",
   "reorder": "Změnit pořadí",
   "newTypeTile": "nový typ",

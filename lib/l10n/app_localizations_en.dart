@@ -416,6 +416,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteForGood => 'Delete for good';
 
   @override
+  String get showPhoto => 'Show photo';
+
+  @override
   String get dropToRemove => 'Drop here to remove';
 
   @override

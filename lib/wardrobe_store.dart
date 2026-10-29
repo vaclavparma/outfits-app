@@ -1804,7 +1804,6 @@ class WardrobeStore extends ChangeNotifier {
     _stash[activeWardrobeId] = _liveContent;
     wardrobes = [...wardrobes, w];
     _activate(w.id);
-    screen = WardrobeTabKind.wardrobe;
     notifyListeners();
     await _persist();
   }
@@ -1812,8 +1811,8 @@ class WardrobeStore extends ChangeNotifier {
   Future<void> switchWardrobe(String id) async {
     if (id == activeWardrobeId || !wardrobes.any((w) => w.id == id)) return;
     _stash[activeWardrobeId] = _liveContent;
+    // Stays on the tab it's on, even for an empty wardrobe.
     _activate(id);
-    if (items.isEmpty) screen = WardrobeTabKind.wardrobe;
     notifyListeners();
     await _persist();
   }
@@ -1859,7 +1858,6 @@ class WardrobeStore extends ChangeNotifier {
     if (id == activeWardrobeId) {
       _stash[id] = _liveContent;
       _activate(wardrobes.firstWhere((w) => w.id != id).id);
-      if (items.isEmpty) screen = WardrobeTabKind.wardrobe;
     }
     final removed = _stash.remove(id);
     wardrobes = wardrobes.where((w) => w.id != id).toList();

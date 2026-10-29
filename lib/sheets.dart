@@ -716,12 +716,19 @@ class _ItemDetailState extends State<_ItemDetail> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // A short hold opens the photo full screen, as on the outfit tab.
-        GarmentCard(
-          width: double.infinity,
-          height: 320,
-          imagePath: cur.imagePath,
-          zoomable: true,
+        // A tap opens the photo full screen.
+        Semantics(
+          button: cur.imagePath != null,
+          label: cur.imagePath == null ? null : l10n.showPhoto,
+          child: GarmentCard(
+            width: double.infinity,
+            height: 320,
+            imagePath: cur.imagePath,
+            onTap: switch (cur.imagePath) {
+              final path? => () => openPhotoViewer(context, path),
+              null => null,
+            },
+          ),
         ),
         const SizedBox(height: 18),
         Text(

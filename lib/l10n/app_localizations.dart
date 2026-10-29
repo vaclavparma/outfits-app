@@ -788,6 +788,12 @@ abstract class AppLocalizations {
   /// **'Opravdu smazat'**
   String get deleteForGood;
 
+  /// No description provided for @showPhoto.
+  ///
+  /// In cs, this message translates to:
+  /// **'Zobrazit fotku'**
+  String get showPhoto;
+
   /// No description provided for @dropToRemove.
   ///
   /// In cs, this message translates to:

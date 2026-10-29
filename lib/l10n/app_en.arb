@@ -174,6 +174,7 @@
   "importFailed": "The data couldn’t be imported. Everything in the app is as it was.",
   "exportFailed": "The data couldn’t be exported.",
   "deleteForGood": "Delete for good",
+  "showPhoto": "Show photo",
   "dropToRemove": "Drop here to remove",
   "reorder": "Reorder",
   "newTypeTile": "new type",

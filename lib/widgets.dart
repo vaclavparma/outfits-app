@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -85,8 +84,6 @@ class GarmentCard extends StatelessWidget {
   final VoidCallback? onTap;
   final void Function(int direction)? onSwipe;
 
-  /// A short hold opens the photo full screen (see [openPhotoViewer]).
-  final bool zoomable;
   final Color? borderColor;
   final List<BoxShadow>? shadow;
   final Alignment captionAlign;
@@ -102,7 +99,6 @@ class GarmentCard extends StatelessWidget {
     this.imagePath,
     this.onTap,
     this.onSwipe,
-    this.zoomable = false,
     this.borderColor,
     this.shadow,
     this.captionAlign = Alignment.bottomLeft,
@@ -206,7 +202,7 @@ class GarmentCard extends StatelessWidget {
       card = Transform.rotate(angle: rotationDeg * math.pi / 180, child: card);
     }
 
-    final gestures = GestureDetector(
+    return GestureDetector(
       onTap: onTap,
       onHorizontalDragEnd: onSwipe == null
           ? null
@@ -215,20 +211,6 @@ class GarmentCard extends StatelessWidget {
               if (v.abs() > 120) onSwipe!(v < 0 ? 1 : -1);
             },
       child: card,
-    );
-    final path = imagePath;
-    if (!zoomable || path == null) return gestures;
-    return RawGestureDetector(
-      gestures: {
-        LongPressGestureRecognizer: GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
-          () => LongPressGestureRecognizer(duration: photoHoldDuration),
-          (r) => r.onLongPress = () {
-            HapticFeedback.mediumImpact();
-            openPhotoViewer(context, path);
-          },
-        ),
-      },
-      child: gestures,
     );
   }
 }
@@ -662,10 +644,6 @@ bool get reduceMotion {
   final f = WidgetsBinding.instance.platformDispatcher.accessibilityFeatures;
   return f.reduceMotion || f.disableAnimations;
 }
-
-/// How long to hold a garment photo before it opens full screen — shorter
-/// than the system long-press (500 ms) so it feels like a quick peek.
-const photoHoldDuration = Duration(milliseconds: 300);
 
 /// Opens [path] full screen over everything (sheets included): pinch or
 /// double-tap to zoom, × / back / a downward flick to close.

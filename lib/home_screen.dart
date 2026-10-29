@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
@@ -309,8 +311,9 @@ class _TabRoot extends StatelessWidget {
   }
 }
 
-/// The active wardrobe's name; with more than one wardrobe, a dropdown to
-/// switch between them. Adding, renaming and deleting live in settings.
+/// The active wardrobe: a hanger and its name, plainly, like the rest of
+/// the header. With more than one wardrobe, a chevron says it's a dropdown
+/// to switch between them. Adding, renaming and deleting live in settings.
 class _WardrobeSwitcher extends StatefulWidget {
   const _WardrobeSwitcher();
 
@@ -327,7 +330,7 @@ class _WardrobeSwitcherState extends State<_WardrobeSwitcher> {
     final l10n = AppLocalizations.of(context)!;
     final canSwitch = store.wardrobes.length > 1;
 
-    // A bigger target than the name and chevron alone.
+    // A bigger target than the name alone.
     return TapArea(
       child: PopupMenuButton<String>(
         enabled: canSwitch,
@@ -366,6 +369,8 @@ class _WardrobeSwitcherState extends State<_WardrobeSwitcher> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Icon(Icons.checkroom_outlined, size: 17, color: AppColors.muted),
+              const SizedBox(width: 7),
               Flexible(
                 child: Text(
                   store.activeWardrobe.name,
@@ -379,7 +384,7 @@ class _WardrobeSwitcherState extends State<_WardrobeSwitcher> {
                 AnimatedRotation(
                   turns: _open ? 0.5 : 0,
                   duration: const Duration(milliseconds: 180),
-                  child: Icon(Icons.keyboard_arrow_down, size: 20, color: AppColors.mutedSoft),
+                  child: Icon(Icons.keyboard_arrow_down, size: 20, color: AppColors.muted),
                 ),
               ],
             ],
@@ -562,43 +567,47 @@ class _Toast extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.rowBorder),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 16,
-            offset: Offset(0, 6),
+    // Frosted glass: the screen shows through, blurred, so the text stays
+    // easy to read. Solid with Increase Contrast.
+    final solid = MediaQuery.highContrastOf(context);
+    final radius = BorderRadius.circular(14);
+    return ClipRRect(
+      borderRadius: radius,
+      child: BackdropFilter(
+        enabled: !solid,
+        filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: solid ? AppColors.surface : AppColors.surface.withValues(alpha: 0.8),
+            borderRadius: radius,
+            border: Border.all(color: AppColors.rowBorder),
           ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            margin: const EdgeInsets.only(right: 10),
-            decoration: BoxDecoration(
-              color: AppColors.accent,
-              shape: BoxShape.circle,
-            ),
-          ),
-          Flexible(
-            child: Text(
-              message,
-              style: AppText.sans(
-                size: 11.5,
-                height: 1.35,
-                color: AppColors.ink,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                margin: const EdgeInsets.only(right: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.accent,
+                  shape: BoxShape.circle,
+                ),
               ),
-            ),
+              Flexible(
+                child: Text(
+                  message,
+                  style: AppText.sans(
+                    size: 11.5,
+                    height: 1.35,
+                    color: AppColors.ink,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

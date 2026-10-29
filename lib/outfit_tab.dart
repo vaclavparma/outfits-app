@@ -55,6 +55,13 @@ class _OutfitTabState extends State<OutfitTab> {
   /// the store when the gesture ends, not on every frame.
   String? _active;
   Offset _drag = Offset.zero;
+
+  /// How far a held card has been dragged. Kept apart from [_drag] and
+  /// listened to by that card alone: following the finger only moves its
+  /// already-painted layer, rather than rebuilding the whole canvas (all
+  /// the photos and shadows) on every touch event — which left it a frame
+  /// or two behind the finger.
+  final _moveDrag = ValueNotifier(Offset.zero);
   double _startScale = 1;
   double _liveScale = 1;
 
@@ -71,7 +78,8 @@ class _OutfitTabState extends State<OutfitTab> {
   double _unit = 1;
 
   /// Where [s]'s card sits. Kept inside the canvas — except while it's
-  /// being dragged, so it can follow the finger down to the bin.
+  /// being dragged, so it can follow the finger down to the bin. (While
+  /// held and dragged, that's where it started; [_moveDrag] moves it.)
   Rect _boxFor(CanvasSlot s) {
     final active = s.id == _active;
     final r = CanvasGeometry.cardRect(
@@ -94,15 +102,23 @@ class _OutfitTabState extends State<OutfitTab> {
     return (box.localToGlobal(Offset.zero) & box.size).inflate(12).contains(global);
   }
 
+  @override
+  void dispose() {
+    _moveDrag.dispose();
+    super.dispose();
+  }
+
   void _begin(CanvasSlot s) {
     _active = s.id;
     _drag = Offset.zero;
+    _moveDrag.value = Offset.zero;
     _maxPointers = 0;
     _startScale = _liveScale = s.scale;
   }
 
   /// Saves where the active card ended up (kept inside the canvas).
   void _commit(WardrobeStore store, CanvasSlot s) {
+    if (_moving) _drag = _moveDrag.value;
     _moving = false;
     final box = _boxFor(s);
     store.moveSlot(s.id, box.center.dx / _size.width, box.center.dy / _size.height);
@@ -315,12 +331,11 @@ class _OutfitTabState extends State<OutfitTab> {
               });
             }
             ..onLongPressMoveUpdate = (d) {
-              setState(() {
-                _drag = d.offsetFromOrigin;
-                final over = _isOverBin(d.globalPosition);
-                if (over && !_overBin) HapticFeedback.selectionClick();
-                _overBin = over;
-              });
+              _moveDrag.value = d.offsetFromOrigin;
+              final over = _isOverBin(d.globalPosition);
+              if (over == _overBin) return;
+              if (over) HapticFeedback.selectionClick();
+              setState(() => _overBin = over);
             }
             ..onLongPressEnd = (_) {
               _endMove(store, s);
@@ -347,9 +362,7 @@ class _OutfitTabState extends State<OutfitTab> {
     // and taps only reach what's inside the box the card is given. The
     // margin itself lets taps through to whatever is below.
     const m = _pinMargin;
-    return Positioned.fromRect(
-      key: ValueKey(s.id),
-      rect: box.inflate(m),
+    final content = RepaintBoundary(
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -367,6 +380,17 @@ class _OutfitTabState extends State<OutfitTab> {
               child: _PinButton(pinned: item.pinned, onTap: () => store.togglePinned(item.id)),
             ),
         ],
+      ),
+    );
+    // The same widgets whether lifted or not: swapping them out when the
+    // hold kicks in would drop the gesture that's under way.
+    return Positioned.fromRect(
+      key: ValueKey(s.id),
+      rect: box.inflate(m),
+      child: ValueListenableBuilder(
+        valueListenable: _moveDrag,
+        builder: (context, offset, child) => Transform.translate(offset: lifted ? offset : Offset.zero, child: child),
+        child: content,
       ),
     );
   }
