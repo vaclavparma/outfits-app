@@ -134,7 +134,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get sectionSeller => 'prodejce';
 
   @override
-  String get sellerHint => 'Tvůj oblíbený obchod';
+  String get sellerHint => 'Váš oblíbený obchod';
 
   @override
   String get sectionSize => 'velikost';
@@ -156,7 +156,7 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String toastSavedWithPhoto(String category) {
-    return 'Uloženo do „$category“ · fotka v souborech apky';
+    return 'Uloženo do „$category“ · fotka v souborech aplikace';
   }
 
   @override
@@ -212,11 +212,11 @@ class AppLocalizationsCs extends AppLocalizations {
   String get themeDark => 'Tmavý';
 
   @override
-  String get onboardingTitle => 'Vítej v Outfits';
+  String get onboardingTitle => 'Vítejte v Outfits';
 
   @override
   String get onboardingSubtitle =>
-      'Za pár minut si nastavíš šatník po svém a poskládáš první outfit. Všechno půjde později změnit.';
+      'Za pár minut si nastavíte šatník po svém a poskládáte první outfit. Všechno půjde později změnit.';
 
   @override
   String get onboardingContinue => 'Pokračovat';
@@ -249,7 +249,7 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get colorsHint =>
-      'Vyber barvu pod fotkou a pak klepni na místo na fotce, odkud ji má převzít.';
+      'Vyberte barvu pod fotkou a pak klepněte na místo na fotce, odkud ji má převzít.';
 
   @override
   String get colorsRedetect => 'Zjistit znovu automaticky';
@@ -296,7 +296,7 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String kindNotEmptyMessage(String name, String items) {
-    return 'V druhu „$name“ je ještě $items (počítají se všechny šatníky). Nejdřív je přesuň do jiného druhu nebo smaž.';
+    return 'V druhu „$name“ je ještě $items (počítají se všechny šatníky). Nejdřív je přesuňte do jiného druhu nebo smažte.';
   }
 
   @override
@@ -313,7 +313,7 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get kindsHint =>
-      'Druhy jsou karty na hlavní stránce, typy třídí oblečení uvnitř druhu. Pořadí změníš přetažením za úchyt.';
+      'Druhy jsou karty na hlavní stránce, typy třídí oblečení uvnitř druhu. Pořadí změníte přetažením za úchyt.';
 
   @override
   String get sectionKind => 'druh';
@@ -332,7 +332,7 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get canvasEmpty =>
-      'Na plátně zatím nic není.\nPřidej karty tlačítky dole — podržením je pak přesuneš, dvěma prsty změníš velikost.';
+      'Na plátně zatím nic není.\nPřidejte karty tlačítky dole — podržením je pak přesunete, dvěma prsty změníte velikost.';
 
   @override
   String get otherTypeName => 'Ostatní';
@@ -347,11 +347,11 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String canvasFull(int count) {
-    return 'Na plátně může být nejvýš $count karet. Nějakou odeber — podrž ji a přetáhni do koše.';
+    return 'Na plátně může být nejvýš $count karet. Nějakou odeberte — podržte ji a přetáhněte do koše.';
   }
 
   @override
-  String get rateAppHint => 'Pomůžeš tím ostatním appku najít';
+  String get rateAppHint => 'Pomůžete tím ostatním aplikaci najít';
 
   @override
   String get rateApp => 'Ohodnotit Outfits';
@@ -390,7 +390,7 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String importConfirmMessage(String wardrobes, String items, String outfits) {
-    return 'Záloha obsahuje $wardrobes, $items a $outfits. Nahradí všechno, co je teď v aplikaci — šatníky, fotky, outfity, deník i nastavení. Jestli chceš mít současný stav schovaný, nejdřív ho exportuj.';
+    return 'Záloha obsahuje $wardrobes, $items a $outfits. Nahradí všechno, co je teď v aplikaci — šatníky, fotky, outfity, deník i nastavení. Jestli chcete mít současný stav schovaný, nejdřív ho exportujte.';
   }
 
   @override
@@ -403,11 +403,11 @@ class AppLocalizationsCs extends AppLocalizations {
   String get importFailedTitle => 'Import se nepovedl';
 
   @override
-  String get importNotABackup => 'Tenhle soubor není záloha z Outfits.';
+  String get importNotABackup => 'Tento soubor není záloha z Outfits.';
 
   @override
   String get importNewerVersion =>
-      'Záloha je z novější verze Outfits. Aktualizuj aplikaci a zkus to znovu.';
+      'Záloha je z novější verze Outfits. Aktualizujte aplikaci a zkuste to znovu.';
 
   @override
   String get importFailed =>
@@ -423,7 +423,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get showPhoto => 'Zobrazit fotku';
 
   @override
-  String get dropToRemove => 'Pusť sem pro odebrání';
+  String get dropToRemove => 'Pusťte sem pro odebrání';
 
   @override
   String get reorder => 'Změnit pořadí';
@@ -459,7 +459,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get diaryYesterday => 'Včera';
 
   @override
-  String get diaryDayEmpty => 'Na tenhle den zatím nemáš nic zapsané.';
+  String get diaryDayEmpty => 'Na tento den zatím nemáte nic zapsané.';
 
   @override
   String get diaryFromCanvas => 'Z plátna';
@@ -523,7 +523,7 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get statsEmpty =>
-      'Statistiky se objeví, až v kalendáři zapíšeš první outfit.';
+      'Statistiky se objeví, až v kalendáři zapíšete první outfit.';
 
   @override
   String timesWorn(int n) {
@@ -596,16 +596,16 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get itemAutoNameHint =>
-      'název z barvy a typu · přepíšeš v podrobnostech';
+      'název z barvy a typu · přepíšete v podrobnostech';
 
   @override
   String get sectionDetails => 'podrobnosti · volitelné';
 
   @override
-  String get reminderTitle => 'Co máš dnes na sobě?';
+  String get reminderTitle => 'Co máte dnes na sobě?';
 
   @override
-  String get reminderBody => 'Zapiš si dnešní outfit do deníku.';
+  String get reminderBody => 'Zapište si dnešní outfit do deníku.';
 
   @override
   String get reminderChannel => 'Upomínka deníku';
@@ -618,7 +618,7 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get reminderHint =>
-      'Připomene ti zapsat outfit — jen když ten den ještě nemáš nic zapsané.';
+      'Připomene vám zapsat outfit — jen když ten den ještě nemáte nic zapsané.';
 
   @override
   String get reminderTime => 'Čas';
@@ -628,7 +628,7 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get reminderDeniedMessage =>
-      'Aby upomínka mohla přijít, povol aplikaci notifikace v Nastavení telefonu.';
+      'Aby upomínka mohla přijít, povolte aplikaci notifikace v Nastavení telefonu.';
 
   @override
   String get tabOutfits => 'Sbírka';
@@ -650,11 +650,11 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get outfitAlreadySavedHere =>
-      'Tuhle kombinaci už máš mezi outfity. Uložit i tak?';
+      'Tuto kombinaci už máte mezi outfity. Uložit i tak?';
 
   @override
   String outfitAlreadySavedIn(String wardrobe) {
-    return 'Tuhle kombinaci už máš uloženou v šatníku „$wardrobe“. Uložit i tak?';
+    return 'Tuto kombinaci už máte uloženou v šatníku „$wardrobe“. Uložit i tak?';
   }
 
   @override
@@ -662,7 +662,7 @@ class AppLocalizationsCs extends AppLocalizations {
 
   @override
   String get outfitsEmpty =>
-      'Zatím nemáš žádné uložené outfity. Poskládej si nějaký na hlavní stránce a ulož ho.';
+      'Zatím nemáte žádné uložené outfity. Poskládejte si nějaký na hlavní stránce a uložte ho.';
 
   @override
   String outfitUsualWeekday(String weekday) {
@@ -696,7 +696,7 @@ class AppLocalizationsCs extends AppLocalizations {
       'Zápis tohoto outfitu u dne bude smazán.';
 
   @override
-  String get nameTaken => 'Tenhle název už existuje.';
+  String get nameTaken => 'Tento název už existuje.';
 
   @override
   String get onboardingStart => 'Začít';
@@ -709,32 +709,32 @@ class AppLocalizationsCs extends AppLocalizations {
       'Jak má aplikace vypadat a jakou řečí mluvit.';
 
   @override
-  String get onboardingWardrobeTitle => 'Tvůj šatník';
+  String get onboardingWardrobeTitle => 'Váš šatník';
 
   @override
   String get onboardingWardrobeBody =>
-      'Pojmenuj ho — třeba „Doma“. Další šatníky (chata, kancelář…) přidáš kdykoli v nastavení.';
+      'Pojmenujte ho — třeba „Doma“. Další šatníky (chata, kancelář…) přidáte kdykoli v nastavení.';
 
   @override
-  String get onboardingKindsTitle => 'Co nosíš';
+  String get onboardingKindsTitle => 'Co nosíte';
 
   @override
   String get onboardingKindsBody =>
-      'Vyber druhy oblečení, se kterými chceš pracovat. Každý druh je karta na plátně, typy uvnitř (trička, košile…) upravíš v nastavení.';
+      'Vyberte druhy oblečení, se kterými chcete pracovat. Každý druh je karta na plátně, typy uvnitř (trička, košile…) upravíte v nastavení.';
 
   @override
   String get onboardingReminderTitle => 'Denní upomínka';
 
   @override
   String get onboardingReminderBody =>
-      'Z deníku se počítá, co nosíš nejčastěji a co leží ve skříni. Upomínka ti připomene zapsat dnešní outfit — klidně ji nech vypnutou.';
+      'Z deníku se počítá, co nosíte nejčastěji a co leží ve skříni. Upomínka vám připomene zapsat dnešní outfit — klidně ji nechte vypnutou.';
 
   @override
-  String get tourAddTitle => 'Přidej první kusy';
+  String get tourAddTitle => 'Přidejte první kusy';
 
   @override
   String get tourAddBody =>
-      'Vyfoť nebo vyber z galerie pár kousků — třeba tričko, kalhoty a boty. Barvy i název se doplní samy.';
+      'Vyfoťte nebo vyberte z galerie pár kousků — třeba tričko, kalhoty a boty. Barvy i název se doplní samy.';
 
   @override
   String get tourAddButton => 'Přidat oblečení';
@@ -743,19 +743,19 @@ class AppLocalizationsCs extends AppLocalizations {
   String get tourAddMore => 'Přidat další';
 
   @override
-  String get tourCanvasTitle => 'Tvůj první outfit';
+  String get tourCanvasTitle => 'Váš první outfit';
 
   @override
   String get tourCanvasBody =>
-      'Tvoje kusy jsou na plátně. Ťukni na kartu a vyber jiný kus, podrž ji a přesuň, dvěma prsty změníš velikost. Pak outfit ulož.';
+      'Vaše kusy jsou na plátně. Ťukněte na kartu a vyberte jiný kus, podržte ji a přesuňte, dvěma prsty změníte velikost. Pak outfit uložte.';
 
   @override
   String get tourOutfitsBody =>
-      'Tady jsou uložené outfity. Najdeš je podle oblečení, srdíčkem si označíš oblíbené a ťuknutím otevřeš detail.';
+      'Tady jsou uložené outfity. Najdete je podle oblečení, srdíčkem si označíte oblíbené a ťuknutím otevřete detail.';
 
   @override
   String get tourDiaryBody =>
-      'Zapisuj, co máš na sobě — tlačítkem + nebo ťuknutím na den. Ze zápisů vznikají statistiky: co nosíš nejvíc a co ne.';
+      'Zapisujte, co máte na sobě — tlačítkem + nebo ťuknutím na den. Ze zápisů vznikají statistiky: co nosíte nejvíc a co ne.';
 
   @override
   String get tourNext => 'Dál';

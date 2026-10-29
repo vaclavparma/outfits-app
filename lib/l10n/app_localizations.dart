@@ -311,7 +311,7 @@ abstract class AppLocalizations {
   /// No description provided for @sellerHint.
   ///
   /// In cs, this message translates to:
-  /// **'Tvůj oblíbený obchod'**
+  /// **'Váš oblíbený obchod'**
   String get sellerHint;
 
   /// No description provided for @sectionSize.
@@ -353,7 +353,7 @@ abstract class AppLocalizations {
   /// No description provided for @toastSavedWithPhoto.
   ///
   /// In cs, this message translates to:
-  /// **'Uloženo do „{category}“ · fotka v souborech apky'**
+  /// **'Uloženo do „{category}“ · fotka v souborech aplikace'**
   String toastSavedWithPhoto(String category);
 
   /// No description provided for @toastSavedPhotoFailed.
@@ -437,13 +437,13 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingTitle.
   ///
   /// In cs, this message translates to:
-  /// **'Vítej v Outfits'**
+  /// **'Vítejte v Outfits'**
   String get onboardingTitle;
 
   /// No description provided for @onboardingSubtitle.
   ///
   /// In cs, this message translates to:
-  /// **'Za pár minut si nastavíš šatník po svém a poskládáš první outfit. Všechno půjde později změnit.'**
+  /// **'Za pár minut si nastavíte šatník po svém a poskládáte první outfit. Všechno půjde později změnit.'**
   String get onboardingSubtitle;
 
   /// No description provided for @onboardingContinue.
@@ -503,7 +503,7 @@ abstract class AppLocalizations {
   /// No description provided for @colorsHint.
   ///
   /// In cs, this message translates to:
-  /// **'Vyber barvu pod fotkou a pak klepni na místo na fotce, odkud ji má převzít.'**
+  /// **'Vyberte barvu pod fotkou a pak klepněte na místo na fotce, odkud ji má převzít.'**
   String get colorsHint;
 
   /// No description provided for @colorsRedetect.
@@ -587,7 +587,7 @@ abstract class AppLocalizations {
   /// No description provided for @kindNotEmptyMessage.
   ///
   /// In cs, this message translates to:
-  /// **'V druhu „{name}“ je ještě {items} (počítají se všechny šatníky). Nejdřív je přesuň do jiného druhu nebo smaž.'**
+  /// **'V druhu „{name}“ je ještě {items} (počítají se všechny šatníky). Nejdřív je přesuňte do jiného druhu nebo smažte.'**
   String kindNotEmptyMessage(String name, String items);
 
   /// No description provided for @newTypeTitle.
@@ -617,7 +617,7 @@ abstract class AppLocalizations {
   /// No description provided for @kindsHint.
   ///
   /// In cs, this message translates to:
-  /// **'Druhy jsou karty na hlavní stránce, typy třídí oblečení uvnitř druhu. Pořadí změníš přetažením za úchyt.'**
+  /// **'Druhy jsou karty na hlavní stránce, typy třídí oblečení uvnitř druhu. Pořadí změníte přetažením za úchyt.'**
   String get kindsHint;
 
   /// No description provided for @sectionKind.
@@ -653,7 +653,7 @@ abstract class AppLocalizations {
   /// No description provided for @canvasEmpty.
   ///
   /// In cs, this message translates to:
-  /// **'Na plátně zatím nic není.\nPřidej karty tlačítky dole — podržením je pak přesuneš, dvěma prsty změníš velikost.'**
+  /// **'Na plátně zatím nic není.\nPřidejte karty tlačítky dole — podržením je pak přesunete, dvěma prsty změníte velikost.'**
   String get canvasEmpty;
 
   /// No description provided for @otherTypeName.
@@ -677,13 +677,13 @@ abstract class AppLocalizations {
   /// No description provided for @canvasFull.
   ///
   /// In cs, this message translates to:
-  /// **'Na plátně může být nejvýš {count} karet. Nějakou odeber — podrž ji a přetáhni do koše.'**
+  /// **'Na plátně může být nejvýš {count} karet. Nějakou odeberte — podržte ji a přetáhněte do koše.'**
   String canvasFull(int count);
 
   /// No description provided for @rateAppHint.
   ///
   /// In cs, this message translates to:
-  /// **'Pomůžeš tím ostatním appku najít'**
+  /// **'Pomůžete tím ostatním aplikaci najít'**
   String get rateAppHint;
 
   /// No description provided for @rateApp.
@@ -737,7 +737,7 @@ abstract class AppLocalizations {
   /// No description provided for @importConfirmMessage.
   ///
   /// In cs, this message translates to:
-  /// **'Záloha obsahuje {wardrobes}, {items} a {outfits}. Nahradí všechno, co je teď v aplikaci — šatníky, fotky, outfity, deník i nastavení. Jestli chceš mít současný stav schovaný, nejdřív ho exportuj.'**
+  /// **'Záloha obsahuje {wardrobes}, {items} a {outfits}. Nahradí všechno, co je teď v aplikaci — šatníky, fotky, outfity, deník i nastavení. Jestli chcete mít současný stav schovaný, nejdřív ho exportujte.'**
   String importConfirmMessage(String wardrobes, String items, String outfits);
 
   /// No description provided for @importConfirm.
@@ -761,13 +761,13 @@ abstract class AppLocalizations {
   /// No description provided for @importNotABackup.
   ///
   /// In cs, this message translates to:
-  /// **'Tenhle soubor není záloha z Outfits.'**
+  /// **'Tento soubor není záloha z Outfits.'**
   String get importNotABackup;
 
   /// No description provided for @importNewerVersion.
   ///
   /// In cs, this message translates to:
-  /// **'Záloha je z novější verze Outfits. Aktualizuj aplikaci a zkus to znovu.'**
+  /// **'Záloha je z novější verze Outfits. Aktualizujte aplikaci a zkuste to znovu.'**
   String get importNewerVersion;
 
   /// No description provided for @importFailed.
@@ -797,7 +797,7 @@ abstract class AppLocalizations {
   /// No description provided for @dropToRemove.
   ///
   /// In cs, this message translates to:
-  /// **'Pusť sem pro odebrání'**
+  /// **'Pusťte sem pro odebrání'**
   String get dropToRemove;
 
   /// No description provided for @reorder.
@@ -851,7 +851,7 @@ abstract class AppLocalizations {
   /// No description provided for @diaryDayEmpty.
   ///
   /// In cs, this message translates to:
-  /// **'Na tenhle den zatím nemáš nic zapsané.'**
+  /// **'Na tento den zatím nemáte nic zapsané.'**
   String get diaryDayEmpty;
 
   /// No description provided for @diaryFromCanvas.
@@ -947,7 +947,7 @@ abstract class AppLocalizations {
   /// No description provided for @statsEmpty.
   ///
   /// In cs, this message translates to:
-  /// **'Statistiky se objeví, až v kalendáři zapíšeš první outfit.'**
+  /// **'Statistiky se objeví, až v kalendáři zapíšete první outfit.'**
   String get statsEmpty;
 
   /// No description provided for @timesWorn.
@@ -1049,7 +1049,7 @@ abstract class AppLocalizations {
   /// No description provided for @itemAutoNameHint.
   ///
   /// In cs, this message translates to:
-  /// **'název z barvy a typu · přepíšeš v podrobnostech'**
+  /// **'název z barvy a typu · přepíšete v podrobnostech'**
   String get itemAutoNameHint;
 
   /// No description provided for @sectionDetails.
@@ -1061,13 +1061,13 @@ abstract class AppLocalizations {
   /// No description provided for @reminderTitle.
   ///
   /// In cs, this message translates to:
-  /// **'Co máš dnes na sobě?'**
+  /// **'Co máte dnes na sobě?'**
   String get reminderTitle;
 
   /// No description provided for @reminderBody.
   ///
   /// In cs, this message translates to:
-  /// **'Zapiš si dnešní outfit do deníku.'**
+  /// **'Zapište si dnešní outfit do deníku.'**
   String get reminderBody;
 
   /// No description provided for @reminderChannel.
@@ -1091,7 +1091,7 @@ abstract class AppLocalizations {
   /// No description provided for @reminderHint.
   ///
   /// In cs, this message translates to:
-  /// **'Připomene ti zapsat outfit — jen když ten den ještě nemáš nic zapsané.'**
+  /// **'Připomene vám zapsat outfit — jen když ten den ještě nemáte nic zapsané.'**
   String get reminderHint;
 
   /// No description provided for @reminderTime.
@@ -1109,7 +1109,7 @@ abstract class AppLocalizations {
   /// No description provided for @reminderDeniedMessage.
   ///
   /// In cs, this message translates to:
-  /// **'Aby upomínka mohla přijít, povol aplikaci notifikace v Nastavení telefonu.'**
+  /// **'Aby upomínka mohla přijít, povolte aplikaci notifikace v Nastavení telefonu.'**
   String get reminderDeniedMessage;
 
   /// No description provided for @tabOutfits.
@@ -1151,13 +1151,13 @@ abstract class AppLocalizations {
   /// No description provided for @outfitAlreadySavedHere.
   ///
   /// In cs, this message translates to:
-  /// **'Tuhle kombinaci už máš mezi outfity. Uložit i tak?'**
+  /// **'Tuto kombinaci už máte mezi outfity. Uložit i tak?'**
   String get outfitAlreadySavedHere;
 
   /// No description provided for @outfitAlreadySavedIn.
   ///
   /// In cs, this message translates to:
-  /// **'Tuhle kombinaci už máš uloženou v šatníku „{wardrobe}“. Uložit i tak?'**
+  /// **'Tuto kombinaci už máte uloženou v šatníku „{wardrobe}“. Uložit i tak?'**
   String outfitAlreadySavedIn(String wardrobe);
 
   /// No description provided for @deleteOutfitPlain.
@@ -1169,7 +1169,7 @@ abstract class AppLocalizations {
   /// No description provided for @outfitsEmpty.
   ///
   /// In cs, this message translates to:
-  /// **'Zatím nemáš žádné uložené outfity. Poskládej si nějaký na hlavní stránce a ulož ho.'**
+  /// **'Zatím nemáte žádné uložené outfity. Poskládejte si nějaký na hlavní stránce a uložte ho.'**
   String get outfitsEmpty;
 
   /// No description provided for @outfitUsualWeekday.
@@ -1211,7 +1211,7 @@ abstract class AppLocalizations {
   /// No description provided for @nameTaken.
   ///
   /// In cs, this message translates to:
-  /// **'Tenhle název už existuje.'**
+  /// **'Tento název už existuje.'**
   String get nameTaken;
 
   /// No description provided for @onboardingStart.
@@ -1235,25 +1235,25 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingWardrobeTitle.
   ///
   /// In cs, this message translates to:
-  /// **'Tvůj šatník'**
+  /// **'Váš šatník'**
   String get onboardingWardrobeTitle;
 
   /// No description provided for @onboardingWardrobeBody.
   ///
   /// In cs, this message translates to:
-  /// **'Pojmenuj ho — třeba „Doma“. Další šatníky (chata, kancelář…) přidáš kdykoli v nastavení.'**
+  /// **'Pojmenujte ho — třeba „Doma“. Další šatníky (chata, kancelář…) přidáte kdykoli v nastavení.'**
   String get onboardingWardrobeBody;
 
   /// No description provided for @onboardingKindsTitle.
   ///
   /// In cs, this message translates to:
-  /// **'Co nosíš'**
+  /// **'Co nosíte'**
   String get onboardingKindsTitle;
 
   /// No description provided for @onboardingKindsBody.
   ///
   /// In cs, this message translates to:
-  /// **'Vyber druhy oblečení, se kterými chceš pracovat. Každý druh je karta na plátně, typy uvnitř (trička, košile…) upravíš v nastavení.'**
+  /// **'Vyberte druhy oblečení, se kterými chcete pracovat. Každý druh je karta na plátně, typy uvnitř (trička, košile…) upravíte v nastavení.'**
   String get onboardingKindsBody;
 
   /// No description provided for @onboardingReminderTitle.
@@ -1265,19 +1265,19 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingReminderBody.
   ///
   /// In cs, this message translates to:
-  /// **'Z deníku se počítá, co nosíš nejčastěji a co leží ve skříni. Upomínka ti připomene zapsat dnešní outfit — klidně ji nech vypnutou.'**
+  /// **'Z deníku se počítá, co nosíte nejčastěji a co leží ve skříni. Upomínka vám připomene zapsat dnešní outfit — klidně ji nechte vypnutou.'**
   String get onboardingReminderBody;
 
   /// No description provided for @tourAddTitle.
   ///
   /// In cs, this message translates to:
-  /// **'Přidej první kusy'**
+  /// **'Přidejte první kusy'**
   String get tourAddTitle;
 
   /// No description provided for @tourAddBody.
   ///
   /// In cs, this message translates to:
-  /// **'Vyfoť nebo vyber z galerie pár kousků — třeba tričko, kalhoty a boty. Barvy i název se doplní samy.'**
+  /// **'Vyfoťte nebo vyberte z galerie pár kousků — třeba tričko, kalhoty a boty. Barvy i název se doplní samy.'**
   String get tourAddBody;
 
   /// No description provided for @tourAddButton.
@@ -1295,25 +1295,25 @@ abstract class AppLocalizations {
   /// No description provided for @tourCanvasTitle.
   ///
   /// In cs, this message translates to:
-  /// **'Tvůj první outfit'**
+  /// **'Váš první outfit'**
   String get tourCanvasTitle;
 
   /// No description provided for @tourCanvasBody.
   ///
   /// In cs, this message translates to:
-  /// **'Tvoje kusy jsou na plátně. Ťukni na kartu a vyber jiný kus, podrž ji a přesuň, dvěma prsty změníš velikost. Pak outfit ulož.'**
+  /// **'Vaše kusy jsou na plátně. Ťukněte na kartu a vyberte jiný kus, podržte ji a přesuňte, dvěma prsty změníte velikost. Pak outfit uložte.'**
   String get tourCanvasBody;
 
   /// No description provided for @tourOutfitsBody.
   ///
   /// In cs, this message translates to:
-  /// **'Tady jsou uložené outfity. Najdeš je podle oblečení, srdíčkem si označíš oblíbené a ťuknutím otevřeš detail.'**
+  /// **'Tady jsou uložené outfity. Najdete je podle oblečení, srdíčkem si označíte oblíbené a ťuknutím otevřete detail.'**
   String get tourOutfitsBody;
 
   /// No description provided for @tourDiaryBody.
   ///
   /// In cs, this message translates to:
-  /// **'Zapisuj, co máš na sobě — tlačítkem + nebo ťuknutím na den. Ze zápisů vznikají statistiky: co nosíš nejvíc a co ne.'**
+  /// **'Zapisujte, co máte na sobě — tlačítkem + nebo ťuknutím na den. Ze zápisů vznikají statistiky: co nosíte nejvíc a co ne.'**
   String get tourDiaryBody;
 
   /// No description provided for @tourNext.
