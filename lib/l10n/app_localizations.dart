@@ -1160,11 +1160,11 @@ abstract class AppLocalizations {
   /// **'Oblíbený'**
   String get favorite;
 
-  /// No description provided for @toastOutfitSavedPlain.
+  /// No description provided for @outfitSaved.
   ///
   /// In cs, this message translates to:
-  /// **'Outfit uložen'**
-  String get toastOutfitSavedPlain;
+  /// **'Uloženo'**
+  String get outfitSaved;
 
   /// No description provided for @outfitAlreadySavedHere.
   ///

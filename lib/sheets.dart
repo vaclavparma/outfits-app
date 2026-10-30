@@ -1272,9 +1272,8 @@ Future<bool> saveCurrentOutfit(BuildContext context) async {
     );
     if (!saveAnyway) return false;
   }
-  if (!await store.saveOutfit()) return false;
-  store.flash(l10n.toastOutfitSavedPlain);
-  return true;
+  // No toast: the save button turns into "Saved" (see OutfitTab).
+  return store.saveOutfit();
 }
 
 /// Closes the top [count] screens, then does [then] once the last one has

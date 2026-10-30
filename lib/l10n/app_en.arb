@@ -236,7 +236,7 @@
   "filterFavorites": "Favorites",
   "filterOftenWorn": "Worn often",
   "favorite": "Favorite",
-  "toastOutfitSavedPlain": "Outfit saved",
+  "outfitSaved": "Saved",
   "outfitAlreadySavedHere": "You already have this combination among your outfits. Save it anyway?",
   "outfitAlreadySavedIn": "You already have this combination saved in the “{wardrobe}” wardrobe. Save it anyway?",
   "deleteOutfitPlain": "The outfit will be deleted.",

@@ -249,7 +249,7 @@
   "filterFavorites": "Oblíbené",
   "filterOftenWorn": "Často nošené",
   "favorite": "Oblíbený",
-  "toastOutfitSavedPlain": "Outfit uložen",
+  "outfitSaved": "Uloženo",
   "outfitAlreadySavedHere": "Tuto kombinaci už máte mezi outfity. Uložit i tak?",
   "outfitAlreadySavedIn": "Tuto kombinaci už máte uloženou v šatníku „{wardrobe}“. Uložit i tak?",
   "@outfitAlreadySavedIn": {"placeholders": {"wardrobe": {"type": "String"}}},

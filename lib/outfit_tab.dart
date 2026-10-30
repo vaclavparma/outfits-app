@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import 'l10n/app_localizations.dart';
 import 'models.dart';
+import 'sheets.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
 import 'widgets.dart';
@@ -169,7 +170,7 @@ class _OutfitTabState extends State<OutfitTab> {
             children: [
               _ShuffleButton(label: l10n.shuffleButton, onTap: store.shuffle),
               const SizedBox(width: 10),
-              Expanded(child: _PillButton(label: l10n.saveOutfitButton, filled: true, onTap: widget.onOpenSave)),
+              Expanded(child: _SaveButton(onSave: widget.onOpenSave)),
             ],
           ),
         ),
@@ -427,33 +428,53 @@ class _OutfitTabState extends State<OutfitTab> {
   static const _pinMargin = 18.0;
 }
 
-class _PillButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-  final bool filled;
-
-  const _PillButton({required this.label, required this.onTap, this.filled = false});
+/// "Save outfit" — or, once what's on the canvas is saved, "Saved" with a
+/// check, which opens that outfit. Worked out from the data, so it goes
+/// back to "Save outfit" as soon as anything on the canvas changes (and
+/// says "Saved" for an outfit put back on the canvas from the collection).
+class _SaveButton extends StatelessWidget {
+  final VoidCallback onSave;
+  const _SaveButton({required this.onSave});
 
   @override
   Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final saved = store.savedCanvasOutfit;
     return Semantics(
       button: true,
       child: GestureDetector(
-        onTap: onTap,
-        child: Container(
+        onTap: saved == null ? onSave : () => openOutfitDetail(context, saved),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           height: 44,
           padding: const EdgeInsets.symmetric(horizontal: 18),
           decoration: BoxDecoration(
-            color: filled ? AppColors.accent : null,
+            color: saved == null ? AppColors.accent : Colors.transparent,
             borderRadius: BorderRadius.circular(22),
-            border: filled ? null : Border.all(color: AppColors.cardBorder),
+            border: Border.all(color: saved == null ? AppColors.accent : AppColors.accentText, width: 1.5),
           ),
           alignment: Alignment.center,
-          child: Text(
-            label,
-            style: filled
-                ? AppText.sans(size: 13, weight: FontWeight.w500, color: Colors.white)
-                : AppText.sans(size: 12.5, color: AppColors.label),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (saved != null) ...[
+                Icon(Icons.check_rounded, size: 18, color: AppColors.accentText),
+                const SizedBox(width: 6),
+              ],
+              Flexible(
+                child: Text(
+                  saved == null ? l10n.saveOutfitButton : l10n.outfitSaved,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.sans(
+                    size: 13,
+                    weight: FontWeight.w500,
+                    color: saved == null ? Colors.white : AppColors.accentText,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

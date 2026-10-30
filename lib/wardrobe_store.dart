@@ -1223,6 +1223,18 @@ class WardrobeStore extends ChangeNotifier {
     return null;
   }
 
+  /// The outfit in this wardrobe that's the same combination as the canvas
+  /// shows now, if it's been saved.
+  SavedOutfit? get savedCanvasOutfit {
+    final ids = currentOutfitItems.map((i) => i.id).toSet();
+    if (ids.isEmpty) return null;
+    for (final o in outfits) {
+      final other = o.itemIds.toSet();
+      if (other.length == ids.length && other.containsAll(ids)) return o;
+    }
+    return null;
+  }
+
   /// Saves the current outfit, canvas layout included — unless the canvas
   /// shows no clothes; returns whether it saved.
   Future<bool> saveOutfit() async {

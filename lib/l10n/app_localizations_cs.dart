@@ -657,7 +657,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get favorite => 'Oblíbený';
 
   @override
-  String get toastOutfitSavedPlain => 'Outfit uložen';
+  String get outfitSaved => 'Uloženo';
 
   @override
   String get outfitAlreadySavedHere =>

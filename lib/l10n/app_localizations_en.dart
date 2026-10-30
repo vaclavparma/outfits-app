@@ -651,7 +651,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get favorite => 'Favorite';
 
   @override
-  String get toastOutfitSavedPlain => 'Outfit saved';
+  String get outfitSaved => 'Saved';
 
   @override
   String get outfitAlreadySavedHere =>
