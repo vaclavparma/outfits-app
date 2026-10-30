@@ -794,6 +794,24 @@ abstract class AppLocalizations {
   /// **'Zobrazit fotku'**
   String get showPhoto;
 
+  /// No description provided for @photoAccessTitle.
+  ///
+  /// In cs, this message translates to:
+  /// **'Fotku se nepodařilo získat'**
+  String get photoAccessTitle;
+
+  /// No description provided for @photoAccessDenied.
+  ///
+  /// In cs, this message translates to:
+  /// **'Aplikace nemá přístup k fotoaparátu nebo k fotkám. Povolte ho v Nastavení telefonu.'**
+  String get photoAccessDenied;
+
+  /// No description provided for @photoAccessFailed.
+  ///
+  /// In cs, this message translates to:
+  /// **'Fotoaparát ani galerii se nepodařilo otevřít. Zkuste to prosím znovu.'**
+  String get photoAccessFailed;
+
   /// No description provided for @dropToRemove.
   ///
   /// In cs, this message translates to:

@@ -86,6 +86,11 @@ EOF
 ./build-and-upload.sh
 ```
 
+### Shutting down all iOS simulators
+```
+xcrun simctl shutdown all
+```
+
 
 ## License
 

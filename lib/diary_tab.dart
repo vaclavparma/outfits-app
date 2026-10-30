@@ -19,8 +19,26 @@ class DiaryTab extends StatefulWidget {
   State<DiaryTab> createState() => _DiaryTabState();
 }
 
-class _DiaryTabState extends State<DiaryTab> {
+class _DiaryTabState extends State<DiaryTab> with WidgetsBindingObserver {
   bool _stats = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Back after a while (say, overnight): "today" may have moved on.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +74,9 @@ class _DiaryTabState extends State<DiaryTab> {
         Expanded(
           child: Stack(
             children: [
-              Positioned.fill(child: _stats ? const _Stats() : const _Calendar()),
+              // Not const: they're built again with the tab (see
+              // didChangeAppLifecycleState), and work out "today" anew.
+              Positioned.fill(child: _stats ? _Stats() : _Calendar()),
               Positioned(
                 right: 20,
                 bottom: 16,

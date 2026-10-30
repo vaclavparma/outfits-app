@@ -326,7 +326,9 @@ class _KindPicker extends StatelessWidget {
             height: 40,
             onTap: () {
               if (selected.contains(k.id)) {
-                if (store.kindItemCount(k.id) > 0) return;
+                // A kind with clothes stays, and so does the last one: with
+                // none, there'd be nothing to add clothes to.
+                if (store.kindItemCount(k.id) > 0 || selected.length == 1) return;
                 selected.remove(k.id);
               } else {
                 selected.add(k.id);

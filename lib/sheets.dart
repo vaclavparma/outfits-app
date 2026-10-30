@@ -393,6 +393,15 @@ class _AddItemFormState extends State<_AddItemForm> {
       );
       widget.onAdded?.call(result.items.first);
       if (mounted) Navigator.of(context).pop();
+    } on PlatformException catch (e) {
+      // No access to the camera or photos (or no camera at all).
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      await infoDialog(
+        context,
+        title: l10n.photoAccessTitle,
+        message: e.code.contains('access_denied') ? l10n.photoAccessDenied : l10n.photoAccessFailed,
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -628,13 +637,10 @@ class _ItemPageState extends State<_ItemPage> {
                 // A fresh question for each item browsed to.
                 key: ValueKey(cur.id),
                 deleteMessage: l10n.deleteItemMessage,
-                onDelete: () async {
-                  // Close the page first: once the item is gone, it would
-                  // close itself too — and a second pop after that would
-                  // close the home screen.
-                  Navigator.of(context).pop();
-                  await store.deleteItem(cur);
-                },
+                // Close the page first: once the item is gone, it would close
+                // itself too — and a second pop after that would close the
+                // home screen.
+                onDelete: () => _closeThen(context, () => store.deleteItem(cur)),
                 actions: [
                   Expanded(
                     child: _DetailAction(
@@ -1245,12 +1251,13 @@ class _ColorEditorState extends State<_ColorEditor> {
 
 /// Saves what's on the canvas — after a confirmation if exactly these
 /// clothes are already saved (here or in another wardrobe).
-Future<void> saveCurrentOutfit(BuildContext context) async {
+/// Returns whether it saved (not when cancelled, or nothing to save).
+Future<bool> saveCurrentOutfit(BuildContext context) async {
   final store = context.read<WardrobeStore>();
   final l10n = AppLocalizations.of(context)!;
   if (store.currentOutfitItems.isEmpty) {
     store.flash(l10n.diaryCanvasEmpty);
-    return;
+    return false;
   }
   final existing = store.findSavedCopyOfCurrentOutfit();
   if (existing != null) {
@@ -1260,9 +1267,29 @@ Future<void> saveCurrentOutfit(BuildContext context) async {
       message: existing.here ? l10n.outfitAlreadySavedHere : l10n.outfitAlreadySavedIn(existing.wardrobe),
       confirmLabel: l10n.saveAnyway,
     );
-    if (!saveAnyway) return;
+    if (!saveAnyway) return false;
   }
-  if (await store.saveOutfit()) store.flash(l10n.toastOutfitSavedPlain);
+  if (!await store.saveOutfit()) return false;
+  store.flash(l10n.toastOutfitSavedPlain);
+  return true;
+}
+
+/// Closes the top [count] screens, then does [then] once the last one has
+/// slid away — so a page doesn't go blank on its way out because what it
+/// shows was just deleted (or moved) from under it.
+Future<void> _closeThen(BuildContext context, Future<void> Function() then, {int count = 1}) async {
+  final nav = Navigator.of(context);
+  Route<dynamic>? last;
+  for (var i = 0; i < count; i++) {
+    // The route on top, without popping anything.
+    nav.popUntil((route) {
+      last = route;
+      return true;
+    });
+    nav.pop();
+  }
+  if (last case final TransitionRoute<dynamic> route) await route.completed;
+  await then();
 }
 
 /// Closes the sheets so the outfit tab (which the store just switched to)
@@ -1341,12 +1368,10 @@ class _MoveItemState extends State<_MoveItem> {
                 active: false,
                 mono: false,
                 height: 34,
+                // Out of this wardrobe, so the item's page closes too.
                 onTap: () {
-                  store.moveItemToWardrobe(cur.id, w.id);
                   store.flash(l10n.toastMovedToWardrobe(w.name));
-                  Navigator.of(context)
-                    ..pop()
-                    ..pop();
+                  _closeThen(context, () => store.moveItemToWardrobe(cur.id, w.id), count: 2);
                 },
               ),
           ]),
@@ -2162,10 +2187,7 @@ class _OutfitPage extends StatelessWidget {
               ),
               _DetailActionBar(
                 deleteMessage: l10n.deleteOutfitPlain,
-                onDelete: () async {
-                  Navigator.of(context).pop();
-                  await store.deleteOutfit(outfit.id);
-                },
+                onDelete: () => _closeThen(context, () => store.deleteOutfit(outfit.id)),
                 actions: [
                   Expanded(
                     child: _DetailAction(

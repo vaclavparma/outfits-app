@@ -423,6 +423,17 @@ class AppLocalizationsCs extends AppLocalizations {
   String get showPhoto => 'Zobrazit fotku';
 
   @override
+  String get photoAccessTitle => 'Fotku se nepodařilo získat';
+
+  @override
+  String get photoAccessDenied =>
+      'Aplikace nemá přístup k fotoaparátu nebo k fotkám. Povolte ho v Nastavení telefonu.';
+
+  @override
+  String get photoAccessFailed =>
+      'Fotoaparát ani galerii se nepodařilo otevřít. Zkuste to prosím znovu.';
+
+  @override
   String get dropToRemove => 'Pusťte sem pro odebrání';
 
   @override

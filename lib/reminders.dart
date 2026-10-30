@@ -111,7 +111,25 @@ class DailyReminder {
   /// Replaces the scheduled reminders: daily at [minutes] after midnight,
   /// from today (unless [skipToday], or the time has passed) for the next
   /// [_days] days — or none, when not [enabled].
+  ///
+  /// One at a time, in the order asked: two running at once could each
+  /// cancel before the other schedules — and leave reminders on after
+  /// they were turned off.
   static Future<void> schedule({
+    required bool enabled,
+    required int minutes,
+    required bool skipToday,
+    required String title,
+    required String body,
+    required String channelName,
+  }) => _queue = _queue
+      .then((_) => _schedule(enabled: enabled, minutes: minutes, skipToday: skipToday, title: title, body: body, channelName: channelName))
+      // One failing mustn't hold up the ones after it.
+      .catchError((Object _) {});
+
+  static Future<void> _queue = Future.value();
+
+  static Future<void> _schedule({
     required bool enabled,
     required int minutes,
     required bool skipToday,

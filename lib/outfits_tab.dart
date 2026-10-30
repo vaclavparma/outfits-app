@@ -45,6 +45,9 @@ class _OutfitsTabState extends State<OutfitsTab> {
     final today = DateUtils.dateOnly(DateTime.now());
     final wears = store.outfitWearStats;
     final all = store.outfits.reversed.toList();
+    // The search field goes away with the last outfit (or in an empty
+    // wardrobe), and comes back empty — so does the search.
+    if (all.isEmpty) _query = '';
     var shown = all
         .where((o) => textsMatchSearch(_searchTexts(store, o), _query))
         .toList();

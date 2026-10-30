@@ -73,13 +73,20 @@ class _OutfitTabState extends State<OutfitTab> {
   /// (a pinch) move and resize the card.
   int _maxPointers = 0;
 
-  final _binKey = GlobalKey();
+  /// A fresh key for each lift: the bin from the last one may still be
+  /// fading out for a moment, and two can't share one key.
+  GlobalKey _binKey = GlobalKey();
+
+  /// The card a two-finger gesture belongs to, if one is under way. One
+  /// card at a time is moved or resized: a second card held meanwhile is
+  /// ignored rather than sharing (and corrupting) the gesture state.
+  String? _scaleOwner;
   Size _size = Size.zero;
   double _unit = 1;
 
-  /// Where [s]'s card sits. Kept inside the canvas — except while it's
-  /// being dragged, so it can follow the finger down to the bin. (While
-  /// held and dragged, that's where it started; [_moveDrag] moves it.)
+  /// Where [s]'s card sits, kept inside the canvas. (While held and
+  /// dragged, that's where it started: [_moveDrag] moves it from there —
+  /// freely, so it can follow the finger down to the bin.)
   Rect _boxFor(CanvasSlot s) {
     final active = s.id == _active;
     final r = CanvasGeometry.cardRect(
@@ -91,7 +98,8 @@ class _OutfitTabState extends State<OutfitTab> {
       scale: active ? _liveScale : s.scale,
       dx: active ? _drag.dx : 0,
       dy: active ? _drag.dy : 0,
-      free: active && _moving,
+      // Where it's shown at rest, so lifting it doesn't make it jump.
+      free: false,
     );
     return Rect.fromLTWH(r.left, r.top, r.width, r.height);
   }
@@ -292,17 +300,22 @@ class _OutfitTabState extends State<OutfitTab> {
       ],
     );
 
-    void onScaleUpdate(ScaleUpdateDetails d) => setState(() {
-      _maxPointers = math.max(_maxPointers, d.pointerCount);
-      if (_maxPointers > 1) {
-        _drag += d.focalPointDelta;
-        if (d.pointerCount > 1) {
-          _liveScale = (_startScale * d.scale).clamp(CanvasSlot.minScale, CanvasSlot.maxScale);
+    void onScaleUpdate(ScaleUpdateDetails d) {
+      if (_scaleOwner != s.id) return;
+      setState(() {
+        _maxPointers = math.max(_maxPointers, d.pointerCount);
+        if (_maxPointers > 1) {
+          _drag += d.focalPointDelta;
+          if (d.pointerCount > 1) {
+            _liveScale = (_startScale * d.scale).clamp(CanvasSlot.minScale, CanvasSlot.maxScale);
+          }
         }
-      }
-    });
+      });
+    }
 
     void onScaleEnd(ScaleEndDetails d) {
+      if (_scaleOwner != s.id) return;
+      _scaleOwner = null;
       if (_maxPointers > 1) {
         _commit(store, s);
         return;
@@ -323,14 +336,18 @@ class _OutfitTabState extends State<OutfitTab> {
           () => LongPressGestureRecognizer(duration: _holdToMove),
           (r) => r
             ..onLongPressStart = (_) {
+              // Another card is already being moved or resized.
+              if (_active != null) return;
               HapticFeedback.mediumImpact();
               setState(() {
                 _begin(s);
                 _moving = true;
                 _overBin = false;
+                _binKey = GlobalKey();
               });
             }
             ..onLongPressMoveUpdate = (d) {
+              if (!_moving || _active != s.id) return;
               _moveDrag.value = d.offsetFromOrigin;
               final over = _isOverBin(d.globalPosition);
               if (over == _overBin) return;
@@ -338,10 +355,14 @@ class _OutfitTabState extends State<OutfitTab> {
               setState(() => _overBin = over);
             }
             ..onLongPressEnd = (_) {
-              _endMove(store, s);
-            }
-            ..onLongPressCancel = () {
               if (_moving && _active == s.id) _endMove(store, s);
+            }
+            // Interrupted (a system gesture, a call): it stays where it was
+            // taken to — never deleted, even if that's over the bin.
+            ..onLongPressCancel = () {
+              if (!_moving || _active != s.id) return;
+              _overBin = false;
+              _endMove(store, s);
             },
         ),
         // Two fingers resize (and move) the card.
@@ -349,6 +370,10 @@ class _OutfitTabState extends State<OutfitTab> {
           ScaleGestureRecognizer.new,
           (r) => r
             ..onStart = (_) {
+              // Already being moved (a second finger landing on a held
+              // card), or another card is in hand.
+              if (_active != null) return;
+              _scaleOwner = s.id;
               setState(() => _begin(s));
             }
             ..onUpdate = onScaleUpdate

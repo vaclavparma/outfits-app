@@ -419,6 +419,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get showPhoto => 'Show photo';
 
   @override
+  String get photoAccessTitle => 'Couldn’t get the photo';
+
+  @override
+  String get photoAccessDenied =>
+      'The app has no access to the camera or photos. Allow it in your phone’s Settings.';
+
+  @override
+  String get photoAccessFailed =>
+      'The camera or gallery couldn’t be opened. Please try again.';
+
+  @override
   String get dropToRemove => 'Drop here to remove';
 
   @override

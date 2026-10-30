@@ -106,9 +106,26 @@ class _HomeScreenState extends State<HomeScreen> {
       _pages.jumpToPage(page);
       return;
     }
+    // A later slide (another tab tapped meanwhile) owns the flag from here.
+    final slide = ++_slides;
     _animating = true;
     await _pages.animateToPage(page, duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
-    _animating = false;
+    if (slide == _slides) _animating = false;
+  }
+
+  int _slides = 0;
+
+  /// Whenever the pager comes to rest, the tab is the page it's on — also
+  /// after a slide cut short by a finger, when [PageView.onPageChanged]
+  /// may not say so (it already reported the pages slid past).
+  bool _onScrollEnd(ScrollEndNotification n, WardrobeStore store) {
+    if (_animating || n.depth != 0 || !_pages.hasClients) return false;
+    final i = (_pages.page ?? _page.toDouble()).round();
+    if (i != store.screen.index) {
+      _page = i;
+      store.setScreen(WardrobeTabKind.values[i]);
+    }
+    return false;
   }
 
   @override
@@ -142,21 +159,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: ListenableBuilder(
                     listenable: Listenable.merge([_tabDepth[store.screen]!, canvasTouches]),
-                    builder: (context, _) => PageView(
-                      controller: _pages,
-                      physics: _tabDepth[store.screen]!.value == 0 && canvasTouches.value < 2
-                          ? const PageScrollPhysics()
-                          : const NeverScrollableScrollPhysics(),
-                      onPageChanged: (i) {
-                        if (_animating) return;
-                        _page = i;
-                        FocusManager.instance.primaryFocus?.unfocus();
-                        store.setScreen(WardrobeTabKind.values[i]);
-                      },
-                      children: [
-                        for (final kind in WardrobeTabKind.values)
-                          _TabNavigator(kind: kind, active: kind == store.screen),
-                      ],
+                    builder: (context, _) => NotificationListener<ScrollEndNotification>(
+                      onNotification: (n) => _onScrollEnd(n, store),
+                      child: PageView(
+                        controller: _pages,
+                        physics: _tabDepth[store.screen]!.value == 0 && canvasTouches.value < 2
+                            ? const PageScrollPhysics()
+                            : const NeverScrollableScrollPhysics(),
+                        onPageChanged: (i) {
+                          if (_animating) return;
+                          _page = i;
+                          FocusManager.instance.primaryFocus?.unfocus();
+                          store.setScreen(WardrobeTabKind.values[i]);
+                        },
+                        children: [
+                          for (final kind in WardrobeTabKind.values)
+                            _TabNavigator(kind: kind, active: kind == store.screen),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -334,6 +354,9 @@ class _WardrobeSwitcherState extends State<_WardrobeSwitcher> {
     return TapArea(
       child: PopupMenuButton<String>(
         enabled: canSwitch,
+        // Over the whole screen, tab bar included — not inside the tab's
+        // own navigator, where switching tabs would leave it open.
+        useRootNavigator: true,
         tooltip: '',
         position: PopupMenuPosition.under,
         offset: const Offset(-10, 8),
@@ -467,8 +490,9 @@ class _TourCard extends StatelessWidget {
       1 when canvasHasClothes => (
         l10n.saveOutfitButton,
         () async {
-          await saveCurrentOutfit(context);
-          store.nextTourStep();
+          // Only on to the next step once it's saved — not after a cancel,
+          // nor if the tour moved on meanwhile (Skip).
+          if (await saveCurrentOutfit(context) && store.tourStep == step) store.nextTourStep();
         },
         l10n.tourSkip,
         store.nextTourStep,

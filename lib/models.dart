@@ -348,6 +348,13 @@ class DiaryEntry {
   /// The items worn, each once.
   Iterable<String> get itemIds => {for (final s in slots) ?s.itemId};
 
+  /// Day by day, and within a day in the order written down. (Sorting by
+  /// day alone isn't enough: Dart's sort isn't stable past 32 entries.)
+  static int byDay(DiaryEntry a, DiaryEntry b) {
+    final byDay = a.day.compareTo(b.day);
+    return byDay != 0 ? byDay : a.loggedAt.compareTo(b.loggedAt);
+  }
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'day': '${day.year}-${_two(day.month)}-${_two(day.day)}',

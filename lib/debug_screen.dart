@@ -80,6 +80,8 @@ class _DebugScreenState extends State<DebugScreen> {
     try {
       final message = await action();
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e')));
     } finally {
       if (mounted) setState(() => _busy = false);
       await _refresh();

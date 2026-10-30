@@ -113,7 +113,7 @@ class _DataCardState extends State<_DataCard> {
   final _exportKey = GlobalKey();
 
   Future<void> _export() async {
-    if (_exporting || _importing) return;
+    if (_exporting || _importFlow) return;
     final l10n = AppLocalizations.of(context)!;
     final store = context.read<WardrobeStore>();
     // Where the share popover points from on iPad.
@@ -132,8 +132,24 @@ class _DataCardState extends State<_DataCard> {
     }
   }
 
+  /// Set from the first tap until the import is over (picker and dialogs
+  /// included), so a second tap can't start another one alongside.
+  bool _importFlow = false;
+
   Future<void> _import() async {
-    if (_exporting || _importing) return;
+    if (_exporting || _importFlow) return;
+    _importFlow = true;
+    try {
+      await _runImport();
+    } catch (_) {
+      if (mounted) await _fail(ImportResult.failed);
+    } finally {
+      _importFlow = false;
+      if (mounted) setState(() => _importing = false);
+    }
+  }
+
+  Future<void> _runImport() async {
     final l10n = AppLocalizations.of(context)!;
     final store = context.read<WardrobeStore>();
     final file = await openFile(
@@ -174,6 +190,13 @@ class _DataCardState extends State<_DataCard> {
       await _fail(result);
       return;
     }
+    // A reminder that was on where the backup came from needs this phone's
+    // permission too; without it, it's switched off rather than silently
+    // never coming.
+    if (store.reminderEnabled && !await DailyReminder.requestPermission()) {
+      store.setReminder(enabled: false);
+    }
+    if (!mounted) return;
     // Back to the start: screens open underneath may show what's gone.
     Navigator.of(context, rootNavigator: true).popUntil((r) => r.isFirst);
     store.flash(l10n.importDone);

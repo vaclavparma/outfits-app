@@ -51,6 +51,8 @@ class GarmentImage extends StatelessWidget {
   final String path;
   const GarmentImage(this.path, {super.key});
 
+  static const _decodeStep = 160;
+
   @override
   Widget build(BuildContext context) {
     final dpr = MediaQuery.devicePixelRatioOf(context);
@@ -62,7 +64,11 @@ class GarmentImage extends StatelessWidget {
         child: Image.file(
           File(path),
           fit: BoxFit.contain,
-          cacheWidth: constraints.maxWidth.isFinite ? (constraints.maxWidth * dpr).round() : null,
+          // Decoded at the size shown, rounded up to a step so a card being
+          // pinched doesn't decode again on every frame — and keeps showing
+          // the old decode meanwhile rather than going blank.
+          cacheWidth: constraints.maxWidth.isFinite ? ((constraints.maxWidth * dpr) / _decodeStep).ceil() * _decodeStep : null,
+          gaplessPlayback: true,
           errorBuilder: (context, error, stackTrace) => const DiagonalStripes(),
         ),
       ),
@@ -675,7 +681,8 @@ class _PhotoViewerState extends State<_PhotoViewer> with SingleTickerProviderSta
   late final AnimationController _zoomAnim = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 220),
-  )..addListener(() => _transform.value = _zoomTween!.evaluate(CurvedAnimation(parent: _zoomAnim, curve: Curves.easeOut)));
+  )..addListener(() => _transform.value = _zoomTween!.evaluate(_zoomCurve));
+  late final _zoomCurve = CurvedAnimation(parent: _zoomAnim, curve: Curves.easeOut);
   Matrix4Tween? _zoomTween;
   Offset? _doubleTapAt;
 
@@ -688,6 +695,7 @@ class _PhotoViewerState extends State<_PhotoViewer> with SingleTickerProviderSta
 
   @override
   void dispose() {
+    _zoomCurve.dispose();
     _zoomAnim.dispose();
     _transform.dispose();
     super.dispose();

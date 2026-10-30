@@ -247,7 +247,14 @@ class WardrobeStore extends ChangeNotifier {
         data = jsonDecode(await file.readAsString()) as Map<String, dynamic>;
       }
     } catch (_) {
-      // Unreadable state file — start from the empty defaults.
+      // Unreadable state file — start from the empty defaults, but keep a
+      // copy first: they're about to be saved over it.
+      try {
+        final f = file;
+        if (f != null && await f.exists()) {
+          await f.copy(p.join(f.parent.path, 'satnik_v1.unreadable-${DateTime.now().millisecondsSinceEpoch}.json'));
+        }
+      } catch (_) {}
     }
 
     var migrated = false;
@@ -1300,7 +1307,7 @@ class WardrobeStore extends ChangeNotifier {
 
   void _addDiaryEntry(DateTime day, List<SavedSlot> slots) {
     final entry = DiaryEntry(id: _newId('d'), day: day, loggedAt: DateTime.now(), slots: slots);
-    diary = [...diary, entry]..sort((a, b) => a.day.compareTo(b.day));
+    diary = [...diary, entry]..sort(DiaryEntry.byDay);
     notifyListeners();
     _persist();
     maybeAskForReview();
@@ -1564,6 +1571,11 @@ class WardrobeStore extends ChangeNotifier {
   void _forgetAll() {
     wardrobes = [];
     _stash.clear();
+    // The live wardrobe's content too: load() looks at every item (e.g. for
+    // kinds they need) before it activates a wardrobe of its own.
+    items = [];
+    outfits = [];
+    diary = [];
     localeCode = null;
     themeModeCode = null;
     reminderEnabled = false;
@@ -1660,36 +1672,54 @@ class WardrobeStore extends ChangeNotifier {
       return ImportResult.failed;
     }
 
-    // No more saves of the current state: the one queued would land on
-    // top of the imported file.
-    loaded = false;
+    // Whatever was waiting to be saved goes to disk now (the old data is
+    // what comes back if the import fails); then no more saves, which would
+    // land on top of the imported file.
     _canvasPersistTimer?.cancel();
     _persistTimer?.cancel();
+    await _persist();
+    loaded = false;
     await _saving;
+    // Each step's undo, in order — only for the steps that happened.
+    final undo = <Future<void> Function()>[];
+    Future<void> rollBack() async {
+      for (final step in undo.reversed) {
+        try {
+          await step();
+        } catch (_) {}
+      }
+      await remove(staging);
+    }
+
     try {
       await remove(oldImages);
       await remove(oldState);
-      if (await images.exists()) await images.rename(oldImages.path);
-      if (await state.exists()) await state.rename(oldState.path);
+      if (await oldImages.exists() || await oldState.exists()) throw const FileSystemException('leftover backup');
+      if (await images.exists()) {
+        await images.rename(oldImages.path);
+        undo.add(() => oldImages.rename(images.path));
+      }
+      if (await state.exists()) {
+        await state.rename(oldState.path);
+        undo.add(() => oldState.rename(state.path));
+      }
       await Directory(p.join(staging.path, _imagesDir)).rename(images.path);
+      undo.add(() => remove(images));
       await File(p.join(staging.path, _fileName)).rename(state.path);
+      undo.add(() => remove(state));
+      // Only a backup that actually loads replaces the old data; one that
+      // doesn't (damaged or hand-edited) brings the old data back.
+      _forgetAll();
+      await load();
     } catch (_) {
-      // Put back what was there.
-      await remove(images);
-      await remove(state);
-      try {
-        if (await oldImages.exists()) await oldImages.rename(images.path);
-        if (await oldState.exists()) await oldState.rename(state.path);
-      } catch (_) {}
-      await remove(staging);
-      loaded = true;
+      await rollBack();
+      _forgetAll();
+      await load();
       return ImportResult.failed;
     }
     await remove(staging);
     await remove(oldImages);
     await remove(oldState);
-    _forgetAll();
-    await load();
     detectMissingColors();
     return ImportResult.done;
   }
@@ -1951,7 +1981,7 @@ class _WardrobeContent {
           c.diary.add(DiaryEntry.fromJson(e as Map<String, dynamic>));
         } catch (_) {}
       }
-      c.diary.sort((a, b) => a.day.compareTo(b.day));
+      c.diary.sort(DiaryEntry.byDay);
     } catch (_) {}
 
     return c;
