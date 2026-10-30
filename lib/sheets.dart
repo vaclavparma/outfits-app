@@ -392,7 +392,10 @@ class _AddItemFormState extends State<_AddItemForm> {
             : l10n.toastSavedWithPhoto(label),
       );
       widget.onAdded?.call(result.items.first);
-      if (mounted) Navigator.of(context).pop();
+      // Only if this sheet is still the one on top: it may have been closed
+      // while the camera was open — and popping anyway would then close the
+      // home screen underneath, leaving a black screen.
+      if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) Navigator.of(context).pop();
     } on PlatformException catch (e) {
       // No access to the camera or photos (or no camera at all).
       if (!mounted) return;
