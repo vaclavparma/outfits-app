@@ -190,6 +190,7 @@ class _DataCardState extends State<_DataCard> {
       await _fail(result);
       return;
     }
+    Haptics.done();
     // A reminder that was on where the backup came from needs this phone's
     // permission too; without it, it's switched off rather than silently
     // never coming.
@@ -559,7 +560,9 @@ class _WardrobesCard extends StatelessWidget {
       confirmLabel: l10n.create,
       isTaken: store.wardrobeNameTaken,
     );
-    if (name != null) await store.addWardrobe(name);
+    if (name == null) return;
+    Haptics.done();
+    await store.addWardrobe(name);
   }
 }
 
@@ -577,7 +580,10 @@ class _WardrobeRow extends StatelessWidget {
       selected: active,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => store.switchWardrobe(wardrobe.id),
+        onTap: () {
+          if (wardrobe.id != store.activeWardrobeId) Haptics.tick();
+          store.switchWardrobe(wardrobe.id);
+        },
         child: Padding(
           padding: _WardrobesCard._rowPadding,
           // At least 56 tall; a long name with large text wraps.
@@ -632,7 +638,9 @@ class _WardrobeRow extends StatelessWidget {
       confirmLabel: l10n.save,
       isTaken: (n) => store.wardrobeNameTaken(n, except: wardrobe.id),
     );
-    if (name != null) await store.renameWardrobe(wardrobe.id, name);
+    if (name == null) return;
+    Haptics.done();
+    await store.renameWardrobe(wardrobe.id, name);
   }
 
   Future<void> _delete(BuildContext context, WardrobeStore store) async {
@@ -643,7 +651,9 @@ class _WardrobeRow extends StatelessWidget {
       message: l10n.deleteWardrobeMessage(wardrobe.name),
       confirmLabel: l10n.delete,
     );
-    if (confirmed) await store.deleteWardrobe(wardrobe.id);
+    if (!confirmed) return;
+    Haptics.remove();
+    await store.deleteWardrobe(wardrobe.id);
   }
 }
 
@@ -706,6 +716,7 @@ class _KindsCardState extends State<_KindsCard> {
             buildDefaultDragHandles: false,
             proxyDecorator: _liftedRow,
             itemCount: kinds.length,
+            onReorderStart: (_) => Haptics.pickUp(),
             onReorderItem: store.reorderKinds,
             itemBuilder: (context, i) {
               final k = kinds[i];
@@ -754,6 +765,7 @@ class _KindsCardState extends State<_KindsCard> {
     );
     if (name == null) return;
     final kind = store.addKind(name);
+    if (kind != null) Haptics.done();
     // Straight to its types.
     if (kind != null) setState(() => _expanded.add(kind.id));
   }
@@ -882,7 +894,9 @@ class _KindRow extends StatelessWidget {
       confirmLabel: l10n.save,
       isTaken: (n) => store.kindNameTaken(n, except: kind.id),
     );
-    if (name != null) store.renameKind(kind.id, name);
+    if (name == null) return;
+    Haptics.done();
+    store.renameKind(kind.id, name);
   }
 
   Future<void> _delete(BuildContext context, WardrobeStore store) async {
@@ -902,7 +916,9 @@ class _KindRow extends StatelessWidget {
       message: l10n.deleteKindMessage(kind.name),
       confirmLabel: l10n.delete,
     );
-    if (confirmed) store.deleteKind(kind.id);
+    if (!confirmed) return;
+    Haptics.remove();
+    store.deleteKind(kind.id);
   }
 }
 
@@ -929,6 +945,7 @@ class _TypeList extends StatelessWidget {
             buildDefaultDragHandles: false,
             proxyDecorator: _liftedRow,
             itemCount: types.length,
+            onReorderStart: (_) => Haptics.pickUp(),
             onReorderItem: (from, to) => store.reorderTypes(kind.id, from, to),
             itemBuilder: (context, i) {
               final t = types[i];
@@ -996,7 +1013,9 @@ class _TypeList extends StatelessWidget {
       confirmLabel: l10n.create,
       isTaken: (n) => store.typeNameTaken(kind.id, n),
     );
-    if (name != null) store.addType(kind.id, name);
+    if (name == null) return;
+    Haptics.done();
+    store.addType(kind.id, name);
   }
 
   Future<void> _rename(BuildContext context, WardrobeStore store, ClothingType t) async {
@@ -1008,7 +1027,9 @@ class _TypeList extends StatelessWidget {
       confirmLabel: l10n.save,
       isTaken: (n) => store.typeNameTaken(kind.id, n, except: t.id),
     );
-    if (name != null) store.renameType(kind.id, t.id, name);
+    if (name == null) return;
+    Haptics.done();
+    store.renameType(kind.id, t.id, name);
   }
 
   Future<void> _delete(BuildContext context, WardrobeStore store, ClothingType t) =>
@@ -1038,7 +1059,9 @@ class ReminderCard extends StatelessWidget {
       context: context,
       initialTime: TimeOfDay(hour: store.reminderMinutes ~/ 60, minute: store.reminderMinutes % 60),
     );
-    if (picked != null) store.setReminder(minutes: picked.hour * 60 + picked.minute);
+    if (picked == null) return;
+    Haptics.done();
+    store.setReminder(minutes: picked.hour * 60 + picked.minute);
   }
 
   @override

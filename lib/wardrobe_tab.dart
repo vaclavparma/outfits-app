@@ -199,7 +199,9 @@ class _KindSection extends StatelessWidget {
       confirmLabel: l10n.create,
       isTaken: (n) => store.typeNameTaken(kind.id, n),
     );
-    if (name != null) store.addType(kind.id, name);
+    if (name == null) return;
+    Haptics.done();
+    store.addType(kind.id, name);
   }
 }
 

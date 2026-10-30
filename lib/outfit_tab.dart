@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'l10n/app_localizations.dart';
@@ -73,6 +72,7 @@ class _OutfitTabState extends State<OutfitTab> {
 
   /// A two-finger pinch is resizing (and moving) [_active].
   bool _pinching = false;
+  bool _atScaleLimit = false;
   double _pinchStartDistance = 1;
   Offset _pinchStartFocal = Offset.zero;
   Offset _pinchStartDrag = Offset.zero;
@@ -178,7 +178,8 @@ class _OutfitTabState extends State<OutfitTab> {
     if (_active != null) {
       s = store.slotById(_active!);
       if (s == null) return;
-      // Lifted and being moved: from here the two fingers move it.
+      // Lifted and being moved (already picked up): from here the two
+      // fingers move it.
       if (_moving) {
         _drag = _moveDrag.value;
         _moveDrag.value = Offset.zero;
@@ -189,9 +190,11 @@ class _OutfitTabState extends State<OutfitTab> {
       s = _cardAt(a, store) ?? _cardAt(b, store) ?? _cardAt(focal, store);
       if (s == null) return;
       _begin(s);
+      Haptics.pickUp();
     }
     _pinching = true;
     _afterPinch = true;
+    _atScaleLimit = false;
     _pinchStartDistance = math.max((a - b).distance, 1);
     _pinchStartFocal = focal;
     _pinchStartDrag = _drag;
@@ -201,8 +204,14 @@ class _OutfitTabState extends State<OutfitTab> {
 
   void _updatePinch() {
     final [a, b, ...] = _fingers.values.toList();
+    final wanted = _startScale * (a - b).distance / _pinchStartDistance;
+    final scale = wanted.clamp(CanvasSlot.minScale, CanvasSlot.maxScale);
+    // A tick on reaching the smallest or biggest size.
+    final atLimit = scale != wanted;
+    if (atLimit && !_atScaleLimit) Haptics.tick();
+    _atScaleLimit = atLimit;
     setState(() {
-      _liveScale = (_startScale * (a - b).distance / _pinchStartDistance).clamp(CanvasSlot.minScale, CanvasSlot.maxScale);
+      _liveScale = scale;
       _drag = _pinchStartDrag + ((a + b) / 2 - _pinchStartFocal);
     });
   }
@@ -232,7 +241,7 @@ class _OutfitTabState extends State<OutfitTab> {
     // Another card is already being moved or resized, or this is (the
     // start of) a pinch rather than a move.
     if (_active != null || _afterPinch || _fingers.length > 1) return;
-    HapticFeedback.mediumImpact();
+    Haptics.pickUp();
     setState(() {
       _begin(s);
       _moving = true;
@@ -246,7 +255,7 @@ class _OutfitTabState extends State<OutfitTab> {
     _moveDrag.value = offset;
     final over = _isOverBin(global);
     if (over == _overBin) return;
-    if (over) HapticFeedback.selectionClick();
+    if (over) Haptics.tick();
     setState(() => _overBin = over);
   }
 
@@ -261,7 +270,7 @@ class _OutfitTabState extends State<OutfitTab> {
 
   void _endMove(WardrobeStore store, CanvasSlot s) {
     if (_overBin) {
-      HapticFeedback.mediumImpact();
+      Haptics.remove();
       store.removeSlot(s.id);
       setState(() {
         _active = null;
@@ -292,7 +301,13 @@ class _OutfitTabState extends State<OutfitTab> {
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
           child: Row(
             children: [
-              _ShuffleButton(label: l10n.shuffleButton, onTap: store.shuffle),
+              _ShuffleButton(
+                label: l10n.shuffleButton,
+                onTap: () {
+                  Haptics.tick();
+                  store.shuffle();
+                },
+              ),
               const SizedBox(width: 10),
               Expanded(child: _SaveButton(onSave: widget.onOpenSave)),
             ],
@@ -323,7 +338,6 @@ class _OutfitTabState extends State<OutfitTab> {
                     store.flash(l10n.canvasFull(CanvasSlot.maxCount));
                     return;
                   }
-                  HapticFeedback.selectionClick();
                   store.addSlot(k.id);
                 },
               ),
@@ -495,11 +509,18 @@ class _OutfitTabState extends State<OutfitTab> {
             height: box.height,
             child: gestures,
           ),
-          if (item != null && !lifted)
+          // Stays on the card while it's moved, rather than blinking out.
+          if (item != null)
             Positioned(
               top: m - 8,
               left: m - 8,
-              child: _PinButton(pinned: item.pinned, onTap: () => store.togglePinned(item.id)),
+              child: _PinButton(
+                pinned: item.pinned,
+                onTap: () {
+                  Haptics.tick();
+                  store.togglePinned(item.id);
+                },
+              ),
             ),
         ],
       ),

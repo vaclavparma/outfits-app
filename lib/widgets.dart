@@ -230,6 +230,10 @@ class SelectChip extends StatelessWidget {
   final double height;
   final bool mono;
 
+  /// A choice ticks when tapped. One that only opens something (a "+ new"
+  /// chip and its dialog) doesn't — the thing it makes says so when done.
+  final bool choice;
+
   const SelectChip({
     super.key,
     required this.label,
@@ -237,6 +241,7 @@ class SelectChip extends StatelessWidget {
     this.onTap,
     this.height = 30,
     this.mono = true,
+    this.choice = true,
   });
 
   /// Chips are never drawn shorter than this — big enough to hit.
@@ -248,8 +253,14 @@ class SelectChip extends StatelessWidget {
     final bg = active ? AppColors.accentDark : AppColors.surface;
     final border = active ? AppColors.accentDark : AppColors.chipBorderIdle;
     final color = active ? Colors.white : AppColors.chipTextIdle;
+    final onTap = this.onTap;
     return GestureDetector(
-      onTap: onTap,
+      onTap: onTap == null
+          ? null
+          : () {
+              if (choice) Haptics.tick();
+              onTap();
+            },
       child: Container(
         height: height,
         padding: const EdgeInsets.symmetric(horizontal: 13),
@@ -642,6 +653,30 @@ class OutfitCollage extends StatelessWidget {
   }
 }
 
+/// The app's haptics, by what happened rather than by strength, so the
+/// same kind of moment always feels the same.
+///
+/// Nothing for getting around — opening a sheet, a page or a dialog, going
+/// back, cancelling — nor for typing.
+abstract final class Haptics {
+  /// Something is taken in hand: a card on the canvas held, dragged or
+  /// pinched; a row in settings picked up to reorder.
+  static void pickUp() => HapticFeedback.mediumImpact();
+
+  /// A choice or toggle changes (chips, tabs, the wardrobe, pin, favorite,
+  /// the item on a card, colors), or a threshold is crossed (over the bin,
+  /// a size limit, on to the next item).
+  static void tick() => HapticFeedback.selectionClick();
+
+  /// Something new or changed is kept: an outfit saved or put on the
+  /// canvas, clothes added or moved, a diary entry, a wardrobe, kind or
+  /// type created or renamed, colors detected, a backup imported.
+  static void done() => HapticFeedback.lightImpact();
+
+  /// Something was deleted.
+  static void remove() => HapticFeedback.mediumImpact();
+}
+
 /// Whether the system asks for less motion (iOS Reduce Motion, Android
 /// Remove animations): then nothing slides across the screen or zooms by
 /// itself — it fades or just appears. Read live, at the moment of the
@@ -693,8 +728,34 @@ class _PhotoViewerState extends State<_PhotoViewer> with SingleTickerProviderSta
 
   bool get _zoomed => _transform.value.getMaxScaleOnAxis() > 1.01;
 
+  /// The photo's own size, for telling a tap on it from one beside it.
+  Size? _imageSize;
+  late final ImageStream _imageStream = FileImage(File(widget.path)).resolve(ImageConfiguration.empty);
+  late final _imageListener = ImageStreamListener((info, _) {
+    final size = Size(info.image.width.toDouble(), info.image.height.toDouble());
+    info.dispose();
+    if (mounted) setState(() => _imageSize = size);
+  });
+
+  @override
+  void initState() {
+    super.initState();
+    _imageStream.addListener(_imageListener);
+  }
+
+  /// A tap beside the photo (in the black around it, as zoomed now) closes
+  /// the viewer, like the ×.
+  void _onTapUp(TapUpDetails d, Size box) {
+    final size = _imageSize;
+    if (size == null) return;
+    final fitted = applyBoxFit(BoxFit.contain, size, box).destination;
+    final photo = Alignment.center.inscribe(fitted, Offset.zero & box);
+    if (!photo.contains(_transform.toScene(d.localPosition))) Navigator.of(context).pop();
+  }
+
   @override
   void dispose() {
+    _imageStream.removeListener(_imageListener);
     _zoomCurve.dispose();
     _zoomAnim.dispose();
     _transform.dispose();
@@ -754,18 +815,21 @@ class _PhotoViewerState extends State<_PhotoViewer> with SingleTickerProviderSta
                     Navigator.of(context).pop();
                   }
                 },
-                child: GestureDetector(
-                  onDoubleTapDown: (d) => _doubleTapAt = d.localPosition,
-                  onDoubleTap: _onDoubleTap,
-                  child: InteractiveViewer(
-                    transformationController: _transform,
-                    minScale: 1,
-                    maxScale: 5,
-                    child: SizedBox.expand(
-                      child: Image.file(
-                        File(widget.path),
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                child: LayoutBuilder(
+                  builder: (context, constraints) => GestureDetector(
+                    onTapUp: (d) => _onTapUp(d, constraints.biggest),
+                    onDoubleTapDown: (d) => _doubleTapAt = d.localPosition,
+                    onDoubleTap: _onDoubleTap,
+                    child: InteractiveViewer(
+                      transformationController: _transform,
+                      minScale: 1,
+                      maxScale: 5,
+                      child: SizedBox.expand(
+                        child: Image.file(
+                          File(widget.path),
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                        ),
                       ),
                     ),
                   ),
@@ -909,7 +973,10 @@ class TypeTabs extends StatelessWidget {
               selected: t.key == selected,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => onSelect(t.key),
+                onTap: () {
+                  if (t.key != selected) Haptics.tick();
+                  onSelect(t.key);
+                },
                 child: Container(
                   margin: const EdgeInsets.only(right: 18),
                   padding: const EdgeInsets.symmetric(vertical: 10),

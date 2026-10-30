@@ -305,6 +305,7 @@ class _KindPicker extends StatelessWidget {
     if (name == null) return;
     final kind = store.addKind(name);
     if (kind != null) {
+      Haptics.done();
       selected.add(kind.id);
       onChanged();
     }
@@ -336,7 +337,7 @@ class _KindPicker extends StatelessWidget {
               onChanged();
             },
           ),
-        SelectChip(label: '+ ${l10n.newKind}', active: false, mono: false, height: 40, onTap: () => _add(context, store)),
+        SelectChip(label: '+ ${l10n.newKind}', active: false, mono: false, height: 40, choice: false, onTap: () => _add(context, store)),
       ],
     );
   }

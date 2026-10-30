@@ -168,6 +168,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             : const NeverScrollableScrollPhysics(),
                         onPageChanged: (i) {
                           if (_animating) return;
+                          // Swiped to another tab (a tapped one ticks on the tap).
+                          Haptics.tick();
                           _page = i;
                           FocusManager.instance.primaryFocus?.unfocus();
                           store.setScreen(WardrobeTabKind.values[i]);
@@ -373,6 +375,7 @@ class _WardrobeSwitcherState extends State<_WardrobeSwitcher> {
         onCanceled: () => setState(() => _open = false),
         onSelected: (id) {
           setState(() => _open = false);
+          if (id != store.activeWardrobeId) Haptics.tick();
           store.switchWardrobe(id);
         },
         itemBuilder: (context) => [
@@ -671,7 +674,10 @@ class _BottomTabs extends StatelessWidget {
           for (final (kind, label) in tabs)
             Expanded(
               child: GestureDetector(
-                onTap: () => onSelect(kind),
+                onTap: () {
+                  if (kind != current) Haptics.tick();
+                  onSelect(kind);
+                },
                 behavior: HitTestBehavior.opaque,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 16),

@@ -215,7 +215,10 @@ class _OutfitCard extends StatelessWidget {
                 label: l10n.favorite,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: () => store.toggleFavorite(outfit.id),
+                  onTap: () {
+                    Haptics.tick();
+                    store.toggleFavorite(outfit.id);
+                  },
                   child: SizedBox(
                     width: 44,
                     height: 40,

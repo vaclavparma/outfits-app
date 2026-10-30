@@ -132,7 +132,10 @@ class _Segmented extends StatelessWidget {
               selected: i == selected,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
-                onTap: () => onSelect(i),
+                onTap: () {
+                  if (i != selected) Haptics.tick();
+                  onSelect(i);
+                },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 150),
                   padding: const EdgeInsets.symmetric(horizontal: 12),

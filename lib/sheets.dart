@@ -275,6 +275,7 @@ class _PickGridState extends State<_PickGrid> {
               imagePath: it.imagePath,
               borderColor: current?.id == it.id ? AppColors.ink : AppColors.cardBorder,
               onTap: () {
+                Haptics.tick();
                 store.setSlotItem(slot.id, it.id);
                 Navigator.of(context).pop();
               },
@@ -343,6 +344,7 @@ class _AddItemFormState extends State<_AddItemForm> {
     );
     if (name == null) return;
     final type = store.addType(kindId, name);
+    if (type != null) Haptics.done();
     if (type != null && mounted) setState(() => _type = type.id);
   }
 
@@ -384,6 +386,7 @@ class _AddItemFormState extends State<_AddItemForm> {
         type,
         sourceImagePaths: files.map((f) => f.path).toList(),
       );
+      Haptics.done();
       store.flash(
         files.length > 1
             ? l10n.toastSavedMultiple(files.length, label)
@@ -451,7 +454,7 @@ class _AddItemFormState extends State<_AddItemForm> {
             children: [
               for (final t in kind.types)
                 SelectChip(label: t.name, active: _type == t.id, onTap: () => setState(() => _type = t.id)),
-              SelectChip(label: '+ ${l10n.addTypeChip}', active: false, onTap: () => _newType(store, kind.id)),
+              SelectChip(label: '+ ${l10n.addTypeChip}', active: false, choice: false, onTap: () => _newType(store, kind.id)),
             ],
           ),
         ],
@@ -560,7 +563,7 @@ class _ItemPageState extends State<_ItemPage> {
     final next = index - finger;
     if (index < 0 || next < 0 || next >= ids.length) return;
     FocusManager.instance.primaryFocus?.unfocus();
-    HapticFeedback.selectionClick();
+    Haptics.tick();
     setState(() {
       _slide = finger;
       _currentId = ids[next];
@@ -592,12 +595,24 @@ class _ItemPageState extends State<_ItemPage> {
                 child: Row(
                   children: [
                     const AppBackButton(),
+                    // Next to the back arrow, the title goes back too (as
+                    // on iOS).
                     Expanded(
-                      child: Text(
-                        store.typeName(cur) ?? store.kindName(cur.cat),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppText.sans(size: 16, weight: FontWeight.w500, color: AppColors.ink),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => Navigator.of(context).pop(),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Text(
+                              store.typeName(cur) ?? store.kindName(cur.cat),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppText.sans(size: 16, weight: FontWeight.w500, color: AppColors.ink),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -1128,7 +1143,7 @@ class _ColorEditorState extends State<_ColorEditor> {
                     if (r == null || !r.contains(d.localPosition)) return;
                     final px = ((d.localPosition.dx - r.left) / r.width * sample!.width).floor();
                     final py = ((d.localPosition.dy - r.top) / r.height * sample.height).floor();
-                    HapticFeedback.selectionClick();
+                    Haptics.tick();
                     setState(() => _marker = d.localPosition);
                     setSlot(_colorAt(px, py));
                   },
@@ -1173,10 +1188,13 @@ class _ColorEditorState extends State<_ColorEditor> {
                 selected: i == selected,
                 label: l10n.colorSlot(i + 1),
                 child: GestureDetector(
-                  onTap: () => setState(() {
-                    _selected = i;
-                    _marker = null;
-                  }),
+                  onTap: () {
+                    if (i != selected) Haptics.tick();
+                    setState(() {
+                      _selected = i;
+                      _marker = null;
+                    });
+                  },
                   child: Container(
                     width: 48,
                     height: 48,
@@ -1202,6 +1220,7 @@ class _ColorEditorState extends State<_ColorEditor> {
                     // A new slot starts as a copy of the selected color; a tap
                     // on the photo then sets it.
                     final next = [...colors, colors.isEmpty ? 0xFFBDBDBD : colors[selected]];
+                    Haptics.tick();
                     store.setItemColors(item.id, next);
                     setState(() {
                       _selected = next.length - 1;
@@ -1225,6 +1244,7 @@ class _ColorEditorState extends State<_ColorEditor> {
               IconButton(
                 tooltip: l10n.colorRemove,
                 onPressed: () {
+                  Haptics.tick();
                   store.setItemColors(item.id, [...colors]..removeAt(selected));
                   setState(() {
                     _selected = math.max(0, selected - 1);
@@ -1242,6 +1262,7 @@ class _ColorEditorState extends State<_ColorEditor> {
               _selected = 0;
               _marker = null;
             });
+            Haptics.done();
             store.redetectColors(item.id);
           },
           icon: Icon(Icons.auto_awesome_outlined, size: 18, color: AppColors.accentText),
@@ -1273,7 +1294,9 @@ Future<bool> saveCurrentOutfit(BuildContext context) async {
     if (!saveAnyway) return false;
   }
   // No toast: the save button turns into "Saved" (see OutfitTab).
-  return store.saveOutfit();
+  if (!await store.saveOutfit()) return false;
+  Haptics.done();
+  return true;
 }
 
 /// Closes the top [count] screens, then does [then] once the last one has
@@ -1329,6 +1352,7 @@ class _MoveItemState extends State<_MoveItem> {
 
     void moveTo(String typeId) {
       if (kind == null || isCurrent(typeId)) return;
+      Haptics.done();
       store.moveItem(cur.id, kind.id, typeId);
       Navigator.of(context).pop();
     }
@@ -1348,6 +1372,24 @@ class _MoveItemState extends State<_MoveItem> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Most often it's the wardrobe that changes, so that's first.
+        if (otherWardrobes.isNotEmpty)
+          section(l10n.sectionWardrobe, [
+            for (final w in otherWardrobes)
+              SelectChip(
+                label: w.name,
+                active: false,
+                mono: false,
+                height: 34,
+                choice: false,
+                // Out of this wardrobe, so the item's page closes too.
+                onTap: () {
+                  Haptics.done();
+                  store.flash(l10n.toastMovedToWardrobe(w.name));
+                  _closeThen(context, () => store.moveItemToWardrobe(cur.id, w.id), count: 2);
+                },
+              ),
+          ]),
         section(l10n.sectionKind, [
           for (final k in kinds)
             SelectChip(
@@ -1360,22 +1402,8 @@ class _MoveItemState extends State<_MoveItem> {
         ]),
         if (kind != null)
           section(l10n.sectionType, [
-            for (final t in kind.types) SelectChip(label: t.name, active: isCurrent(t.id), onTap: () => moveTo(t.id)),
-          ]),
-        if (otherWardrobes.isNotEmpty)
-          section(l10n.sectionWardrobe, [
-            for (final w in otherWardrobes)
-              SelectChip(
-                label: w.name,
-                active: false,
-                mono: false,
-                height: 34,
-                // Out of this wardrobe, so the item's page closes too.
-                onTap: () {
-                  store.flash(l10n.toastMovedToWardrobe(w.name));
-                  _closeThen(context, () => store.moveItemToWardrobe(cur.id, w.id), count: 2);
-                },
-              ),
+            for (final t in kind.types)
+              SelectChip(label: t.name, active: isCurrent(t.id), choice: false, onTap: () => moveTo(t.id)),
           ]),
       ],
     );
@@ -1473,7 +1501,7 @@ class _DetailActionBarState extends State<_DetailActionBar> {
                           fill: AppColors.danger,
                           textColor: Colors.white,
                           onTap: () {
-                            HapticFeedback.mediumImpact();
+                            Haptics.remove();
                             widget.onDelete();
                           },
                         ),
@@ -1626,6 +1654,7 @@ Future<void> deleteTypeAskingWhereTo(BuildContext context, ClothingKind kind, Cl
   if (kind.types.length < 2) return;
   final count = store.typeItemCount(kind.id, type.id);
   if (count == 0) {
+    Haptics.remove();
     store.deleteType(kind.id, type.id);
     return;
   }
@@ -1633,7 +1662,9 @@ Future<void> deleteTypeAskingWhereTo(BuildContext context, ClothingKind kind, Cl
     context: context,
     builder: (_) => _MoveTypeItemsDialog(kind: kind, type: type, count: count),
   );
-  if (target != null) store.deleteType(kind.id, type.id, moveTo: target);
+  if (target == null) return;
+  Haptics.remove();
+  store.deleteType(kind.id, type.id, moveTo: target);
 }
 
 /// Deleting a type that has clothes: pick which of the kind's other types
@@ -1865,6 +1896,7 @@ class _DiaryDay extends StatelessWidget {
                 return GestureDetector(
                   // Wear it again: onto the canvas.
                   onTap: () {
+                    Haptics.done();
                     store.loadDiaryEntry(e);
                     _backToOutfit(context);
                   },
@@ -1901,7 +1933,9 @@ class _DiaryDay extends StatelessWidget {
                                       message: l10n.diaryRemoveEntryMessage,
                                       confirmLabel: l10n.delete,
                                     );
-                                    if (confirmed) store.deleteDiaryEntry(e.id);
+                                    if (!confirmed) return;
+                                    Haptics.remove();
+                                    store.deleteDiaryEntry(e.id);
                                   },
                                   child: SizedBox(
                                     width: 40,
@@ -1930,7 +1964,11 @@ class _DiaryDay extends StatelessWidget {
                 filled: canvasHasClothes,
                 textColor: canvasHasClothes ? Colors.white : AppColors.mutedSoft,
                 onTap: () {
-                  if (!store.logCanvas(day)) store.flash(l10n.diaryCanvasEmpty);
+                  if (!store.logCanvas(day)) {
+                    store.flash(l10n.diaryCanvasEmpty);
+                    return;
+                  }
+                  Haptics.done();
                 },
               ),
             ),
@@ -1984,6 +2022,7 @@ class _PickSavedOutfit extends StatelessWidget {
             onTap: () {
               // An outfit whose clothes have all been deleted has nothing to log.
               if (!store.logSavedOutfit(day, o)) return;
+              Haptics.done();
               final nav = Navigator.of(context)..pop();
               if (closeBoth) {
                 nav.pop();
@@ -2089,6 +2128,7 @@ class _LogOutfitState extends State<_LogOutfit> {
                     store.flash(l10n.diaryCanvasEmpty);
                     return;
                   }
+                  Haptics.done();
                   store.flash(l10n.toastLogged(_diaryDayTitle(context, _day)));
                   Navigator.of(context).pop();
                 },
@@ -2154,10 +2194,21 @@ class _OutfitPage extends StatelessWidget {
                 child: Row(
                   children: [
                     const AppBackButton(),
+                    // The title goes back too (see [_ItemPage]).
                     Expanded(
-                      child: Text(
-                        l10n.tabOutfit,
-                        style: AppText.sans(size: 16, weight: FontWeight.w500, color: AppColors.ink),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => Navigator.of(context).pop(),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Text(
+                              l10n.tabOutfit,
+                              style: AppText.sans(size: 16, weight: FontWeight.w500, color: AppColors.ink),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                     Semantics(
@@ -2166,7 +2217,10 @@ class _OutfitPage extends StatelessWidget {
                       label: l10n.favorite,
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
-                        onTap: () => store.toggleFavorite(outfit.id),
+                        onTap: () {
+                          Haptics.tick();
+                          store.toggleFavorite(outfit.id);
+                        },
                         child: SizedBox(
                           width: 44,
                           height: 44,
@@ -2198,8 +2252,9 @@ class _OutfitPage extends StatelessWidget {
                       textColor: wornToday ? AppColors.mutedSoft : Colors.white,
                       onTap: () {
                         if (wornToday || !store.logSavedOutfit(today, outfit)) return;
-                        store.flash(l10n.toastLogged(_diaryDayTitle(context, today)));
-                        Navigator.of(context).pop();
+                        // Stays on the outfit: the button turning into
+                        // "Logged today" (and the month strip) says it's done.
+                        Haptics.done();
                       },
                     ),
                   ),
@@ -2209,6 +2264,7 @@ class _OutfitPage extends StatelessWidget {
                       label: l10n.editOnCanvas,
                       textColor: AppColors.ink,
                       onTap: () {
+                        Haptics.done();
                         store.loadOutfit(outfit);
                         Navigator.of(context).pop();
                       },
