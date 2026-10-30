@@ -61,6 +61,8 @@ class SettingsScreen extends StatelessWidget {
                   children: [
                     const _AppCard(),
                     const SizedBox(height: 28),
+                    const SettingsContent(uppercaseLabels: true),
+                    const SizedBox(height: 22),
                     SettingsSectionLabel(l10n.sectionWardrobes, uppercase: true),
                     const SizedBox(height: 8),
                     const _WardrobesCard(),
@@ -79,8 +81,6 @@ class SettingsScreen extends StatelessWidget {
                     SettingsSectionLabel(l10n.sectionDiary, uppercase: true),
                     const SizedBox(height: 8),
                     const ReminderCard(),
-                    const SizedBox(height: 22),
-                    const SettingsContent(uppercaseLabels: true),
                     const SizedBox(height: 22),
                     SettingsSectionLabel(l10n.sectionData, uppercase: true),
                     const SizedBox(height: 8),
@@ -123,7 +123,10 @@ class _DataCardState extends State<_DataCard> {
     try {
       final zip = await store.exportArchive();
       await SharePlus.instance.share(
-        ShareParams(files: [XFile(zip.path, mimeType: 'application/zip')], sharePositionOrigin: origin),
+        ShareParams(
+          files: [XFile(zip.path, mimeType: 'application/zip')],
+          sharePositionOrigin: origin,
+        ),
       );
     } catch (_) {
       if (mounted) await infoDialog(context, title: l10n.exportData, message: l10n.exportFailed);
@@ -344,12 +347,15 @@ class _AppCard extends StatelessWidget {
               Row(
                 children: [
                   // Brand names — not translated.
-                  const Expanded(child: _LinkButton(label: 'GitHub', url: _githubUrl)),
+                  const Expanded(
+                    child: _LinkButton(label: 'GitHub', url: _githubUrl),
+                  ),
                   const SizedBox(width: 10),
-                  const Expanded(child: _LinkButton(label: 'Buy Me a Coffee', url: _buyMeACoffeeUrl)),
+                  const Expanded(
+                    child: _LinkButton(label: 'Buy Me a Coffee', url: _buyMeACoffeeUrl),
+                  ),
                 ],
               ),
-
             ],
           );
         },
@@ -393,7 +399,10 @@ class _RateBanner extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text(l10n.rateApp, style: AppText.sans(size: 15, weight: FontWeight.w500, color: AppColors.ink)),
+                    Text(
+                      l10n.rateApp,
+                      style: AppText.sans(size: 15, weight: FontWeight.w500, color: AppColors.ink),
+                    ),
                     const SizedBox(height: 2),
                     Text(l10n.rateAppHint, style: AppText.sans(size: 13, color: AppColors.muted, height: 1.3)),
                   ],
@@ -591,10 +600,7 @@ class _WardrobeRow extends StatelessWidget {
             constraints: const BoxConstraints(minHeight: 56),
             child: Row(
               children: [
-                SizedBox(
-                  width: 32,
-                  child: active ? Icon(Icons.check, size: 18, color: AppColors.accentText) : null,
-                ),
+                SizedBox(width: 32, child: active ? Icon(Icons.check, size: 18, color: AppColors.accentText) : null),
                 Expanded(
                   child: Text(
                     wardrobe.name,
@@ -609,11 +615,7 @@ class _WardrobeRow extends StatelessWidget {
                   style: AppText.mono(size: 10, letterSpacing: 0.4, color: AppColors.mutedTag),
                 ),
                 const SizedBox(width: 16),
-                _RowIcon(
-                  icon: Icons.edit_outlined,
-                  label: l10n.rename,
-                  onTap: () => _rename(context, store),
-                ),
+                _RowIcon(icon: Icons.edit_outlined, label: l10n.rename, onTap: () => _rename(context, store)),
                 // Greyed out rather than hidden for the last wardrobe, so the
                 // icons line up in every row.
                 _RowIcon(
@@ -1109,12 +1111,13 @@ class ReminderCard extends StatelessWidget {
                     height: 52,
                     child: Row(
                       children: [
-                        Expanded(child: Text(l10n.reminderTime, style: AppText.sans(size: 16, color: AppColors.ink))),
+                        Expanded(
+                          child: Text(l10n.reminderTime, style: AppText.sans(size: 16, color: AppColors.ink)),
+                        ),
                         Text(
-                          MaterialLocalizations.of(context).formatTimeOfDay(
-                            time,
-                            alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
-                          ),
+                          MaterialLocalizations.of(
+                            context,
+                          ).formatTimeOfDay(time, alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context)),
                           style: AppText.sans(size: 16, color: AppColors.accentText),
                         ),
                       ],
