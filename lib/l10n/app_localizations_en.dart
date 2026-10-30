@@ -126,9 +126,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nothingFound => 'Nothing found.';
 
   @override
-  String get sectionItemName => 'name';
-
-  @override
   String get sectionSeller => 'seller';
 
   @override
@@ -600,11 +597,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get itemLastYesterday => 'yesterday';
 
   @override
-  String get itemAutoNameHint =>
-      'named from color and type · change it in the details';
-
-  @override
-  String get sectionDetails => 'details · optional';
+  String get sectionDetails => 'details';
 
   @override
   String get reminderTitle => 'What are you wearing today?';

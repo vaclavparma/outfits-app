@@ -715,8 +715,6 @@ class _ItemDetailState extends State<_ItemDetail> {
     _size = TextEditingController(text: it?.size);
     _price = TextEditingController(text: it?.price);
     _note = TextEditingController(text: it?.note);
-    // The title follows the name as it's typed, not once saving catches up.
-    _name.addListener(() => setState(() {}));
   }
 
   @override
@@ -734,7 +732,6 @@ class _ItemDetailState extends State<_ItemDetail> {
     final itemId = widget.itemId;
     final cur = store.itemById(itemId);
     if (cur == null) return const SizedBox.shrink();
-    final typed = _name.text.trim();
     final autoName = store.displayName(ClothingItem(id: cur.id, cat: cur.cat, typeId: cur.typeId, colors: cur.colors));
 
     return Column(
@@ -755,20 +752,28 @@ class _ItemDetailState extends State<_ItemDetail> {
           ),
         ),
         const SizedBox(height: 18),
-        Text(
-          typed.isEmpty ? autoName : typed,
-          style: AppText.sans(
-            size: 28,
-            weight: FontWeight.w300,
-            // A made-up name stays a little in the background.
-            color: typed.isEmpty ? AppColors.label : AppColors.ink,
-            letterSpacing: -0.3,
+        // The name, edited right in the title. Until one is typed, the
+        // made-up one (from color and type) shows in its place.
+        TextField(
+          controller: _name,
+          onChanged: (v) => store.setItemInfo(itemId, name: v),
+          onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+          textCapitalization: TextCapitalization.sentences,
+          // Wraps like a title, but Return finishes rather than
+          // starting a new line.
+          minLines: 1,
+          maxLines: 3,
+          keyboardType: TextInputType.text,
+          textInputAction: TextInputAction.done,
+          decoration: InputDecoration(
+            hintText: autoName,
+            hintStyle: _itemTitleStyle,
+            isDense: true,
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.zero,
           ),
+          style: _itemTitleStyle,
         ),
-        if (typed.isEmpty) ...[
-          const SizedBox(height: 3),
-          Text(l10n.itemAutoNameHint, style: AppText.mono(size: 9.5, letterSpacing: 0.3, color: AppColors.mutedTag)),
-        ],
         const SizedBox(height: 8),
         Row(
           children: [
@@ -812,13 +817,6 @@ class _ItemDetailState extends State<_ItemDetail> {
           child: Column(
             children: [
               _InfoRow(
-                label: l10n.sectionItemName,
-                // The made-up name, as a suggestion to type over.
-                hint: autoName,
-                controller: _name,
-                onChanged: (v) => store.setItemInfo(itemId, name: v),
-              ),
-              _InfoRow(
                 label: l10n.sectionSeller,
                 hint: l10n.sellerHint,
                 controller: _seller,
@@ -851,6 +849,8 @@ class _ItemDetailState extends State<_ItemDetail> {
     );
   }
 }
+
+TextStyle get _itemTitleStyle => AppText.sans(size: 28, weight: FontWeight.w300, color: AppColors.ink, letterSpacing: -0.3);
 
 /// How much an item gets worn, from the diary: times worn, when last, the
 /// price per wear (if a price is filled in), and this month day by day.
@@ -1623,7 +1623,8 @@ class _InfoRow extends StatelessWidget {
               // keeps the keyboard up; anywhere else hides it.
               onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
               textCapitalization: TextCapitalization.sentences,
-              minLines: 1,
+              // A note starts two lines tall, so there's clearly room.
+              minLines: multiline ? 2 : 1,
               maxLines: multiline ? 5 : 1,
               // A one-line field would otherwise claim every sideways drag to
               // scroll its text — swallowing the swipe to the next item. It

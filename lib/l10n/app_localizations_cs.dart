@@ -128,9 +128,6 @@ class AppLocalizationsCs extends AppLocalizations {
   String get nothingFound => 'Nic nenalezeno.';
 
   @override
-  String get sectionItemName => 'název';
-
-  @override
   String get sectionSeller => 'prodejce';
 
   @override
@@ -606,11 +603,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get itemLastYesterday => 'včera';
 
   @override
-  String get itemAutoNameHint =>
-      'název z barvy a typu · přepíšete v podrobnostech';
-
-  @override
-  String get sectionDetails => 'podrobnosti · volitelné';
+  String get sectionDetails => 'podrobnosti';
 
   @override
   String get reminderTitle => 'Co máte dnes na sobě?';

@@ -296,12 +296,6 @@ abstract class AppLocalizations {
   /// **'Nic nenalezeno.'**
   String get nothingFound;
 
-  /// No description provided for @sectionItemName.
-  ///
-  /// In cs, this message translates to:
-  /// **'název'**
-  String get sectionItemName;
-
   /// No description provided for @sectionSeller.
   ///
   /// In cs, this message translates to:
@@ -1064,16 +1058,10 @@ abstract class AppLocalizations {
   /// **'včera'**
   String get itemLastYesterday;
 
-  /// No description provided for @itemAutoNameHint.
-  ///
-  /// In cs, this message translates to:
-  /// **'název z barvy a typu · přepíšete v podrobnostech'**
-  String get itemAutoNameHint;
-
   /// No description provided for @sectionDetails.
   ///
   /// In cs, this message translates to:
-  /// **'podrobnosti · volitelné'**
+  /// **'podrobnosti'**
   String get sectionDetails;
 
   /// No description provided for @reminderTitle.
