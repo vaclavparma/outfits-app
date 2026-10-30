@@ -103,33 +103,33 @@ class _OutfitsTabState extends State<OutfitsTab> {
             ],
           ),
         ),
-        if (all.isNotEmpty)
-          SliverToBoxAdapter(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  for (final (f, label) in [
-                    (_Filter.all, l10n.all),
-                    (_Filter.favorites, l10n.filterFavorites),
-                    (_Filter.oftenWorn, l10n.filterOftenWorn),
-                    (_Filter.longUnworn, l10n.statsNotWorn),
-                  ])
-                    Padding(
-                      padding: const EdgeInsets.only(right: 7),
-                      child: SelectChip(
-                        label: label,
-                        active: _filter == f,
-                        mono: false,
-                        height: 34,
-                        onTap: () => setState(() => _filter = f),
-                      ),
+        // Shown even with no outfits yet, so it's clear what's to come.
+        SliverToBoxAdapter(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                for (final (f, label) in [
+                  (_Filter.all, l10n.all),
+                  (_Filter.favorites, l10n.filterFavorites),
+                  (_Filter.oftenWorn, l10n.filterOftenWorn),
+                  (_Filter.longUnworn, l10n.statsNotWorn),
+                ])
+                  Padding(
+                    padding: const EdgeInsets.only(right: 7),
+                    child: SelectChip(
+                      label: label,
+                      active: _filter == f,
+                      mono: false,
+                      height: 34,
+                      onTap: () => setState(() => _filter = f),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
+        ),
         if (all.isEmpty || shown.isEmpty)
           SliverToBoxAdapter(
             child: Padding(
