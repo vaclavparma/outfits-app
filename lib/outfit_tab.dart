@@ -12,29 +12,14 @@ import 'theme.dart';
 import 'wardrobe_store.dart';
 import 'widgets.dart';
 
-/// How many fingers are on canvas cards right now. Swiping between tabs
+/// How many fingers are on the canvas right now. Swiping between tabs
 /// pauses while two are (a pinch), so resizing a card never turns the page
 /// instead. (Holding a card to move it can't turn it either: the hold wins
 /// before the finger moves.)
 final ValueNotifier<int> canvasTouches = ValueNotifier(0);
 
-/// Counts a finger landing on a card until it lifts — followed through the
-/// pointer router rather than the card's own [Listener], since the card may
-/// be gone by then (dropped on the bin).
-void _trackCardTouch(PointerDownEvent down) {
-  canvasTouches.value++;
-  void route(PointerEvent e) {
-    if (e is PointerUpEvent || e is PointerCancelEvent) {
-      GestureBinding.instance.pointerRouter.removeRoute(down.pointer, route);
-      canvasTouches.value = math.max(0, canvasTouches.value - 1);
-    }
-  }
-
-  GestureBinding.instance.pointerRouter.addRoute(down.pointer, route);
-}
-
 /// The outfit canvas: a card per [CanvasSlot], wherever the user put it.
-/// Tap a card to pick what it shows, pin it to keep it through Shuffle. Hold a card to drag it somewhere else (or onto
+/// Tap a card to pick what it shows, pin it to keep it through Shuffle. Drag a card (or hold it) to move it somewhere else (or onto
 /// the bin that appears below, to remove it), pinch it to resize. The chips
 /// below add a card of any kind.
 class OutfitTab extends StatefulWidget {
@@ -51,6 +36,11 @@ class _OutfitTabState extends State<OutfitTab> {
   /// How long a card is held before it lifts to be moved — short, since a
   /// tap is over well before it.
   static const _holdToMove = Duration(milliseconds: 125);
+
+  /// How far a finger moves on a card before it's a drag of the card (the
+  /// pan slop is twice this, 16 px): just under the 18 px it takes the
+  /// pager to claim a swipe between tabs, and still past a shaky tap.
+  static const _dragSlop = 8.0;
 
   /// The card being moved or resized, and where it is so far — committed to
   /// the store when the gesture ends, not on every frame.
@@ -70,18 +60,26 @@ class _OutfitTabState extends State<OutfitTab> {
   bool _moving = false;
   bool _overBin = false;
 
-  /// The most fingers seen in the current gesture on [_active] — only two
-  /// (a pinch) move and resize the card.
-  int _maxPointers = 0;
-
   /// A fresh key for each lift: the bin from the last one may still be
   /// fading out for a moment, and two can't share one key.
   GlobalKey _binKey = GlobalKey();
 
-  /// The card a two-finger gesture belongs to, if one is under way. One
-  /// card at a time is moved or resized: a second card held meanwhile is
-  /// ignored rather than sharing (and corrupting) the gesture state.
-  String? _scaleOwner;
+  /// Fingers on the canvas and where they are now (canvas coordinates).
+  /// A pinch is read from these directly rather than through a gesture
+  /// recognizer on the card: that one had to beat the short hold to win —
+  /// both fingers on the card, spread far enough within 125 ms — and often
+  /// didn't, so the card lifted to be moved instead.
+  final Map<int, Offset> _fingers = {};
+
+  /// A two-finger pinch is resizing (and moving) [_active].
+  bool _pinching = false;
+  double _pinchStartDistance = 1;
+  Offset _pinchStartFocal = Offset.zero;
+  Offset _pinchStartDrag = Offset.zero;
+
+  /// Set by a pinch until the next touch: the finger lifted last mustn't
+  /// then count as a tap (opening the picker) or a hold.
+  bool _afterPinch = false;
   Size _size = Size.zero;
   double _unit = 1;
 
@@ -121,8 +119,102 @@ class _OutfitTabState extends State<OutfitTab> {
     _active = s.id;
     _drag = Offset.zero;
     _moveDrag.value = Offset.zero;
-    _maxPointers = 0;
     _startScale = _liveScale = s.scale;
+  }
+
+  /// The topmost card at [p] (canvas coordinates), if any.
+  CanvasSlot? _cardAt(Offset p, WardrobeStore store) {
+    final slots = store.visibleSlots;
+    final ordered = [...slots.where((s) => s.id != _active), ...slots.where((s) => s.id == _active)];
+    for (final s in ordered.reversed) {
+      if (_boxFor(s).shift(Offset(_inset.left, _inset.top)).inflate(8).contains(p)) return s;
+    }
+    return null;
+  }
+
+  /// A finger landing on the canvas, followed until it lifts through the
+  /// pointer router rather than the canvas's own [Listener] — the canvas
+  /// may be gone by then (its last card dropped on the bin).
+  void _onFingerDown(PointerDownEvent down) {
+    if (_fingers.isEmpty) _afterPinch = false;
+    canvasTouches.value++;
+    _fingers[down.pointer] = down.localPosition;
+    final toLocal = down.localPosition - down.position;
+    void route(PointerEvent e) {
+      if (e is PointerMoveEvent) {
+        _onFingerMove(e.pointer, e.position + toLocal);
+      } else if (e is PointerUpEvent || e is PointerCancelEvent) {
+        GestureBinding.instance.pointerRouter.removeRoute(e.pointer, route);
+        _onFingerUp(e.pointer);
+      }
+    }
+
+    GestureBinding.instance.pointerRouter.addRoute(down.pointer, route);
+    if (_fingers.length == 2 && !_pinching) _startPinch();
+  }
+
+  void _onFingerMove(int pointer, Offset at) {
+    if (!_fingers.containsKey(pointer)) return;
+    _fingers[pointer] = at;
+    if (_pinching && mounted) _updatePinch();
+  }
+
+  void _onFingerUp(int pointer) {
+    if (_fingers.remove(pointer) == null) return;
+    canvasTouches.value = math.max(0, canvasTouches.value - 1);
+    if (_pinching && _fingers.length < 2) {
+      _pinching = false;
+      if (mounted) _endPinch();
+    }
+  }
+
+  /// A second finger is down: pinch the card being held, or else the one
+  /// under the first finger (or the second, or between them).
+  void _startPinch() {
+    final store = context.read<WardrobeStore>();
+    final [a, b, ...] = _fingers.values.toList();
+    final focal = (a + b) / 2;
+    final CanvasSlot? s;
+    if (_active != null) {
+      s = store.slotById(_active!);
+      if (s == null) return;
+      // Lifted and being moved: from here the two fingers move it.
+      if (_moving) {
+        _drag = _moveDrag.value;
+        _moveDrag.value = Offset.zero;
+        _moving = false;
+        _overBin = false;
+      }
+    } else {
+      s = _cardAt(a, store) ?? _cardAt(b, store) ?? _cardAt(focal, store);
+      if (s == null) return;
+      _begin(s);
+    }
+    _pinching = true;
+    _afterPinch = true;
+    _pinchStartDistance = math.max((a - b).distance, 1);
+    _pinchStartFocal = focal;
+    _pinchStartDrag = _drag;
+    _startScale = _liveScale;
+    setState(() {});
+  }
+
+  void _updatePinch() {
+    final [a, b, ...] = _fingers.values.toList();
+    setState(() {
+      _liveScale = (_startScale * (a - b).distance / _pinchStartDistance).clamp(CanvasSlot.minScale, CanvasSlot.maxScale);
+      _drag = _pinchStartDrag + ((a + b) / 2 - _pinchStartFocal);
+    });
+  }
+
+  void _endPinch() {
+    final store = context.read<WardrobeStore>();
+    final s = _active == null ? null : store.slotById(_active!);
+    if (s == null) {
+      setState(() => _active = null);
+    } else {
+      _commit(store, s);
+    }
   }
 
   /// Saves where the active card ended up (kept inside the canvas).
@@ -133,6 +225,38 @@ class _OutfitTabState extends State<OutfitTab> {
     store.moveSlot(s.id, box.center.dx / _size.width, box.center.dy / _size.height);
     store.scaleSlot(s.id, _liveScale);
     setState(() => _active = null);
+  }
+
+  /// Picks [s] up to be moved — by a hold, or by dragging it straight away.
+  void _lift(CanvasSlot s) {
+    // Another card is already being moved or resized, or this is (the
+    // start of) a pinch rather than a move.
+    if (_active != null || _afterPinch || _fingers.length > 1) return;
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _begin(s);
+      _moving = true;
+      _overBin = false;
+      _binKey = GlobalKey();
+    });
+  }
+
+  void _dragTo(CanvasSlot s, Offset offset, Offset global) {
+    if (!_moving || _active != s.id) return;
+    _moveDrag.value = offset;
+    final over = _isOverBin(global);
+    if (over == _overBin) return;
+    if (over) HapticFeedback.selectionClick();
+    setState(() => _overBin = over);
+  }
+
+  /// Lets go of [s]. If the gesture was [interrupted] (a system gesture, a
+  /// call), it stays where it was taken to — never deleted, even if that's
+  /// over the bin.
+  void _drop(WardrobeStore store, CanvasSlot s, {bool interrupted = false}) {
+    if (!_moving || _active != s.id) return;
+    if (interrupted) _overBin = false;
+    _endMove(store, s);
   }
 
   void _endMove(WardrobeStore store, CanvasSlot s) {
@@ -272,11 +396,15 @@ class _OutfitTabState extends State<OutfitTab> {
       builder: (context, constraints) {
         _size = _inset.deflateSize(constraints.biggest);
         _unit = CanvasGeometry.unitFor(_size.width, _size.height);
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            for (final s in ordered) _card(store, s, _boxFor(s).shift(Offset(_inset.left, _inset.top))),
-          ],
+        return Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: _onFingerDown,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              for (final s in ordered) _card(store, s, _boxFor(s).shift(Offset(_inset.left, _inset.top))),
+            ],
+          ),
         );
       },
     );
@@ -301,85 +429,53 @@ class _OutfitTabState extends State<OutfitTab> {
       ],
     );
 
-    void onScaleUpdate(ScaleUpdateDetails d) {
-      if (_scaleOwner != s.id) return;
-      setState(() {
-        _maxPointers = math.max(_maxPointers, d.pointerCount);
-        if (_maxPointers > 1) {
-          _drag += d.focalPointDelta;
-          if (d.pointerCount > 1) {
-            _liveScale = (_startScale * d.scale).clamp(CanvasSlot.minScale, CanvasSlot.maxScale);
-          }
-        }
-      });
-    }
-
-    void onScaleEnd(ScaleEndDetails d) {
-      if (_scaleOwner != s.id) return;
-      _scaleOwner = null;
-      if (_maxPointers > 1) {
-        _commit(store, s);
-        return;
-      }
-      // A one-finger drag does nothing: what a card shows is picked by
-      // tapping it.
-      setState(() => _active = null);
-    }
-
     final gestures = RawGestureDetector(
       gestures: {
         TapGestureRecognizer: GestureRecognizerFactoryWithHandlers<TapGestureRecognizer>(
           TapGestureRecognizer.new,
-          (r) => r.onTap = () => widget.onPick(s.id),
+          (r) => r.onTap = () {
+            if (!_afterPinch) widget.onPick(s.id);
+          },
         ),
         // A short hold, then drag: move the card (or drop it on the bin).
         LongPressGestureRecognizer: GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
           () => LongPressGestureRecognizer(duration: _holdToMove),
           (r) => r
             ..onLongPressStart = (_) {
-              // Another card is already being moved or resized.
-              if (_active != null) return;
-              HapticFeedback.mediumImpact();
-              setState(() {
-                _begin(s);
-                _moving = true;
-                _overBin = false;
-                _binKey = GlobalKey();
-              });
+              _lift(s);
             }
             ..onLongPressMoveUpdate = (d) {
-              if (!_moving || _active != s.id) return;
-              _moveDrag.value = d.offsetFromOrigin;
-              final over = _isOverBin(d.globalPosition);
-              if (over == _overBin) return;
-              if (over) HapticFeedback.selectionClick();
-              setState(() => _overBin = over);
+              _dragTo(s, d.offsetFromOrigin, d.globalPosition);
             }
             ..onLongPressEnd = (_) {
-              if (_moving && _active == s.id) _endMove(store, s);
+              _drop(store, s);
             }
-            // Interrupted (a system gesture, a call): it stays where it was
-            // taken to — never deleted, even if that's over the bin.
             ..onLongPressCancel = () {
-              if (!_moving || _active != s.id) return;
-              _overBin = false;
-              _endMove(store, s);
+              _drop(store, s, interrupted: true);
             },
         ),
-        // Two fingers resize (and move) the card.
-        ScaleGestureRecognizer: GestureRecognizerFactoryWithHandlers<ScaleGestureRecognizer>(
-          ScaleGestureRecognizer.new,
+        // Or just drag it, without holding first: the card claims the drag
+        // after a short way — sooner than swiping between tabs would — so
+        // moving a card sideways never turns the page instead.
+        PanGestureRecognizer: GestureRecognizerFactoryWithHandlers<PanGestureRecognizer>(
+          PanGestureRecognizer.new,
           (r) => r
+            ..gestureSettings = const DeviceGestureSettings(touchSlop: _dragSlop)
             ..onStart = (_) {
-              // Already being moved (a second finger landing on a held
-              // card), or another card is in hand.
-              if (_active != null) return;
-              _scaleOwner = s.id;
-              setState(() => _begin(s));
+              _lift(s);
             }
-            ..onUpdate = onScaleUpdate
-            ..onEnd = onScaleEnd,
+            ..onUpdate = (d) {
+              _dragTo(s, _moveDrag.value + d.delta, d.globalPosition);
+            }
+            ..onEnd = (_) {
+              _drop(store, s);
+            }
+            ..onCancel = () {
+              _drop(store, s, interrupted: true);
+            },
         ),
+        // Two fingers resizing it are read off the whole canvas (see
+        // [_fingers]).
       },
       child: card,
     );
@@ -397,7 +493,7 @@ class _OutfitTabState extends State<OutfitTab> {
             top: m,
             width: box.width,
             height: box.height,
-            child: Listener(onPointerDown: _trackCardTouch, child: gestures),
+            child: gestures,
           ),
           if (item != null && !lifted)
             Positioned(
