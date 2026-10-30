@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:reorderable_grid/reorderable_grid.dart';
 
 import 'l10n/app_localizations.dart';
 import 'sheets.dart';
@@ -65,22 +66,34 @@ class TypeDetailScreen extends StatelessWidget {
                     ],
                   ),
                 ),
+                // Hold an item and drag it to put the type's clothes in
+                // another order; "+" stays last.
                 Expanded(
-                  child: GridView.count(
+                  child: ReorderableGridView.count(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
                     crossAxisCount: gridColumns(context, 3),
                     mainAxisSpacing: 9,
                     crossAxisSpacing: 9,
                     childAspectRatio: 100 / 124,
+                    buildDefaultDragHandles: false,
+                    itemDragEnable: (i) => i < items.length,
+                    proxyDecorator: liftedTile(17),
+                    onReorderStart: (_) => Haptics.pickUp(),
+                    onReorder: (from, to) => store.reorderItemsInType(kindId, typeId, from, to),
                     children: [
-                      for (final it in items)
-                        GarmentCard(
-                          width: double.infinity,
-                          height: double.infinity,
-                          imagePath: it.imagePath,
-                          onTap: () => openItemDetail(context, it, browseIds: [for (final x in items) x.id]),
+                      for (final (i, it) in items.indexed)
+                        GridDragStart(
+                          key: ValueKey(it.id),
+                          index: i,
+                          child: GarmentCard(
+                            width: double.infinity,
+                            height: double.infinity,
+                            imagePath: it.imagePath,
+                            onTap: () => openItemDetail(context, it, browseIds: [for (final x in items) x.id]),
+                          ),
                         ),
                       AddTile(
+                        key: const ValueKey('+'),
                         label: l10n.add,
                         onTap: () => openAddItemSheet(context, presetKind: kindId, presetType: typeId),
                       ),

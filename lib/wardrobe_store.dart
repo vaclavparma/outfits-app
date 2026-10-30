@@ -776,6 +776,20 @@ class WardrobeStore extends ChangeNotifier {
   // ---------------------------------------------------------------------
   // Items
 
+  /// Moves the item at [oldIndex] among [typeId]'s items (in this
+  /// wardrobe, in the order they're shown) to [newIndex]. Items of other
+  /// types keep their places.
+  void reorderItemsInType(String kindId, String typeId, int oldIndex, int newIndex) {
+    bool inType(ClothingItem it) => it.cat == kindId && it.typeId == typeId;
+    final group = items.where(inType).toList();
+    if (oldIndex < 0 || oldIndex >= group.length) return;
+    group.insert(newIndex.clamp(0, group.length - 1), group.removeAt(oldIndex));
+    var next = 0;
+    items = [for (final it in items) inType(it) ? group[next++] : it];
+    notifyListeners();
+    _persist();
+  }
+
   Future<String> _newImageCopy(String sourcePath) async {
     final dir = await getApplicationDocumentsDirectory();
     final imagesDir = Directory(p.join(dir.path, 'satnik_images'));
@@ -1153,6 +1167,17 @@ class WardrobeStore extends ChangeNotifier {
     } catch (_) {
       // Best-effort cleanup — a stray photo file left behind is harmless.
     }
+  }
+
+  /// Moves the outfit at [oldIndex] to [newIndex], counted as the
+  /// collection shows them: newest first.
+  void reorderOutfits(int oldIndex, int newIndex) {
+    if (oldIndex < 0 || oldIndex >= outfits.length) return;
+    final shown = outfits.reversed.toList();
+    shown.insert(newIndex.clamp(0, shown.length - 1), shown.removeAt(oldIndex));
+    outfits = shown.reversed.toList();
+    notifyListeners();
+    _persist();
   }
 
   void toggleFavorite(String outfitId) {

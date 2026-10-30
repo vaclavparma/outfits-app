@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:reorderable_grid/reorderable_grid.dart';
 
 import 'l10n/app_localizations.dart';
 import 'models.dart';
@@ -69,6 +70,9 @@ class _OutfitsTabState extends State<OutfitsTab> {
             return la.compareTo(lb);
           });
     }
+
+    // Only the whole collection, unfiltered, can be put in order.
+    final canReorder = _query.trim().isEmpty && _filter == _Filter.all;
 
     return CustomScrollView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -148,12 +152,26 @@ class _OutfitsTabState extends State<OutfitsTab> {
         else
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-            sliver: SliverGrid.count(
-              crossAxisCount: gridColumns(context, 2),
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 0.78,
-              children: [for (final o in shown) _OutfitCard(key: ValueKey(o.id), outfit: o)],
+            // Hold an outfit and drag it to put them in another order — in
+            // "All" only: the other filters sort by wear or show some, as
+            // does a search.
+            sliver: SliverReorderableGrid(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: gridColumns(context, 2),
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 0.78,
+              ),
+              itemCount: shown.length,
+              proxyDecorator: liftedTile(18),
+              onReorderStart: (_) => Haptics.pickUp(),
+              onReorder: store.reorderOutfits,
+              itemBuilder: (context, i) => GridDragStart(
+                key: ValueKey(shown[i].id),
+                index: i,
+                enabled: canReorder,
+                child: _OutfitCard(outfit: shown[i]),
+              ),
             ),
           ),
       ],
@@ -163,7 +181,7 @@ class _OutfitsTabState extends State<OutfitsTab> {
 
 class _OutfitCard extends StatelessWidget {
   final SavedOutfit outfit;
-  const _OutfitCard({super.key, required this.outfit});
+  const _OutfitCard({required this.outfit});
 
   @override
   Widget build(BuildContext context) {

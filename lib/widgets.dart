@@ -1,9 +1,11 @@
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:reorderable_grid/reorderable_grid.dart';
 
 import 'l10n/app_localizations.dart';
 import 'models.dart';
@@ -676,6 +678,35 @@ abstract final class Haptics {
   /// Something was deleted.
   static void remove() => HapticFeedback.mediumImpact();
 }
+
+/// Picks up a tile of a [ReorderableGridView] after a short hold — 250 ms
+/// rather than the system's 500, which felt sluggish — so it can be dragged
+/// to another place. Moving the finger sooner scrolls instead, and letting
+/// go sooner is a tap.
+class GridDragStart extends ReorderableGridDragStartListener {
+  const GridDragStart({super.key, required super.child, required super.index, super.enabled});
+
+  @override
+  MultiDragGestureRecognizer createRecognizer() =>
+      DelayedMultiDragGestureRecognizer(debugOwner: this, delay: const Duration(milliseconds: 250));
+}
+
+/// A grid tile while it's being dragged: lifted onto a shadow, its own
+/// rounded corners ([radius]) kept.
+ReorderItemProxyDecorator liftedTile(double radius) => (child, index, animation) => AnimatedBuilder(
+  animation: animation,
+  builder: (context, child) => Transform.scale(
+    scale: 1 + 0.04 * animation.value,
+    child: Material(
+      color: Colors.transparent,
+      elevation: 8 * animation.value,
+      shadowColor: const Color(0x55000000),
+      borderRadius: BorderRadius.circular(radius),
+      child: child,
+    ),
+  ),
+  child: child,
+);
 
 /// Whether the system asks for less motion (iOS Reduce Motion, Android
 /// Remove animations): then nothing slides across the screen or zooms by

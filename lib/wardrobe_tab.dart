@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:reorderable_grid/reorderable_grid.dart';
 
 import 'l10n/app_localizations.dart';
 import 'models.dart';
@@ -166,7 +167,9 @@ class _KindSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          GridView.count(
+          // Hold a type and drag it to put the kind's types in another
+          // order (the same order as in settings); "new type" stays last.
+          ReorderableGridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             padding: EdgeInsets.zero,
@@ -174,14 +177,23 @@ class _KindSection extends StatelessWidget {
             mainAxisSpacing: 10,
             crossAxisSpacing: 10,
             childAspectRatio: 0.78,
+            buildDefaultDragHandles: false,
+            itemDragEnable: (i) => i < kind.types.length,
+            proxyDecorator: liftedTile(14),
+            onReorderStart: (_) => Haptics.pickUp(),
+            onReorder: (from, to) => store.reorderTypes(kind.id, from, to),
             children: [
-              for (final t in kind.types)
-                _TypeFolder(
-                  kind: kind,
-                  type: t,
-                  items: [for (final it in all) if (it.typeId == t.id) it],
+              for (final (i, t) in kind.types.indexed)
+                GridDragStart(
+                  key: ValueKey(t.id),
+                  index: i,
+                  child: _TypeFolder(
+                    kind: kind,
+                    type: t,
+                    items: [for (final it in all) if (it.typeId == t.id) it],
+                  ),
                 ),
-              AddTile(label: l10n.newTypeTile, onTap: () => _newType(context, store)),
+              AddTile(key: const ValueKey('+'), label: l10n.newTypeTile, onTap: () => _newType(context, store)),
             ],
           ),
         ],
