@@ -273,6 +273,7 @@ class _PickGridState extends State<_PickGrid> {
               width: double.infinity,
               height: double.infinity,
               imagePath: it.imagePath,
+              semanticLabel: store.displayName(it),
               borderColor: current?.id == it.id ? AppColors.ink : AppColors.cardBorder,
               onTap: () {
                 Haptics.tick();
@@ -625,7 +626,7 @@ class _ItemPageState extends State<_ItemPage> {
                     keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
                     child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
+                      duration: motion(const Duration(milliseconds: 220)),
                       switchInCurve: Curves.easeOut,
                       switchOutCurve: Curves.easeIn,
                       layoutBuilder: (current, previous) => Stack(
@@ -1469,7 +1470,7 @@ class _DetailActionBarState extends State<_DetailActionBar> {
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
       decoration: BoxDecoration(border: Border(top: BorderSide(color: AppColors.hairline))),
       child: AnimatedSize(
-        duration: const Duration(milliseconds: 160),
+        duration: motion(const Duration(milliseconds: 160)),
         alignment: Alignment.bottomCenter,
         child: _confirming
             ? Column(

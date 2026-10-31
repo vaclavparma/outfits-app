@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'widgets.dart';
+
 /// One full set of the app's colors — see [AppColors].
 class AppPalette {
   final Color background;
@@ -266,5 +268,8 @@ ThemeData buildAppTheme(Brightness brightness) {
       surface: p.background,
     ),
     splashFactory: NoSplash.splashFactory,
+    pageTransitionsTheme: PageTransitionsTheme(
+      builders: {for (final platform in TargetPlatform.values) platform: const AppPageTransitions()},
+    ),
   );
 }

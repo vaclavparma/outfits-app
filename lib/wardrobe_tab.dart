@@ -85,6 +85,7 @@ class _WardrobeTabState extends State<WardrobeTab> {
                           height: double.infinity,
                           slotLabel: store.kindName(it.cat).toLowerCase(),
                           imagePath: it.imagePath,
+                          semanticLabel: store.displayName(it),
                           onTap: () => widget.onOpenItem(it, [for (final x in results) x.id]),
                         ),
                     ],

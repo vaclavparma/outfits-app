@@ -422,7 +422,7 @@ class _WardrobeSwitcherState extends State<_WardrobeSwitcher> {
                 const SizedBox(width: 2),
                 AnimatedRotation(
                   turns: _open ? 0.5 : 0,
-                  duration: const Duration(milliseconds: 180),
+                  duration: motion(const Duration(milliseconds: 180)),
                   child: Icon(Icons.keyboard_arrow_down, size: 20, color: AppColors.muted),
                 ),
               ],

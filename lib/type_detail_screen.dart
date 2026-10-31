@@ -89,6 +89,7 @@ class TypeDetailScreen extends StatelessWidget {
                             width: double.infinity,
                             height: double.infinity,
                             imagePath: it.imagePath,
+                            semanticLabel: store.displayName(it),
                             onTap: () => openItemDetail(context, it, browseIds: [for (final x in items) x.id]),
                           ),
                         ),

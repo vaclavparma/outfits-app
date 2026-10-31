@@ -427,6 +427,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'The camera or gallery couldn’t be opened. Please try again.';
 
   @override
+  String get pinItem => 'Pin';
+
+  @override
   String get dropToRemove => 'Drop here to remove';
 
   @override

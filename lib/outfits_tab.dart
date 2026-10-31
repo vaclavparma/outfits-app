@@ -188,68 +188,78 @@ class _OutfitCard extends StatelessWidget {
     final store = context.watch<WardrobeStore>();
     final l10n = AppLocalizations.of(context)!;
     final colors = store.topColors([outfit.slots]);
-    return GestureDetector(
-      onTap: () => openOutfitDetail(context, outfit),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.background,
-          border: Border.all(color: AppColors.rowBorder),
-          borderRadius: BorderRadius.circular(18),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 30),
-                child: OutfitPreview(slots: outfit.slots, itemById: store.itemById, nameOf: store.displayName),
+    // VoiceOver: what's in it (the photos say nothing); the heart inside
+    // stays a button of its own.
+    final pieces = [
+      for (final id in outfit.itemIds)
+        if (store.itemById(id) case final it?) store.displayName(it),
+    ].join(', ');
+    return Semantics(
+      button: true,
+      label: pieces,
+      child: GestureDetector(
+        onTap: () => openOutfitDetail(context, outfit),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            border: Border.all(color: AppColors.rowBorder),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 30),
+                  child: OutfitPreview(slots: outfit.slots, itemById: store.itemById, nameOf: store.displayName),
+                ),
               ),
-            ),
-            Positioned(
-              left: 12,
-              bottom: 14,
-              child: Row(
-                children: [
-                  for (final c in colors)
-                    Container(
-                      width: 9,
-                      height: 9,
-                      margin: const EdgeInsets.only(right: 4),
-                      decoration: BoxDecoration(
-                        color: c.swatch,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.mutedSoft.withValues(alpha: 0.6), width: 0.8),
+              Positioned(
+                left: 12,
+                bottom: 14,
+                child: Row(
+                  children: [
+                    for (final c in colors)
+                      Container(
+                        width: 9,
+                        height: 9,
+                        margin: const EdgeInsets.only(right: 4),
+                        decoration: BoxDecoration(
+                          color: c.swatch,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.mutedSoft.withValues(alpha: 0.6), width: 0.8),
+                        ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Positioned(
-              right: 0,
-              bottom: 0,
-              child: Semantics(
-                button: true,
-                toggled: outfit.favorite,
-                label: l10n.favorite,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {
-                    Haptics.tick();
-                    store.toggleFavorite(outfit.id);
-                  },
-                  child: SizedBox(
-                    width: 44,
-                    height: 40,
-                    child: Icon(
-                      outfit.favorite ? Icons.favorite : Icons.favorite_border,
-                      size: 21,
-                      color: outfit.favorite ? AppColors.accentText : AppColors.mutedSoft,
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Semantics(
+                  button: true,
+                  toggled: outfit.favorite,
+                  label: l10n.favorite,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      Haptics.tick();
+                      store.toggleFavorite(outfit.id);
+                    },
+                    child: SizedBox(
+                      width: 44,
+                      height: 40,
+                      child: Icon(
+                        outfit.favorite ? Icons.favorite : Icons.favorite_border,
+                        size: 21,
+                        color: outfit.favorite ? AppColors.accentText : AppColors.mutedSoft,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

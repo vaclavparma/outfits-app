@@ -182,6 +182,7 @@
   "photoAccessTitle": "Fotku se nepodařilo získat",
   "photoAccessDenied": "Aplikace nemá přístup k fotoaparátu nebo k fotkám. Povolte ho v Nastavení telefonu.",
   "photoAccessFailed": "Fotoaparát ani galerii se nepodařilo otevřít. Zkuste to prosím znovu.",
+  "pinItem": "Připnout",
   "dropToRemove": "Pusťte sem pro odebrání",
   "reorder": "Změnit pořadí",
   "newTypeTile": "nový typ",

@@ -431,6 +431,9 @@ class AppLocalizationsCs extends AppLocalizations {
       'Fotoaparát ani galerii se nepodařilo otevřít. Zkuste to prosím znovu.';
 
   @override
+  String get pinItem => 'Připnout';
+
+  @override
   String get dropToRemove => 'Pusťte sem pro odebrání';
 
   @override

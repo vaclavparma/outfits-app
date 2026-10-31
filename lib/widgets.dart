@@ -96,6 +96,10 @@ class GarmentCard extends StatelessWidget {
   final List<BoxShadow>? shadow;
   final Alignment captionAlign;
 
+  /// What VoiceOver says the card is (the item's name) — a photo alone
+  /// says nothing. Replaces the card's own captions when given.
+  final String? semanticLabel;
+
   const GarmentCard({
     super.key,
     required this.width,
@@ -110,6 +114,7 @@ class GarmentCard extends StatelessWidget {
     this.borderColor,
     this.shadow,
     this.captionAlign = Alignment.bottomLeft,
+    this.semanticLabel,
   });
 
   @override
@@ -210,7 +215,7 @@ class GarmentCard extends StatelessWidget {
       card = Transform.rotate(angle: rotationDeg * math.pi / 180, child: card);
     }
 
-    return GestureDetector(
+    final gestures = GestureDetector(
       onTap: onTap,
       onHorizontalDragEnd: onSwipe == null
           ? null
@@ -220,6 +225,9 @@ class GarmentCard extends StatelessWidget {
             },
       child: card,
     );
+    final label = semanticLabel;
+    if (label == null) return gestures;
+    return Semantics(button: onTap != null, label: label, excludeSemantics: true, onTap: onTap, child: gestures);
   }
 }
 
@@ -294,13 +302,17 @@ class AppBackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => Navigator.of(context).pop(),
-      child: SizedBox(
-        width: 48,
-        height: 48,
-        child: Icon(Icons.arrow_back_ios_new, size: 18, color: AppColors.ink),
+    return Semantics(
+      button: true,
+      label: MaterialLocalizations.of(context).backButtonTooltip,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => Navigator.of(context).pop(),
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: Icon(Icons.arrow_back_ios_new, size: 18, color: AppColors.ink),
+        ),
       ),
     );
   }
@@ -314,6 +326,10 @@ class RoundIconButton extends StatelessWidget {
   final Color? background;
   final Color? borderColor;
 
+  /// What VoiceOver calls it, and whether it's switched on (for a toggle).
+  final String? semanticLabel;
+  final bool? toggled;
+
   const RoundIconButton({
     super.key,
     required this.child,
@@ -321,23 +337,30 @@ class RoundIconButton extends StatelessWidget {
     this.size = 40,
     this.background,
     this.borderColor,
+    this.semanticLabel,
+    this.toggled,
   });
 
   @override
   Widget build(BuildContext context) {
-    return TapArea(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: background ?? AppColors.ink,
-            shape: BoxShape.circle,
-            border: borderColor != null ? Border.all(color: borderColor!) : null,
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      toggled: toggled,
+      child: TapArea(
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: background ?? AppColors.ink,
+              shape: BoxShape.circle,
+              border: borderColor != null ? Border.all(color: borderColor!) : null,
+            ),
+            alignment: Alignment.center,
+            child: child,
           ),
-          alignment: Alignment.center,
-          child: child,
         ),
       ),
     );
@@ -425,6 +448,7 @@ class _SearchFieldState extends State<SearchField> {
         suffixIcon: _controller.text.isEmpty
             ? null
             : IconButton(
+                tooltip: MaterialLocalizations.of(context).clearButtonTooltip,
                 icon: Icon(Icons.close, size: 17, color: AppColors.mutedSoft),
                 onPressed: () {
                   _controller.clear();
@@ -710,7 +734,7 @@ class Segmented extends StatelessWidget {
           onSelect(i);
         },
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: motion(const Duration(milliseconds: 150)),
           padding: const EdgeInsets.symmetric(horizontal: 12),
           alignment: Alignment.center,
           decoration: BoxDecoration(
@@ -783,6 +807,31 @@ ReorderItemProxyDecorator liftedTile(double radius) => (child, index, animation)
 bool get reduceMotion {
   final f = WidgetsBinding.instance.platformDispatcher.accessibilityFeatures;
   return f.reduceMotion || f.disableAnimations;
+}
+
+/// [duration] for an animation within a screen — or none, so things just
+/// change, when the system asks for less motion. (Flutter's own animations
+/// only heed Android's setting; iOS's comes as [reduceMotion].)
+Duration motion(Duration duration) => reduceMotion ? Duration.zero : duration;
+
+/// Moving between screens: the platform's own transition — unless the
+/// system asks for less motion; then a screen fades in and out instead of
+/// sliding (on iOS the one beneath slides along at another speed, a
+/// parallax Apple asks to avoid).
+class AppPageTransitions extends PageTransitionsBuilder {
+  const AppPageTransitions();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (reduceMotion) return FadeTransition(opacity: animation, child: child);
+    return const PageTransitionsTheme().buildTransitions(route, context, animation, secondaryAnimation, child);
+  }
 }
 
 /// Opens [path] full screen over everything (sheets included): pinch or

@@ -806,6 +806,12 @@ abstract class AppLocalizations {
   /// **'Fotoaparát ani galerii se nepodařilo otevřít. Zkuste to prosím znovu.'**
   String get photoAccessFailed;
 
+  /// No description provided for @pinItem.
+  ///
+  /// In cs, this message translates to:
+  /// **'Připnout'**
+  String get pinItem;
+
   /// No description provided for @dropToRemove.
   ///
   /// In cs, this message translates to:

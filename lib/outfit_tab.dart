@@ -293,7 +293,7 @@ class _OutfitTabState extends State<OutfitTab> {
         SizedBox(
           height: 52,
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 160),
+            duration: motion(const Duration(milliseconds: 160)),
             child: _moving ? _bin(l10n) : _addChips(store, l10n),
           ),
         ),
@@ -356,10 +356,10 @@ class _OutfitTabState extends State<OutfitTab> {
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
       child: AnimatedScale(
         scale: _overBin && !reduceMotion ? 1.04 : 1,
-        duration: const Duration(milliseconds: 120),
+        duration: motion(const Duration(milliseconds: 120)),
         child: AnimatedContainer(
           key: _binKey,
-          duration: const Duration(milliseconds: 120),
+          duration: motion(const Duration(milliseconds: 120)),
           decoration: BoxDecoration(
             color: _overBin ? AppColors.danger : AppColors.cardFill,
             borderRadius: BorderRadius.circular(22),
@@ -507,7 +507,13 @@ class _OutfitTabState extends State<OutfitTab> {
             top: m,
             width: box.width,
             height: box.height,
-            child: gestures,
+            // What VoiceOver says: the item (or the empty card's kind); a
+            // double-tap picks another, like a tap.
+            child: Semantics(
+              button: true,
+              label: item == null ? store.kindName(s.kindId) : store.displayName(item),
+              child: gestures,
+            ),
           ),
           // Stays on the card while it's moved, rather than blinking out.
           if (item != null)
@@ -563,7 +569,7 @@ class _SaveButton extends StatelessWidget {
       child: GestureDetector(
         onTap: saved == null ? onSave : () => openOutfitDetail(context, saved),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: motion(const Duration(milliseconds: 200)),
           height: 44,
           padding: const EdgeInsets.symmetric(horizontal: 18),
           decoration: BoxDecoration(
@@ -695,6 +701,8 @@ class _PinButton extends StatelessWidget {
       size: 26,
       background: AppColors.surface,
       borderColor: AppColors.removeButtonBorder,
+      semanticLabel: AppLocalizations.of(context)!.pinItem,
+      toggled: pinned,
       onTap: onTap,
       child: Icon(
         pinned ? Icons.push_pin : Icons.push_pin_outlined,

@@ -61,7 +61,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: ContentWidth(
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
+            duration: motion(const Duration(milliseconds: 250)),
             switchInCurve: Curves.easeOut,
             switchOutCurve: Curves.easeIn,
             child: _step == 0
@@ -341,10 +341,14 @@ class _SetupStep extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(4, 8, 24, 0),
           child: Row(
             children: [
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: onBack,
-                child: SizedBox(width: 48, height: 48, child: Icon(Icons.arrow_back_ios_new, size: 18, color: AppColors.ink)),
+              Semantics(
+                button: true,
+                label: MaterialLocalizations.of(context).backButtonTooltip,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onBack,
+                  child: SizedBox(width: 48, height: 48, child: Icon(Icons.arrow_back_ios_new, size: 18, color: AppColors.ink)),
+                ),
               ),
               const SizedBox(width: 8),
               Expanded(child: _Progress(step: step, of: of)),
@@ -411,7 +415,7 @@ class _Progress extends StatelessWidget {
             if (i > 1) const SizedBox(width: 6),
             Expanded(
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
+                duration: motion(const Duration(milliseconds: 250)),
                 height: 4,
                 decoration: BoxDecoration(
                   color: i <= step ? AppColors.accentText : AppColors.cardBorder,
@@ -523,7 +527,7 @@ class _LooksPicker extends StatelessWidget {
       children: [
         ExcludeSemantics(
           child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
+            duration: motion(const Duration(milliseconds: 250)),
             child: _PhoneMock(key: ValueKey(code), width: width, screen: screen),
           ),
         ),

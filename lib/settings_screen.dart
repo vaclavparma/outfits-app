@@ -881,7 +881,7 @@ class _KindRow extends StatelessWidget {
                   _RowIcon(icon: Icons.delete_outline, label: l10n.delete, onTap: () => _delete(context, store)),
                   AnimatedRotation(
                     turns: expanded ? 0.5 : 0,
-                    duration: const Duration(milliseconds: 180),
+                    duration: motion(const Duration(milliseconds: 180)),
                     child: SizedBox(
                       width: 34,
                       child: Icon(Icons.keyboard_arrow_down, size: 22, color: AppColors.mutedSoft),
@@ -893,7 +893,7 @@ class _KindRow extends StatelessWidget {
           ),
         ),
         AnimatedSize(
-          duration: const Duration(milliseconds: 180),
+          duration: motion(const Duration(milliseconds: 180)),
           curve: Curves.easeOut,
           alignment: Alignment.topCenter,
           child: expanded ? _TypeList(kind: kind) : const SizedBox(width: double.infinity),
@@ -1124,7 +1124,7 @@ class ReminderCard extends StatelessWidget {
               behavior: HitTestBehavior.opaque,
               onTap: store.reminderEnabled ? () => _pickTime(context, store) : null,
               child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 150),
+                duration: motion(const Duration(milliseconds: 150)),
                 opacity: store.reminderEnabled ? 1 : 0.4,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
