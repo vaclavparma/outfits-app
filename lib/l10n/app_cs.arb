@@ -22,10 +22,10 @@
   "categorySaty": "Šaty",
   "categoryDolni": "Dolní díl",
   "categoryBoty": "Boty",
-  "defaultTypesTop": "Trička, Košile, Mikiny, Svetry",
+  "defaultTypesTop": "Trička",
   "@defaultTypesTop": {"description": "Comma-separated types a fresh install starts with under tops."},
-  "defaultTypesBottom": "Kalhoty, Džíny, Sukně, Kraťasy",
-  "defaultTypesShoes": "Tenisky, Polobotky, Sandály",
+  "defaultTypesBottom": "Kalhoty",
+  "defaultTypesShoes": "Tenisky",
 
   "itemCount": "{count, plural, one{{count} kus} few{{count} kusy} other{{count} kusů}}",
   "@itemCount": {
@@ -153,7 +153,7 @@
   "addClothes": "Přidat",
   "canvasEmpty": "Na plátně zatím nic není.\nPřidejte karty tlačítky dole — podržením je pak přesunete, dvěma prsty změníte velikost.",
   "otherTypeName": "Ostatní",
-  "defaultTypesDress": "Letní, Společenské",
+  "defaultTypesDress": "Letní",
   "deleteTypeMoveMessage": "V typu „{name}“ je {items}. Kam je přesunout?",
   "@deleteTypeMoveMessage": {"placeholders": {"name": {"type": "String"}, "items": {"type": "String"}}},
   "canvasFull": "Na plátně může být nejvýš {count} karet. Nějakou odeberte — podržte ji a přetáhněte do koše.",

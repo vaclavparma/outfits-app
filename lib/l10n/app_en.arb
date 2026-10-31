@@ -22,9 +22,9 @@
   "categorySaty": "Dresses",
   "categoryDolni": "Bottom",
   "categoryBoty": "Shoes",
-  "defaultTypesTop": "T-shirts, Shirts, Hoodies, Sweaters",
-  "defaultTypesBottom": "Trousers, Jeans, Skirts, Shorts",
-  "defaultTypesShoes": "Sneakers, Dress shoes, Sandals",
+  "defaultTypesTop": "T-shirts",
+  "defaultTypesBottom": "Trousers",
+  "defaultTypesShoes": "Sneakers",
 
   "itemCount": "{count, plural, one{{count} item} other{{count} items}}",
   "@itemCount": {
@@ -149,7 +149,7 @@
   "addClothes": "Add",
   "canvasEmpty": "Nothing on the canvas yet.\nAdd cards with the buttons below — hold one to move it, pinch to resize it.",
   "otherTypeName": "Other",
-  "defaultTypesDress": "Summer, Formal",
+  "defaultTypesDress": "Summer",
   "deleteTypeMoveMessage": "“{name}” has {items}. Where should they go?",
   "canvasFull": "The canvas holds at most {count} cards. Remove one first — hold it and drag it to the bin.",
   "@canvasFull": {"placeholders": {"count": {"type": "int"}}},

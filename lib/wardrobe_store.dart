@@ -121,12 +121,11 @@ class WardrobeStore extends ChangeNotifier {
   /// Whether [item]'s name was given by the user, not made up.
   bool hasOwnName(ClothingItem item) => item.name?.isNotEmpty ?? false;
 
-  /// Default type names that describe rather than name ("Summer",
-  /// "Formal" dresses), in every language.
-  static final _modifierTypeNames = {
-    for (final code in ['cs', 'en'])
-      for (final n in lookupAppLocalizations(Locale(code)).defaultTypesDress.split(',')) n.trim(),
-  };
+  /// Type names the app has given dresses by default, which describe
+  /// rather than name ("Summer", "Formal" dresses), in every language.
+  /// Listed here, not taken from today's defaults: wardrobes made with
+  /// earlier ones still have them.
+  static const _modifierTypeNames = {'Letní', 'Společenské', 'Summer', 'Formal'};
 
   /// The catch-all type's name in every language (it's stored as created).
   static final _otherTypeNames = {

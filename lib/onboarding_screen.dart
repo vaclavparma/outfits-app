@@ -29,8 +29,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _step = 0;
   final _name = TextEditingController();
 
-  /// The kinds to keep — all of them, unless unticked.
-  late final Set<String> _kinds = {for (final k in context.read<WardrobeStore>().kinds) k.id};
+  /// The kinds to keep — all of them, unless unticked. Dresses start
+  /// unticked: plenty of people never wear one, and ticking it is one tap.
+  late final Set<String> _kinds = {
+    for (final k in context.read<WardrobeStore>().kinds)
+      if (k.id != 'saty') k.id,
+  };
 
   @override
   void dispose() {

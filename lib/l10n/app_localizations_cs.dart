@@ -63,13 +63,13 @@ class AppLocalizationsCs extends AppLocalizations {
   String get categoryBoty => 'Boty';
 
   @override
-  String get defaultTypesTop => 'Trička, Košile, Mikiny, Svetry';
+  String get defaultTypesTop => 'Trička';
 
   @override
-  String get defaultTypesBottom => 'Kalhoty, Džíny, Sukně, Kraťasy';
+  String get defaultTypesBottom => 'Kalhoty';
 
   @override
-  String get defaultTypesShoes => 'Tenisky, Polobotky, Sandály';
+  String get defaultTypesShoes => 'Tenisky';
 
   @override
   String itemCount(int count) {
@@ -335,7 +335,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get otherTypeName => 'Ostatní';
 
   @override
-  String get defaultTypesDress => 'Letní, Společenské';
+  String get defaultTypesDress => 'Letní';
 
   @override
   String deleteTypeMoveMessage(String name, String items) {

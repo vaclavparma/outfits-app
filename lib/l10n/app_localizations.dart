@@ -209,19 +209,19 @@ abstract class AppLocalizations {
   /// Comma-separated types a fresh install starts with under tops.
   ///
   /// In cs, this message translates to:
-  /// **'Trička, Košile, Mikiny, Svetry'**
+  /// **'Trička'**
   String get defaultTypesTop;
 
   /// No description provided for @defaultTypesBottom.
   ///
   /// In cs, this message translates to:
-  /// **'Kalhoty, Džíny, Sukně, Kraťasy'**
+  /// **'Kalhoty'**
   String get defaultTypesBottom;
 
   /// No description provided for @defaultTypesShoes.
   ///
   /// In cs, this message translates to:
-  /// **'Tenisky, Polobotky, Sandály'**
+  /// **'Tenisky'**
   String get defaultTypesShoes;
 
   /// No description provided for @itemCount.
@@ -659,7 +659,7 @@ abstract class AppLocalizations {
   /// No description provided for @defaultTypesDress.
   ///
   /// In cs, this message translates to:
-  /// **'Letní, Společenské'**
+  /// **'Letní'**
   String get defaultTypesDress;
 
   /// No description provided for @deleteTypeMoveMessage.
