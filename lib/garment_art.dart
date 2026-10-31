@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Simple drawn garments for the welcome screen — the app ships no photos
 /// of its own, so these stand in for the user's clothes.
-enum GarmentArt { shirt, stripedTee, trousers }
+enum GarmentArt { shirt, stripedTee, trousers, dress, sneaker }
 
 /// [art] in [color], drawn to fit a square of [size] on a white card.
 class GarmentArtCard extends StatelessWidget {
@@ -89,6 +89,30 @@ class _GarmentPainter extends CustomPainter {
       ..lineTo(42, 96)
       ..lineTo(20, 96)
       ..close(),
+    GarmentArt.dress => Path()
+      ..moveTo(36, 6)
+      ..lineTo(41, 6)
+      ..lineTo(43, 28)
+      ..quadraticBezierTo(50, 33, 57, 28)
+      ..lineTo(59, 6)
+      ..lineTo(64, 6)
+      ..lineTo(66, 32)
+      ..lineTo(61, 44)
+      ..lineTo(84, 95)
+      ..lineTo(16, 95)
+      ..lineTo(39, 44)
+      ..lineTo(34, 32)
+      ..close(),
+    GarmentArt.sneaker => Path()
+      ..moveTo(6, 72)
+      ..lineTo(8, 52)
+      ..quadraticBezierTo(16, 44, 26, 50)
+      ..lineTo(36, 42)
+      ..lineTo(52, 40)
+      ..lineTo(62, 50)
+      ..quadraticBezierTo(82, 54, 94, 64)
+      ..lineTo(94, 72)
+      ..close(),
   };
 
   @override
@@ -131,6 +155,17 @@ class _GarmentPainter extends CustomPainter {
       case GarmentArt.trousers:
         canvas.drawLine(const Offset(28, 13), const Offset(72, 13), line);
         canvas.drawLine(const Offset(50, 13), const Offset(50, 34), line);
+      case GarmentArt.dress:
+        canvas.drawLine(const Offset(39, 44), const Offset(61, 44), line);
+        for (final x in const [38.0, 50.0, 62.0]) {
+          canvas.drawLine(Offset(50 + (x - 50) * 0.3, 47), Offset(x, 93), line..color = darker.withValues(alpha: 0.6));
+        }
+        line.color = darker;
+      case GarmentArt.sneaker:
+        canvas.drawLine(const Offset(7, 66), const Offset(94, 66), line);
+        for (var i = 0; i < 3; i++) {
+          canvas.drawLine(Offset(40 + i * 7.0, 44 + i * 2.0), Offset(46 + i * 7.0, 50 + i * 2.0), line);
+        }
     }
     canvas.drawPath(outline, line..color = darker.withValues(alpha: 0.5));
   }

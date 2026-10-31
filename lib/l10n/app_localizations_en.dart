@@ -700,25 +700,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingStart => 'Get started';
 
   @override
-  String get onboardingLooksTitle => 'Look and language';
+  String get onboardingLooksTitle => 'Look';
 
   @override
   String get onboardingLooksBody =>
-      'How the app should look and which language it speaks.';
+      'How the app should look — tap the one you like.';
 
   @override
   String get onboardingWardrobeTitle => 'Your wardrobe';
 
   @override
   String get onboardingWardrobeBody =>
-      'Give it a name — say “Home”. You can add more wardrobes (cottage, office…) in settings any time.';
-
-  @override
-  String get onboardingKindsTitle => 'What you wear';
-
-  @override
-  String get onboardingKindsBody =>
-      'Pick the kinds of clothing you want to work with. Each kind is a card on the canvas; the types within (t-shirts, shirts…) can be edited in settings.';
+      'Give it a name — say “Home”. It starts with cards for tops, bottoms and shoes. More kinds of clothing, and more wardrobes (cottage, office…), can be added in settings any time.';
 
   @override
   String get onboardingReminderTitle => 'Daily reminder';
@@ -754,6 +747,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get tourDiaryBody =>
       'Log what you wear — with the + button or by tapping a day. The entries add up to stats: what you wear most, and what you don\'t.';
+
+  @override
+  String get tourSettingsBody =>
+      'Here you can change the kinds and types of clothing, wardrobes, look, language and the daily reminder, and back up your data. The gear at the top right brings you back any time.';
+
+  @override
+  String get languageSystemShort => 'System';
 
   @override
   String get tourNext => 'Next';

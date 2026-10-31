@@ -706,25 +706,18 @@ class AppLocalizationsCs extends AppLocalizations {
   String get onboardingStart => 'Začít';
 
   @override
-  String get onboardingLooksTitle => 'Vzhled a jazyk';
+  String get onboardingLooksTitle => 'Vzhled';
 
   @override
   String get onboardingLooksBody =>
-      'Jak má aplikace vypadat a jakou řečí mluvit.';
+      'Jak má aplikace vypadat — klepněte na jednu z možností.';
 
   @override
   String get onboardingWardrobeTitle => 'Váš šatník';
 
   @override
   String get onboardingWardrobeBody =>
-      'Pojmenujte ho — třeba „Doma“. Další šatníky (chata, kancelář…) přidáte kdykoli v nastavení.';
-
-  @override
-  String get onboardingKindsTitle => 'Co nosíte';
-
-  @override
-  String get onboardingKindsBody =>
-      'Vyberte druhy oblečení, se kterými chcete pracovat. Každý druh je karta na plátně, typy uvnitř (trička, košile…) upravíte v nastavení.';
+      'Pojmenujte ho — třeba „Doma“. Zatím v něm jsou karty na horní díl, dolní díl a boty. Další druhy oblečení i šatníky (chata, kancelář…) přidáte kdykoli v nastavení.';
 
   @override
   String get onboardingReminderTitle => 'Denní upomínka';
@@ -760,6 +753,13 @@ class AppLocalizationsCs extends AppLocalizations {
   @override
   String get tourDiaryBody =>
       'Zapisujte, co máte na sobě — tlačítkem + nebo ťuknutím na den. Ze zápisů vznikají statistiky: co nosíte nejvíc a co ne.';
+
+  @override
+  String get tourSettingsBody =>
+      'Tady upravíte druhy a typy oblečení, šatníky, vzhled, jazyk i denní upomínku a můžete si zálohovat data. Kdykoli se sem dostanete ozubeným kolečkem vpravo nahoře.';
+
+  @override
+  String get languageSystemShort => 'Systém';
 
   @override
   String get tourNext => 'Dál';

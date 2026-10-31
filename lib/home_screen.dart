@@ -84,6 +84,9 @@ class _HomeScreenState extends State<HomeScreen> {
   /// the page — the pages it slides past mustn't become the current tab.
   bool _animating = false;
 
+  /// Settings opened for the tour's last step (so it opens just once).
+  bool _openedForTour = false;
+
   @override
   void initState() {
     super.initState();
@@ -131,6 +134,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
+
+    // The tour's last step is about settings: open them for it.
+    final onSettingsStep = store.tourStep == WardrobeStore.tourSteps - 1;
+    if (onSettingsStep && !_openedForTour) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) openSettingsScreen(context);
+      });
+    }
+    _openedForTour = onSettingsStep;
 
     // A type kept open in another tab belongs to the wardrobe
     // it was opened in — drop them all when the wardrobe changes.
@@ -182,7 +194,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                 ),
-                if (store.tourStep case final step?) _TourCard(step: step),
+                // The last step is about settings, and shows there.
+                if (store.tourStep case final step? when step < WardrobeStore.tourSteps - 1) TourCard(step: step),
                 _BottomTabs(
                   current: store.screen,
                   onSelect: (kind) {
@@ -466,11 +479,12 @@ class _WardrobeSwitcherState extends State<_WardrobeSwitcher> {
   }
 }
 
-/// The guided tour after onboarding: a card above the tab bar for each
-/// step, on the tab it's about, with what to try there.
-class _TourCard extends StatelessWidget {
+/// The guided tour after onboarding: a card for each step, on the tab it's
+/// about (above the tab bar) — the last one in settings, opened for it —
+/// with what to try there.
+class TourCard extends StatelessWidget {
   final int step;
-  const _TourCard({required this.step});
+  const TourCard({super.key, required this.step});
 
   @override
   Widget build(BuildContext context) {
@@ -478,12 +492,20 @@ class _TourCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final hasItems = store.items.isNotEmpty;
     final canvasHasClothes = store.currentOutfitItems.isNotEmpty;
+    // The last step shows in settings: finishing closes them and goes to
+    // the canvas.
+    final last = step == WardrobeStore.tourSteps - 1;
+    void finish() {
+      store.finishTour();
+      Navigator.of(context).maybePop();
+    }
 
     final (title, body) = switch (step) {
       0 => (l10n.tourAddTitle, l10n.tourAddBody),
       1 => (l10n.tourCanvasTitle, l10n.tourCanvasBody),
       2 => (l10n.tabOutfits, l10n.tourOutfitsBody),
-      _ => (l10n.tabDiary, l10n.tourDiaryBody),
+      3 => (l10n.tabDiary, l10n.tourDiaryBody),
+      _ => (l10n.settingsTitle, l10n.tourSettingsBody),
     };
     // The main button does the step's thing where there is one; the
     // secondary one moves on without it.
@@ -500,7 +522,7 @@ class _TourCard extends StatelessWidget {
         l10n.tourSkip,
         store.nextTourStep,
       ),
-      _ when step == WardrobeStore.tourSteps - 1 => (l10n.done, store.nextTourStep, null, null),
+      _ when last => (l10n.done, finish, null, null),
       _ => (l10n.tourNext, store.nextTourStep, null, null),
     };
 
@@ -534,7 +556,7 @@ class _TourCard extends StatelessWidget {
                     label: l10n.tourClose,
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: store.endTour,
+                      onTap: last ? finish : store.endTour,
                       child: SizedBox(width: 40, height: 36, child: Icon(Icons.close, size: 17, color: ink.withValues(alpha: 0.7))),
                     ),
                   ),

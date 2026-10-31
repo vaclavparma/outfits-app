@@ -212,7 +212,7 @@ class WardrobeStore extends ChangeNotifier {
   /// Where the guided tour of the app (after onboarding) is: the step
   /// shown, or `null` once it's done or closed.
   int? tourStep;
-  static const tourSteps = 4;
+  static const tourSteps = 5;
 
   /// When the app was first opened (or first opened since this was
   /// recorded), and when it last asked for a store rating — see
@@ -1820,6 +1820,8 @@ class WardrobeStore extends ChangeNotifier {
     WardrobeTabKind.outfit,
     WardrobeTabKind.outfits,
     WardrobeTabKind.diary,
+    // Settings: on whichever tab, it's the gear up top.
+    WardrobeTabKind.diary,
   ];
 
   /// Moves the tour on — or ends it after the last step.
@@ -1837,6 +1839,15 @@ class WardrobeStore extends ChangeNotifier {
 
   void endTour() {
     tourStep = null;
+    notifyListeners();
+    _persist();
+  }
+
+  /// Ends the tour from its last step (settings): back to the canvas, to
+  /// start dressing.
+  void finishTour() {
+    tourStep = null;
+    screen = WardrobeTabKind.outfit;
     notifyListeners();
     _persist();
   }

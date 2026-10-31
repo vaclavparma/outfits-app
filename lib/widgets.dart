@@ -679,6 +679,74 @@ abstract final class Haptics {
   static void remove() => HapticFeedback.mediumImpact();
 }
 
+/// A few options side by side in a pill, the selected one filled (the
+/// diary's Calendar / Stats, the look in onboarding). [expand] stretches
+/// it to the width it's given, the options sharing it equally.
+class Segmented extends StatelessWidget {
+  final List<String> labels;
+  final int selected;
+  final ValueChanged<int> onSelect;
+  final double height;
+  final bool expand;
+
+  const Segmented({
+    super.key,
+    required this.labels,
+    required this.selected,
+    required this.onSelect,
+    this.height = 38,
+    this.expand = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Widget option(int i, String label) => Semantics(
+      button: true,
+      selected: i == selected,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          if (i != selected) Haptics.tick();
+          onSelect(i);
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: i == selected ? AppColors.ink : null,
+            borderRadius: BorderRadius.circular((height - 4) / 2 - 2),
+          ),
+          child: Text(
+            label.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppText.mono(
+              size: 9.5,
+              letterSpacing: 1,
+              color: i == selected ? AppColors.background : AppColors.muted,
+            ),
+          ),
+        ),
+      ),
+    );
+    return Container(
+      height: height,
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(height / 2),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Row(
+        mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+        children: [
+          for (final (i, label) in labels.indexed) expand ? Expanded(child: option(i, label)) : option(i, label),
+        ],
+      ),
+    );
+  }
+}
+
 /// Picks up a tile of a [ReorderableGridView] after a short hold — 250 ms
 /// rather than the system's 500, which felt sluggish — so it can be dragged
 /// to another place. Moving the finger sooner scrolls instead, and letting

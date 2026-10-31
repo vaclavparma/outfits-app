@@ -1229,13 +1229,13 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingLooksTitle.
   ///
   /// In cs, this message translates to:
-  /// **'Vzhled a jazyk'**
+  /// **'Vzhled'**
   String get onboardingLooksTitle;
 
   /// No description provided for @onboardingLooksBody.
   ///
   /// In cs, this message translates to:
-  /// **'Jak má aplikace vypadat a jakou řečí mluvit.'**
+  /// **'Jak má aplikace vypadat — klepněte na jednu z možností.'**
   String get onboardingLooksBody;
 
   /// No description provided for @onboardingWardrobeTitle.
@@ -1247,20 +1247,8 @@ abstract class AppLocalizations {
   /// No description provided for @onboardingWardrobeBody.
   ///
   /// In cs, this message translates to:
-  /// **'Pojmenujte ho — třeba „Doma“. Další šatníky (chata, kancelář…) přidáte kdykoli v nastavení.'**
+  /// **'Pojmenujte ho — třeba „Doma“. Zatím v něm jsou karty na horní díl, dolní díl a boty. Další druhy oblečení i šatníky (chata, kancelář…) přidáte kdykoli v nastavení.'**
   String get onboardingWardrobeBody;
-
-  /// No description provided for @onboardingKindsTitle.
-  ///
-  /// In cs, this message translates to:
-  /// **'Co nosíte'**
-  String get onboardingKindsTitle;
-
-  /// No description provided for @onboardingKindsBody.
-  ///
-  /// In cs, this message translates to:
-  /// **'Vyberte druhy oblečení, se kterými chcete pracovat. Každý druh je karta na plátně, typy uvnitř (trička, košile…) upravíte v nastavení.'**
-  String get onboardingKindsBody;
 
   /// No description provided for @onboardingReminderTitle.
   ///
@@ -1321,6 +1309,18 @@ abstract class AppLocalizations {
   /// In cs, this message translates to:
   /// **'Zapisujte, co máte na sobě — tlačítkem + nebo ťuknutím na den. Ze zápisů vznikají statistiky: co nosíte nejvíc a co ne.'**
   String get tourDiaryBody;
+
+  /// No description provided for @tourSettingsBody.
+  ///
+  /// In cs, this message translates to:
+  /// **'Tady upravíte druhy a typy oblečení, šatníky, vzhled, jazyk i denní upomínku a můžete si zálohovat data. Kdykoli se sem dostanete ozubeným kolečkem vpravo nahoře.'**
+  String get tourSettingsBody;
+
+  /// No description provided for @languageSystemShort.
+  ///
+  /// In cs, this message translates to:
+  /// **'Systém'**
+  String get languageSystemShort;
 
   /// No description provided for @tourNext.
   ///

@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'debug_screen.dart';
+import 'home_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'models.dart';
 import 'reminders.dart';
@@ -32,63 +33,78 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: ContentWidth(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
-                child: Row(
+    // The tour's last step shows here, over the bottom of the list; going
+    // back ends it.
+    final tourStep = context.select<WardrobeStore, int?>((s) => s.tourStep);
+    final onTour = tourStep == WardrobeStore.tourSteps - 1;
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        final store = context.read<WardrobeStore>();
+        if (didPop && store.tourStep == WardrobeStore.tourSteps - 1) store.finishTour();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: ContentWidth(
+            child: Stack(
+              children: [
+                Column(
                   children: [
-                    const AppBackButton(),
-                    Expanded(
-                      child: Text(
-                        l10n.settingsTitle,
-                        textAlign: TextAlign.center,
-                        style: AppText.sans(size: 16, weight: FontWeight.w500, color: AppColors.ink),
-                      ),
-                    ),
-                    // Balances the back button so the title stays centered.
-                    const SizedBox(width: 48),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-                  children: [
-                    const _AppCard(),
-                    const SizedBox(height: 28),
-                    const SettingsContent(uppercaseLabels: true),
-                    const SizedBox(height: 22),
-                    SettingsSectionLabel(l10n.sectionWardrobes, uppercase: true),
-                    const SizedBox(height: 8),
-                    const _WardrobesCard(),
-                    const SizedBox(height: 22),
-                    SettingsSectionLabel(l10n.sectionKinds, uppercase: true),
-                    const SizedBox(height: 8),
-                    const _KindsCard(),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
-                      child: Text(
-                        l10n.kindsHint,
-                        style: AppText.sans(size: 11.5, color: AppColors.mutedTag, height: 1.4),
+                      padding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
+                      child: Row(
+                        children: [
+                          const AppBackButton(),
+                          Expanded(
+                            child: Text(
+                              l10n.settingsTitle,
+                              textAlign: TextAlign.center,
+                              style: AppText.sans(size: 16, weight: FontWeight.w500, color: AppColors.ink),
+                            ),
+                          ),
+                          // Balances the back button so the title stays centered.
+                          const SizedBox(width: 48),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 22),
-                    SettingsSectionLabel(l10n.sectionDiary, uppercase: true),
-                    const SizedBox(height: 8),
-                    const ReminderCard(),
-                    const SizedBox(height: 22),
-                    SettingsSectionLabel(l10n.sectionData, uppercase: true),
-                    const SizedBox(height: 8),
-                    const _DataCard(),
+                    Expanded(
+                      child: ListView(
+                        padding: EdgeInsets.fromLTRB(20, 12, 20, onTour ? 200 : 32),
+                        children: [
+                          const _AppCard(),
+                          const SizedBox(height: 28),
+                          const SettingsContent(uppercaseLabels: true),
+                          const SizedBox(height: 22),
+                          SettingsSectionLabel(l10n.sectionWardrobes, uppercase: true),
+                          const SizedBox(height: 8),
+                          const _WardrobesCard(),
+                          const SizedBox(height: 22),
+                          SettingsSectionLabel(l10n.sectionKinds, uppercase: true),
+                          const SizedBox(height: 8),
+                          const _KindsCard(),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
+                            child: Text(
+                              l10n.kindsHint,
+                              style: AppText.sans(size: 11.5, color: AppColors.mutedTag, height: 1.4),
+                            ),
+                          ),
+                          const SizedBox(height: 22),
+                          SettingsSectionLabel(l10n.sectionDiary, uppercase: true),
+                          const SizedBox(height: 8),
+                          const ReminderCard(),
+                          const SizedBox(height: 22),
+                          SettingsSectionLabel(l10n.sectionData, uppercase: true),
+                          const SizedBox(height: 8),
+                          const _DataCard(),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            ],
+                if (onTour) Positioned(left: 0, right: 0, bottom: 0, child: TourCard(step: tourStep!)),
+              ],
+            ),
           ),
         ),
       ),
@@ -1098,13 +1114,18 @@ class ReminderCard extends StatelessWidget {
               ],
             ),
           ),
-          if (store.reminderEnabled) ...[
-            Divider(height: 1, thickness: 1, color: AppColors.rowBorder),
-            Semantics(
-              button: true,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => _pickTime(context, store),
+          // The time stays in view, greyed out while the reminder is off,
+          // so it's clear there's one to set.
+          Divider(height: 1, thickness: 1, color: AppColors.rowBorder),
+          Semantics(
+            button: true,
+            enabled: store.reminderEnabled,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: store.reminderEnabled ? () => _pickTime(context, store) : null,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 150),
+                opacity: store.reminderEnabled ? 1 : 0.4,
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
                   child: SizedBox(
@@ -1118,7 +1139,7 @@ class ReminderCard extends StatelessWidget {
                           MaterialLocalizations.of(
                             context,
                           ).formatTimeOfDay(time, alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context)),
-                          style: AppText.sans(size: 16, color: AppColors.accentText),
+                          style: AppText.sans(size: 16, color: store.reminderEnabled ? AppColors.accentText : AppColors.muted),
                         ),
                       ],
                     ),
@@ -1126,7 +1147,7 @@ class ReminderCard extends StatelessWidget {
                 ),
               ),
             ),
-          ],
+          ),
         ],
       ),
     );

@@ -62,7 +62,7 @@ class _DiaryTabState extends State<DiaryTab> with WidgetsBindingObserver {
                   l10n.tabDiary,
                   style: AppText.sans(size: 26, weight: FontWeight.w300, color: AppColors.ink, letterSpacing: -0.4),
                 ),
-                _Segmented(
+                Segmented(
                   labels: [l10n.diaryCalendar, l10n.diaryStats],
                   selected: _stats ? 1 : 0,
                   onSelect: (i) => setState(() => _stats = i == 1),
@@ -102,61 +102,6 @@ class _DiaryTabState extends State<DiaryTab> with WidgetsBindingObserver {
           ),
         ),
       ],
-    );
-  }
-}
-
-/// Two-way pill toggle ("KALENDÁŘ | STATISTIKY").
-class _Segmented extends StatelessWidget {
-  final List<String> labels;
-  final int selected;
-  final ValueChanged<int> onSelect;
-
-  const _Segmented({required this.labels, required this.selected, required this.onSelect});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 38,
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(19),
-        border: Border.all(color: AppColors.cardBorder),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final (i, label) in labels.indexed)
-            Semantics(
-              button: true,
-              selected: i == selected,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  if (i != selected) Haptics.tick();
-                  onSelect(i);
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: i == selected ? AppColors.ink : null,
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Text(
-                    label.toUpperCase(),
-                    style: AppText.mono(
-                      size: 9.5,
-                      letterSpacing: 1,
-                      color: i == selected ? AppColors.background : AppColors.muted,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
     );
   }
 }
