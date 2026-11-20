@@ -92,8 +92,14 @@ xcrun simctl shutdown all
 ```
 
 
+## Acknowledgements
+
+Thanks to [lucylens.cz](https://lucylens.cz) ([@by.lucylens](https://www.instagram.com/by.lucylens/)) for the clothing illustrations.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+The clothing illustrations in `assets/examples/` (and their originals in `examples/`) are © [lucylens.cz](https://lucylens.cz), all rights reserved. They're not covered by the MIT license and may not be reused outside this app without the author's permission.
 
 Bundled fonts ([Libre Franklin](https://fonts.google.com/specimen/Libre+Franklin) and [IBM Plex Mono](https://fonts.google.com/specimen/IBM+Plex+Mono)) are licensed separately under the [SIL Open Font License 1.1](https://openfontlicense.org/).
