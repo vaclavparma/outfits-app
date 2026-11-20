@@ -5,8 +5,12 @@ import 'package:provider/provider.dart';
 import 'home_screen.dart';
 import 'l10n/app_localizations.dart';
 import 'onboarding_screen.dart';
+import 'reminders.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
+
+/// The most the system text size setting enlarges text in the app.
+const maxTextScale = 2.0;
 
 void main() {
   runApp(const SatnikApp());
@@ -18,7 +22,15 @@ class SatnikApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => WardrobeStore()..load(),
+      create: (_) {
+        final store = WardrobeStore();
+        store.load().then((_) {
+          ReminderSync.start(store);
+          // Colors for items that don't have them yet, in the background.
+          store.detectMissingColors();
+        });
+        return store;
+      },
       child: Consumer<WardrobeStore>(
         builder: (context, store, _) {
           // Depends on the system setting too, so this reruns when it flips
@@ -28,7 +40,14 @@ class SatnikApp extends StatelessWidget {
             ThemeMode.dark => true,
             ThemeMode.system => MediaQuery.platformBrightnessOf(context) == Brightness.dark,
           };
-          _applyPalette(context, dark ? AppPalette.dark : AppPalette.light);
+          // iOS Increase Contrast / Android high-contrast text.
+          final strong = MediaQuery.highContrastOf(context);
+          _applyPalette(
+            context,
+            dark
+                ? (strong ? AppPalette.darkHighContrast : AppPalette.dark)
+                : (strong ? AppPalette.lightHighContrast : AppPalette.light),
+          );
 
           return MaterialApp(
             title: 'Outfits',
@@ -44,7 +63,10 @@ class SatnikApp extends StatelessWidget {
             supportedLocales: AppLocalizations.supportedLocales,
             builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
               value: dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
-              child: child!,
+              // The system text size applies everywhere, up to double —
+              // enough to read comfortably (the 200% Apple asks for), while
+              // dense spots (the calendar, the tab bar) still hold together.
+              child: MediaQuery.withClampedTextScaling(maxScaleFactor: maxTextScale, child: child!),
             ),
             // Before `load()` resolves, stay on a bare background rather than
             // flashing onboarding (or the home screen) with pre-load defaults.
@@ -61,7 +83,7 @@ class SatnikApp extends StatelessWidget {
 }
 
 /// Swaps [AppColors.current] and, if that changed anything, rebuilds every
-/// widget below [context] in place — state (open folders, scroll positions,
+/// widget below [context] in place — state (open screens, scroll positions,
 /// half-typed text) is kept; widgets just re-read their colors. Most don't
 /// depend on Theme, so nothing else would tell them to.
 ///

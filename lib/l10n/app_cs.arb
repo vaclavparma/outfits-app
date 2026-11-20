@@ -3,7 +3,6 @@
 
   "tabOutfit": "Outfit",
   "tabWardrobe": "Šatník",
-  "tabCollections": "Kolekce",
 
   "cancel": "Zrušit",
   "save": "Uložit",
@@ -13,13 +12,9 @@
   "create": "Vytvořit",
   "add": "přidat",
   "actionCannotBeUndone": "Tuto akci nelze vrátit.",
-  "noFolder": "bez složky",
   "rename": "Přejmenovat",
   "unsortedName": "Nezařazené",
 
-  "addTopPlaceholder": "Přidej top",
-  "addBottomPlaceholder": "Přidej spodek",
-  "addShoesPlaceholder": "Přidej boty",
   "shuffleButton": "Zamíchat",
   "saveOutfitButton": "Uložit outfit",
 
@@ -27,6 +22,10 @@
   "categorySaty": "Šaty",
   "categoryDolni": "Dolní díl",
   "categoryBoty": "Boty",
+  "defaultTypesTop": "Trička",
+  "@defaultTypesTop": {"description": "Comma-separated types a fresh install starts with under tops."},
+  "defaultTypesBottom": "Kalhoty",
+  "defaultTypesShoes": "Tenisky",
 
   "itemCount": "{count, plural, one{{count} kus} few{{count} kusy} other{{count} kusů}}",
   "@itemCount": {
@@ -35,10 +34,6 @@
     }
   },
 
-  "newCollectionTile": "nová kolekce",
-  "newCollectionDialogTitle": "Nová kolekce",
-  "newCollectionHint": "např. Práce",
-
   "outfitCount": "{count, plural, one{{count} outfit} few{{count} outfity} other{{count} outfitů}}",
   "@outfitCount": {
     "placeholders": {
@@ -46,79 +41,21 @@
     }
   },
 
-  "collectionEmptyHint": "Zatím prázdné. Ulož outfit a vyber tuto kolekci.",
-  "renameCollectionTitle": "Přejmenovat kolekci",
-  "deleteCollectionTitle": "Smazat kolekci?",
-  "deleteCollectionMessage": "Kolekce „{name}“ a vše v ní bude smazáno.",
-  "@deleteCollectionMessage": {
-    "placeholders": {
-      "name": {"type": "String"}
-    }
-  },
   "deleteOutfitTitle": "Smazat outfit?",
-  "deleteOutfitMessage": "„{name}“ bude smazán.",
-  "@deleteOutfitMessage": {
-    "placeholders": {
-      "name": {"type": "String"}
-    }
-  },
-
-  "pickTopTitle": "Vyber top nebo šaty",
-  "pickBottomTitle": "Vyber spodek",
-  "pickShoesTitle": "Vyber boty",
-
-  "addLayerTitle": "Přidat vrstvu",
-  "changeLayerTitle": "Vyměnit vrstvu",
-  "layerLimitMessage": "{max, plural, one{Můžeš mít nejvýš {max} vrstvu navíc.} few{Můžeš mít nejvýš {max} vrstvy navíc.} other{Můžeš mít nejvýš {max} vrstev navíc.}}",
-  "@layerLimitMessage": {
-    "placeholders": {
-      "max": {"type": "int"}
-    }
-  },
-  "noMoreLayers": "Žádné další vrstvy k přidání.",
 
   "addItemTitle": "Přidat oblečení",
-  "sectionCategory": "kategorie",
-  "sectionFolder": "složka",
   "takePhoto": "Vyfotit",
   "fromGallery": "Z galerie",
 
-  "itemDetailTitle": "Detail oblečení",
-  "useInOutfit": "Použít v outfitu",
   "deleteItemTitle": "Smazat oblečení?",
   "deleteItemMessage": "Oblečení bude smazáno.",
   "moveTitle": "Přesunout",
-  "nothingToMoveTo": "Není kam přesunout — nejdřív založ další složku nebo šatník.",
-  "moveInThisWardrobe": "v tomto šatníku",
-  "moveInWardrobe": "v šatníku „{name}“",
-  "@moveInWardrobe": {
-    "placeholders": {
-      "name": {"type": "String"}
-    }
-  },
-  "toastMovedToWardrobe": "Přesunuto do šatníku „{name}“ · složka {folder}",
-  "@toastMovedToWardrobe": {
-    "placeholders": {
-      "name": {"type": "String"},
-      "folder": {"type": "String"}
-    }
-  },
-  "wearWhereTitle": "Kam do outfitu?",
-  "wearAsTop": "Top",
-  "wearAsLayer": "Vrstva {n}",
-  "@wearAsLayer": {
-    "placeholders": {
-      "n": {"type": "int"}
-    }
-  },
-  "wearAsNewLayer": "Nová vrstva",
-  "wornHere": "teď tady",
+  "toastMovedToWardrobe": "Přesunuto do šatníku „{name}“",
+  "@toastMovedToWardrobe": {"placeholders": {"name": {"type": "String"}}},
   "searchHint": "Hledat oblečení",
   "nothingFound": "Nic nenalezeno.",
-  "sectionItemName": "název",
-  "itemNameHint": "např. Zelená lněná košile",
   "sectionSeller": "prodejce",
-  "sellerHint": "např. Zara",
+  "sellerHint": "Váš oblíbený obchod",
   "sectionSize": "velikost",
   "sizeHint": "např. M",
   "sectionPrice": "cena",
@@ -126,23 +63,7 @@
   "sectionNote": "poznámka",
   "noteHint": "např. prát na 30 °C",
 
-  "sectionOutfitName": "název outfitu",
-  "outfitNameHint": "např. Pondělní porada",
-  "sectionCollection": "kolekce",
-
-  "newFolderTile": "nová složka",
-  "newFolderDialogTitle": "Nová složka",
-  "newFolderHint": "např. Košile",
-  "renameFolderTitle": "Přejmenovat složku",
-  "deleteFolderTitle": "Smazat složku?",
-  "deleteFolderMessage": "Složka „{folder}“ bude smazána. Oblečení v ní se přesune do složky „Nezařazené“.",
-  "@deleteFolderMessage": {
-    "placeholders": {
-      "folder": {"type": "String"}
-    }
-  },
-
-  "toastSavedWithPhoto": "Uloženo do „{category}“ · fotka v souborech apky",
+  "toastSavedWithPhoto": "Uloženo do „{category}“ · fotka v souborech aplikace",
   "@toastSavedWithPhoto": {
     "placeholders": {
       "category": {"type": "String"}
@@ -162,32 +83,9 @@
     }
   },
   "outfitAlreadySavedTitle": "Outfit už je uložený",
-  "outfitAlreadySavedMessage": "Tahle kombinace je už uložená jako „{name}“ v {wardrobe} / {col}. Uložit ji i tak?",
-  "@outfitAlreadySavedMessage": {
-    "placeholders": {
-      "name": {"type": "String"},
-      "wardrobe": {"type": "String"},
-      "col": {"type": "String"}
-    }
-  },
   "saveAnyway": "Uložit i tak",
-  "toastOutfitSaved": "„{name}“ uloženo do kolekce {col}",
-  "@toastOutfitSaved": {
-    "placeholders": {
-      "name": {"type": "String"},
-      "col": {"type": "String"}
-    }
-  },
-  "defaultOutfitName": "Outfit {n}",
-  "@defaultOutfitName": {
-    "placeholders": {
-      "n": {"type": "int"}
-    }
-  },
 
   "aboutTagline": "Šatník pro plánování outfitů",
-  "aboutGithub": "Zdrojový kód na GitHubu",
-  "aboutSupport": "Podpoř vývoj — Buy Me a Coffee",
   "aboutVersionLine": "v{version} ({buildNumber}) · Václav Parma",
   "@aboutVersionLine": {
     "placeholders": {
@@ -196,25 +94,20 @@
     }
   },
 
+  "sectionWardrobes": "šatníky",
   "settingsTitle": "Nastavení",
   "sectionLanguage": "jazyk",
   "languageSystemOption": "Podle systému",
   "sectionAppearance": "vzhled",
   "themeLight": "Světlý",
   "themeDark": "Tmavý",
-  "sectionOther": "ostatní",
-  "showDressesLabel": "Zobrazovat šaty v šatníku",
-  "showDressesHint": "Skryje kategorii šatů v šatníku a při přidávání oblečení. Šaty, které už máš v šatníku, zůstanou beze změny.",
 
-  "onboardingTitle": "Vítej v Šatníku",
-  "onboardingSubtitle": "Pár věcí na začátek — všechno půjde později změnit.",
+  "onboardingTitle": "Vítejte v Outfits",
+  "onboardingSubtitle": "Za pár minut si nastavíte šatník po svém a poskládáte první outfit. Všechno půjde později změnit.",
   "onboardingContinue": "Pokračovat",
 
   "defaultWardrobeName": "Můj šatník",
-  "sectionWardrobeName": "název šatníku",
   "newWardrobe": "Nový šatník",
-  "newWardrobeTile": "nový šatník",
-  "editWardrobes": "Upravit šatníky",
   "newWardrobeHint": "např. Chata",
   "renameWardrobeTitle": "Přejmenovat šatník",
   "deleteWardrobeTitle": "Smazat šatník?",
@@ -223,5 +116,170 @@
     "placeholders": {
       "name": {"type": "String"}
     }
-  }
+  },
+  "colorsTitle": "Barvy",
+  "colorsEdit": "Upravit barvy",
+  "colorsHint": "Vyberte barvu pod fotkou a pak klepněte na místo na fotce, odkud ji má převzít.",
+  "colorsRedetect": "Zjistit znovu automaticky",
+  "colorAdd": "Přidat barvu",
+  "colorRemove": "Odebrat barvu",
+  "colorSlot": "Barva {n}",
+  "@colorSlot": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "ok": "OK",
+  "sectionKinds": "druhy a typy",
+  "addTypeChip": "typ",
+  "newKind": "Vlastní druh",
+  "newKindHint": "např. Čepice",
+  "renameKindTitle": "Přejmenovat druh",
+  "deleteKindTitle": "Smazat druh?",
+  "deleteKindMessage": "Druh „{name}“ i s jeho typy bude smazán.",
+  "@deleteKindMessage": {"placeholders": {"name": {"type": "String"}}},
+  "kindNotEmptyTitle": "Druh není prázdný",
+  "kindNotEmptyMessage": "V druhu „{name}“ je ještě {items} (počítají se všechny šatníky). Nejdřív je přesuňte do jiného druhu nebo smažte.",
+  "@kindNotEmptyMessage": {"placeholders": {"name": {"type": "String"}, "items": {"type": "String"}}},
+  "newTypeTitle": "Nový typ",
+  "newTypeHint": "např. Košile",
+  "renameTypeTitle": "Přejmenovat typ",
+  "deleteTypeTitle": "Smazat typ?",
+  "kindsHint": "Druhy jsou karty na hlavní stránce, typy třídí oblečení uvnitř druhu. Pořadí změníte přetažením za úchyt.",
+  "sectionKind": "druh",
+  "sectionType": "typ",
+  "sectionWardrobe": "šatník",
+  "all": "Vše",
+  "addClothes": "Přidat",
+  "canvasEmpty": "Na plátně zatím nic není.\nPřidejte karty tlačítky dole — podržením je pak přesunete, dvěma prsty změníte velikost.",
+  "otherTypeName": "Ostatní",
+  "defaultTypesDress": "Letní",
+  "deleteTypeMoveMessage": "V typu „{name}“ je {items}. Kam je přesunout?",
+  "@deleteTypeMoveMessage": {"placeholders": {"name": {"type": "String"}, "items": {"type": "String"}}},
+  "canvasFull": "Na plátně může být nejvýš {count} karet. Nějakou odeberte — podržte ji a přetáhněte do koše.",
+  "@canvasFull": {"placeholders": {"count": {"type": "int"}}},
+  "rateAppHint": "Pomůžete tím ostatním aplikaci najít",
+  "rateApp": "Ohodnotit Outfits",
+  "sectionData": "Data",
+  "exportData": "Exportovat data",
+  "exportDataHint": "Šatníky, fotky, outfity, deník i nastavení v jednom souboru .zip",
+  "importData": "Importovat data",
+  "importDataHint": "Ze zálohy .zip — nahradí všechno, co je teď v aplikaci",
+  "wardrobeCount": "{count, plural, one{{count} šatník} few{{count} šatníky} other{{count} šatníků}}",
+  "@wardrobeCount": {"placeholders": {"count": {"type": "int"}}},
+  "importConfirmTitle": "Nahradit všechna data?",
+  "importConfirmMessage": "Záloha obsahuje {wardrobes}, {items} a {outfits}. Nahradí všechno, co je teď v aplikaci — šatníky, fotky, outfity, deník i nastavení. Jestli chcete mít současný stav schovaný, nejdřív ho exportujte.",
+  "@importConfirmMessage": {"placeholders": {"wardrobes": {"type": "String"}, "items": {"type": "String"}, "outfits": {"type": "String"}}},
+  "importConfirm": "Nahradit",
+  "importDone": "Data jsou naimportovaná",
+  "importFailedTitle": "Import se nepovedl",
+  "importNotABackup": "Tento soubor není záloha z Outfits.",
+  "importNewerVersion": "Záloha je z novější verze Outfits. Aktualizujte aplikaci a zkuste to znovu.",
+  "importFailed": "Data se nepodařilo naimportovat. V aplikaci zůstalo všechno, jak bylo.",
+  "exportFailed": "Data se nepodařilo vyexportovat.",
+  "deleteForGood": "Opravdu smazat",
+  "showPhoto": "Zobrazit fotku",
+  "photoAccessTitle": "Fotku se nepodařilo získat",
+  "photoAccessDenied": "Aplikace nemá přístup k fotoaparátu nebo k fotkám. Povolte ho v Nastavení telefonu.",
+  "photoAccessFailed": "Fotoaparát ani galerii se nepodařilo otevřít. Zkuste to prosím znovu.",
+  "pinItem": "Připnout",
+  "dropToRemove": "Pusťte sem pro odebrání",
+  "reorder": "Změnit pořadí",
+  "newTypeTile": "nový typ",
+  "tabDiary": "Deník",
+  "diaryCalendar": "Kalendář",
+  "diaryStats": "Statistiky",
+  "diaryDaysCount": "{count, plural, one{{count} den} few{{count} dny} other{{count} dní}}",
+  "@diaryDaysCount": {"placeholders": {"count": {"type": "int"}}},
+  "diaryToday": "Dnes",
+  "diaryYesterday": "Včera",
+  "diaryDayEmpty": "Na tento den zatím nemáte nic zapsané.",
+  "diaryFromCanvas": "Z plátna",
+  "diaryFromSaved": "Z uložených",
+  "diaryCanvasEmpty": "Na plátně zatím není žádné oblečení.",
+  "diaryPickSavedTitle": "Uložené outfity",
+  "diaryRemoveEntry": "Odebrat z deníku",
+  "statsDaysLogged": "{count, plural, one{den zapsán tento měsíc} few{dny zapsány tento měsíc} other{dní zapsáno tento měsíc}}",
+  "@statsDaysLogged": {"placeholders": {"count": {"type": "int"}}},
+  "statsItemsWorn": "kusů nošeno tento měsíc",
+  "statsTimesWorn": "Počet nošení",
+  "statsAllTime": "celkem",
+  "statsShowAll": "zobrazit všech {count}",
+  "@statsShowAll": {"placeholders": {"count": {"type": "int"}}},
+  "statsShowLess": "zobrazit méně",
+  "statsNotWorn": "Dlouho nenošené",
+  "statsNever": "nikdy",
+  "statsDaysAgo": "před {n} dny",
+  "@statsDaysAgo": {"placeholders": {"n": {"type": "int"}}},
+  "statsNothingUnworn": "Všechno oblečení bylo za posledních {n} dní aspoň jednou na řadě.",
+  "@statsNothingUnworn": {"placeholders": {"n": {"type": "int"}}},
+  "statsEmpty": "Statistiky se objeví, až v kalendáři zapíšete první outfit.",
+  "timesWorn": "{n}×",
+  "@timesWorn": {"placeholders": {"n": {"type": "int"}}},
+  "colorFamily": "{color, select, white{Bílá} beige{Béžová} yellow{Žlutá} orange{Oranžová} red{Červená} pink{Růžová} purple{Fialová} blue{Modrá} green{Zelená} brown{Hnědá} grey{Šedá} black{Černá} other{Jiná}}",
+  "@colorFamily": {"placeholders": {"color": {"type": "String"}}},
+  "statsColors": "Barvy",
+  "statsInWardrobe": "v šatníku",
+  "statsWornLabel": "na sobě",
+  "statsColWardrobe": "šatník",
+  "statsNotWornSince": "30+ dní",
+  "diaryLogOutfit": "Zapsat outfit",
+  "sectionDay": "den",
+  "diaryOtherDay": "Jiný den…",
+  "toastLogged": "Zapsáno do deníku · {date}",
+  "@toastLogged": {"placeholders": {"date": {"type": "String"}}},
+  "itemWornLabel": "nošeno",
+  "itemLastWornLabel": "naposledy",
+  "itemPerWearLabel": "za nošení",
+  "itemLastToday": "dnes",
+  "itemLastYesterday": "včera",
+  "sectionDetails": "podrobnosti",
+  "reminderTitle": "Co máte dnes na sobě?",
+  "reminderBody": "Zapište si dnešní outfit do deníku.",
+  "reminderChannel": "Upomínka deníku",
+  "sectionDiary": "deník",
+  "reminderLabel": "Denní upomínka",
+  "reminderHint": "Připomene vám zapsat outfit — jen když ten den ještě nemáte nic zapsané.",
+  "reminderTime": "Čas",
+  "reminderDeniedTitle": "Notifikace jsou vypnuté",
+  "reminderDeniedMessage": "Aby upomínka mohla přijít, povolte aplikaci notifikace v Nastavení telefonu.",
+  "tabOutfits": "Sbírka",
+  "searchOutfitsHint": "Hledat podle oblečení",
+  "filterFavorites": "Oblíbené",
+  "filterOftenWorn": "Často nošené",
+  "favorite": "Oblíbený",
+  "outfitSaved": "Uloženo",
+  "outfitAlreadySavedHere": "Tuto kombinaci už máte mezi outfity. Uložit i tak?",
+  "outfitAlreadySavedIn": "Tuto kombinaci už máte uloženou v šatníku „{wardrobe}“. Uložit i tak?",
+  "@outfitAlreadySavedIn": {"placeholders": {"wardrobe": {"type": "String"}}},
+  "deleteOutfitPlain": "Outfit bude smazán.",
+  "outfitsEmpty": "Zatím nemáte žádné uložené outfity. Poskládejte si nějaký na hlavní stránce a uložte ho.",
+  "outfitUsualWeekday": "{weekday, select, 1{nejčastěji v pondělí} 2{nejčastěji v úterý} 3{nejčastěji ve středu} 4{nejčastěji ve čtvrtek} 5{nejčastěji v pátek} 6{nejčastěji v sobotu} 7{nejčastěji v neděli} other{}}",
+  "@outfitUsualWeekday": {"placeholders": {"weekday": {"type": "String"}}},
+  "wearToday": "Nosím dnes",
+  "outfitWornToday": "Dnes zapsáno",
+  "editOnCanvas": "Přenést na plátno",
+  "diaryRemoveEntryTitle": "Odebrat z deníku?",
+  "diaryRemoveEntryMessage": "Zápis tohoto outfitu u dne bude smazán.",
+  "nameTaken": "Tento název už existuje.",
+  "onboardingStart": "Začít",
+  "onboardingLooksTitle": "Vzhled",
+  "onboardingLooksBody": "Jak má aplikace vypadat — klepněte na jednu z možností.",
+  "onboardingWardrobeTitle": "Váš šatník",
+  "onboardingWardrobeBody": "Pojmenujte ho — třeba „Doma“. Zatím v něm jsou karty na horní díl, dolní díl a boty. Další druhy oblečení i šatníky (chata, kancelář…) přidáte kdykoli v nastavení.",
+  "onboardingReminderTitle": "Denní upomínka",
+  "onboardingReminderBody": "Z deníku se počítá, co nosíte nejčastěji a co leží ve skříni. Upomínka vám připomene zapsat dnešní outfit — klidně ji nechte vypnutou.",
+  "tourAddTitle": "Přidejte první kusy",
+  "tourAddBody": "Vyfoťte nebo vyberte z galerie pár kousků — třeba tričko, kalhoty a boty. Barvy i název se doplní samy.",
+  "tourAddButton": "Přidat oblečení",
+  "tourAddMore": "Přidat další",
+  "tourCanvasTitle": "Váš první outfit",
+  "tourCanvasBody": "Vaše kusy jsou na plátně. Ťukněte na kartu a vyberte jiný kus, podržte ji a přesuňte, dvěma prsty změníte velikost. Pak outfit uložte.",
+  "tourOutfitsBody": "Tady jsou uložené outfity. Najdete je podle oblečení, srdíčkem si označíte oblíbené a ťuknutím otevřete detail.",
+  "tourDiaryBody": "Zapisujte, co máte na sobě — tlačítkem + nebo ťuknutím na den. Ze zápisů vznikají statistiky: co nosíte nejvíc a co ne.",
+  "tourSettingsBody": "Tady upravíte druhy a typy oblečení, šatníky, vzhled, jazyk i denní upomínku a můžete si zálohovat data. Kdykoli se sem dostanete ozubeným kolečkem vpravo nahoře.",
+  "languageSystemShort": "Systém",
+  "tourNext": "Dál",
+  "tourSkip": "Přeskočit",
+  "tourClose": "Ukončit prohlídku"
 }

@@ -3,7 +3,6 @@
 
   "tabOutfit": "Outfit",
   "tabWardrobe": "Wardrobe",
-  "tabCollections": "Collections",
 
   "cancel": "Cancel",
   "save": "Save",
@@ -13,13 +12,9 @@
   "create": "Create",
   "add": "add",
   "actionCannotBeUndone": "This action can't be undone.",
-  "noFolder": "no folder",
   "rename": "Rename",
   "unsortedName": "Unsorted",
 
-  "addTopPlaceholder": "Add a top",
-  "addBottomPlaceholder": "Add a bottom",
-  "addShoesPlaceholder": "Add shoes",
   "shuffleButton": "Shuffle",
   "saveOutfitButton": "Save outfit",
 
@@ -27,6 +22,9 @@
   "categorySaty": "Dresses",
   "categoryDolni": "Bottom",
   "categoryBoty": "Shoes",
+  "defaultTypesTop": "T-shirts",
+  "defaultTypesBottom": "Trousers",
+  "defaultTypesShoes": "Sneakers",
 
   "itemCount": "{count, plural, one{{count} item} other{{count} items}}",
   "@itemCount": {
@@ -35,10 +33,6 @@
     }
   },
 
-  "newCollectionTile": "new collection",
-  "newCollectionDialogTitle": "New collection",
-  "newCollectionHint": "e.g. Work",
-
   "outfitCount": "{count, plural, one{{count} outfit} other{{count} outfits}}",
   "@outfitCount": {
     "placeholders": {
@@ -46,101 +40,26 @@
     }
   },
 
-  "collectionEmptyHint": "Nothing here yet. Save an outfit and pick this collection.",
-  "renameCollectionTitle": "Rename collection",
-  "deleteCollectionTitle": "Delete collection?",
-  "deleteCollectionMessage": "The collection “{name}” and everything in it will be deleted.",
-  "@deleteCollectionMessage": {
-    "placeholders": {
-      "name": {"type": "String"}
-    }
-  },
   "deleteOutfitTitle": "Delete outfit?",
-  "deleteOutfitMessage": "“{name}” will be deleted.",
-  "@deleteOutfitMessage": {
-    "placeholders": {
-      "name": {"type": "String"}
-    }
-  },
-
-  "pickTopTitle": "Choose a top or dress",
-  "pickBottomTitle": "Choose a bottom",
-  "pickShoesTitle": "Choose shoes",
-
-  "addLayerTitle": "Add a layer",
-  "changeLayerTitle": "Change layer",
-  "layerLimitMessage": "{max, plural, one{You can have at most {max} extra layer.} other{You can have at most {max} extra layers.}}",
-  "@layerLimitMessage": {
-    "placeholders": {
-      "max": {"type": "int"}
-    }
-  },
-  "noMoreLayers": "No more layers to add.",
 
   "addItemTitle": "Add clothing",
-  "sectionCategory": "category",
-  "sectionFolder": "folder",
   "takePhoto": "Take photo",
   "fromGallery": "From gallery",
 
-  "itemDetailTitle": "Clothing detail",
-  "useInOutfit": "Use in outfit",
   "deleteItemTitle": "Delete this item?",
   "deleteItemMessage": "This item will be deleted.",
   "moveTitle": "Move",
-  "nothingToMoveTo": "Nowhere to move it yet — create another folder or wardrobe first.",
-  "moveInThisWardrobe": "in this wardrobe",
-  "moveInWardrobe": "in “{name}”",
-  "@moveInWardrobe": {
-    "placeholders": {
-      "name": {"type": "String"}
-    }
-  },
-  "toastMovedToWardrobe": "Moved to the “{name}” wardrobe · {folder}",
-  "@toastMovedToWardrobe": {
-    "placeholders": {
-      "name": {"type": "String"},
-      "folder": {"type": "String"}
-    }
-  },
-  "wearWhereTitle": "Where in the outfit?",
-  "wearAsTop": "Top",
-  "wearAsLayer": "Layer {n}",
-  "@wearAsLayer": {
-    "placeholders": {
-      "n": {"type": "int"}
-    }
-  },
-  "wearAsNewLayer": "New layer",
-  "wornHere": "here now",
+  "toastMovedToWardrobe": "Moved to the “{name}” wardrobe",
   "searchHint": "Search clothes",
   "nothingFound": "Nothing found.",
-  "sectionItemName": "name",
-  "itemNameHint": "e.g. Green linen shirt",
   "sectionSeller": "seller",
-  "sellerHint": "e.g. Zara",
+  "sellerHint": "Your favourite shop",
   "sectionSize": "size",
   "sizeHint": "e.g. M",
   "sectionPrice": "price",
   "priceHint": "e.g. $35",
   "sectionNote": "note",
   "noteHint": "e.g. wash at 30 °C",
-
-  "sectionOutfitName": "outfit name",
-  "outfitNameHint": "e.g. Monday meeting",
-  "sectionCollection": "collection",
-
-  "newFolderTile": "new folder",
-  "newFolderDialogTitle": "New folder",
-  "newFolderHint": "e.g. Shirts",
-  "renameFolderTitle": "Rename folder",
-  "deleteFolderTitle": "Delete folder?",
-  "deleteFolderMessage": "The folder “{folder}” will be deleted. Items in it will move to “Nezařazené”.",
-  "@deleteFolderMessage": {
-    "placeholders": {
-      "folder": {"type": "String"}
-    }
-  },
 
   "toastSavedWithPhoto": "Saved to “{category}” · photo stored in app files",
   "@toastSavedWithPhoto": {
@@ -162,32 +81,9 @@
     }
   },
   "outfitAlreadySavedTitle": "Outfit already saved",
-  "outfitAlreadySavedMessage": "This combination is already saved as “{name}” in {wardrobe} / {col}. Save it anyway?",
-  "@outfitAlreadySavedMessage": {
-    "placeholders": {
-      "name": {"type": "String"},
-      "wardrobe": {"type": "String"},
-      "col": {"type": "String"}
-    }
-  },
   "saveAnyway": "Save anyway",
-  "toastOutfitSaved": "“{name}” saved to the {col} collection",
-  "@toastOutfitSaved": {
-    "placeholders": {
-      "name": {"type": "String"},
-      "col": {"type": "String"}
-    }
-  },
-  "defaultOutfitName": "Outfit {n}",
-  "@defaultOutfitName": {
-    "placeholders": {
-      "n": {"type": "int"}
-    }
-  },
 
   "aboutTagline": "A wardrobe for planning outfits",
-  "aboutGithub": "Source code on GitHub",
-  "aboutSupport": "Support development — Buy Me a Coffee",
   "aboutVersionLine": "v{version} ({buildNumber}) · Václav Parma",
   "@aboutVersionLine": {
     "placeholders": {
@@ -196,25 +92,20 @@
     }
   },
 
+  "sectionWardrobes": "wardrobes",
   "settingsTitle": "Settings",
   "sectionLanguage": "language",
   "languageSystemOption": "System default",
   "sectionAppearance": "appearance",
   "themeLight": "Light",
   "themeDark": "Dark",
-  "sectionOther": "other",
-  "showDressesLabel": "Show dresses in wardrobe",
-  "showDressesHint": "Hides the dresses category in the wardrobe and when adding clothes. Dresses already in your wardrobe stay put.",
 
   "onboardingTitle": "Welcome to Outfits",
-  "onboardingSubtitle": "A few things to start — you can change all of them later.",
+  "onboardingSubtitle": "In a couple of minutes you'll set up your wardrobe your way and put together your first outfit. You can change everything later.",
   "onboardingContinue": "Continue",
 
   "defaultWardrobeName": "My wardrobe",
-  "sectionWardrobeName": "wardrobe name",
   "newWardrobe": "New wardrobe",
-  "newWardrobeTile": "new wardrobe",
-  "editWardrobes": "Edit wardrobes",
   "newWardrobeHint": "e.g. Cottage",
   "renameWardrobeTitle": "Rename wardrobe",
   "deleteWardrobeTitle": "Delete wardrobe?",
@@ -223,5 +114,157 @@
     "placeholders": {
       "name": {"type": "String"}
     }
-  }
+  },
+  "colorsTitle": "Colors",
+  "colorsEdit": "Edit colors",
+  "colorsHint": "Choose a color below the photo, then tap the spot on the photo to take it from.",
+  "colorsRedetect": "Detect again automatically",
+  "colorAdd": "Add color",
+  "colorRemove": "Remove color",
+  "colorSlot": "Color {n}",
+  "@colorSlot": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "ok": "OK",
+  "sectionKinds": "kinds and types",
+  "addTypeChip": "type",
+  "newKind": "Custom kind",
+  "newKindHint": "e.g. Hats",
+  "renameKindTitle": "Rename kind",
+  "deleteKindTitle": "Delete kind?",
+  "deleteKindMessage": "The kind “{name}” and its types will be deleted.",
+  "kindNotEmptyTitle": "Kind isn’t empty",
+  "kindNotEmptyMessage": "“{name}” still has {items} (counting every wardrobe). Move them to another kind or delete them first.",
+  "newTypeTitle": "New type",
+  "newTypeHint": "e.g. Shirts",
+  "renameTypeTitle": "Rename type",
+  "deleteTypeTitle": "Delete type?",
+  "kindsHint": "Kinds are the cards on the main page; types sort clothes within a kind. Drag the handle to reorder.",
+  "sectionKind": "kind",
+  "sectionType": "type",
+  "sectionWardrobe": "wardrobe",
+  "all": "All",
+  "addClothes": "Add",
+  "canvasEmpty": "Nothing on the canvas yet.\nAdd cards with the buttons below — hold one to move it, pinch to resize it.",
+  "otherTypeName": "Other",
+  "defaultTypesDress": "Summer",
+  "deleteTypeMoveMessage": "“{name}” has {items}. Where should they go?",
+  "canvasFull": "The canvas holds at most {count} cards. Remove one first — hold it and drag it to the bin.",
+  "@canvasFull": {"placeholders": {"count": {"type": "int"}}},
+  "rateAppHint": "It helps other people find the app",
+  "rateApp": "Rate Outfits",
+  "sectionData": "Data",
+  "exportData": "Export data",
+  "exportDataHint": "Wardrobes, photos, outfits, diary and settings in one .zip file",
+  "importData": "Import data",
+  "importDataHint": "From a .zip backup — replaces everything in the app now",
+  "wardrobeCount": "{count, plural, one{{count} wardrobe} other{{count} wardrobes}}",
+  "@wardrobeCount": {"placeholders": {"count": {"type": "int"}}},
+  "importConfirmTitle": "Replace all data?",
+  "importConfirmMessage": "The backup has {wardrobes}, {items} and {outfits}. It replaces everything in the app now — wardrobes, photos, outfits, diary and settings. To keep what’s here, export it first.",
+  "@importConfirmMessage": {"placeholders": {"wardrobes": {"type": "String"}, "items": {"type": "String"}, "outfits": {"type": "String"}}},
+  "importConfirm": "Replace",
+  "importDone": "Data imported",
+  "importFailedTitle": "Import failed",
+  "importNotABackup": "This file isn’t an Outfits backup.",
+  "importNewerVersion": "The backup is from a newer version of Outfits. Update the app and try again.",
+  "importFailed": "The data couldn’t be imported. Everything in the app is as it was.",
+  "exportFailed": "The data couldn’t be exported.",
+  "deleteForGood": "Delete for good",
+  "showPhoto": "Show photo",
+  "photoAccessTitle": "Couldn’t get the photo",
+  "photoAccessDenied": "The app has no access to the camera or photos. Allow it in your phone’s Settings.",
+  "photoAccessFailed": "The camera or gallery couldn’t be opened. Please try again.",
+  "pinItem": "Pin",
+  "dropToRemove": "Drop here to remove",
+  "reorder": "Reorder",
+  "newTypeTile": "new type",
+  "tabDiary": "Diary",
+  "diaryCalendar": "Calendar",
+  "diaryStats": "Stats",
+  "diaryDaysCount": "{count, plural, one{{count} day} other{{count} days}}",
+  "diaryToday": "Today",
+  "diaryYesterday": "Yesterday",
+  "diaryDayEmpty": "Nothing logged for this day yet.",
+  "diaryFromCanvas": "From canvas",
+  "diaryFromSaved": "From saved",
+  "diaryCanvasEmpty": "There are no clothes on the canvas yet.",
+  "diaryPickSavedTitle": "Saved outfits",
+  "diaryRemoveEntry": "Remove from diary",
+  "statsDaysLogged": "{count, plural, one{day logged this month} other{days logged this month}}",
+  "statsItemsWorn": "items worn this month",
+  "statsTimesWorn": "Times worn",
+  "statsAllTime": "all time",
+  "statsShowAll": "show all {count}",
+  "statsShowLess": "show less",
+  "statsNotWorn": "Not worn lately",
+  "statsNever": "never",
+  "statsDaysAgo": "{n} days ago",
+  "statsNothingUnworn": "Every piece of clothing got worn at least once in the last {n} days.",
+  "statsEmpty": "Stats show up once you log your first outfit in the calendar.",
+  "timesWorn": "{n}×",
+  "colorFamily": "{color, select, white{White} beige{Beige} yellow{Yellow} orange{Orange} red{Red} pink{Pink} purple{Purple} blue{Blue} green{Green} brown{Brown} grey{Grey} black{Black} other{Other}}",
+  "statsColors": "Colors",
+  "statsInWardrobe": "in wardrobe",
+  "statsWornLabel": "worn",
+  "statsColWardrobe": "wardrobe",
+  "statsNotWornSince": "30+ days",
+  "diaryLogOutfit": "Log an outfit",
+  "sectionDay": "day",
+  "diaryOtherDay": "Other day…",
+  "toastLogged": "Logged in the diary · {date}",
+  "itemWornLabel": "worn",
+  "itemLastWornLabel": "last worn",
+  "itemPerWearLabel": "per wear",
+  "itemLastToday": "today",
+  "itemLastYesterday": "yesterday",
+  "sectionDetails": "details",
+  "reminderTitle": "What are you wearing today?",
+  "reminderBody": "Log today's outfit in your diary.",
+  "reminderChannel": "Diary reminder",
+  "sectionDiary": "diary",
+  "reminderLabel": "Daily reminder",
+  "reminderHint": "Reminds you to log your outfit — only if nothing's logged for the day yet.",
+  "reminderTime": "Time",
+  "reminderDeniedTitle": "Notifications are off",
+  "reminderDeniedMessage": "To get the reminder, allow notifications for the app in your phone's Settings.",
+  "tabOutfits": "Collection",
+  "searchOutfitsHint": "Search by clothes",
+  "filterFavorites": "Favorites",
+  "filterOftenWorn": "Worn often",
+  "favorite": "Favorite",
+  "outfitSaved": "Saved",
+  "outfitAlreadySavedHere": "You already have this combination among your outfits. Save it anyway?",
+  "outfitAlreadySavedIn": "You already have this combination saved in the “{wardrobe}” wardrobe. Save it anyway?",
+  "deleteOutfitPlain": "The outfit will be deleted.",
+  "outfitsEmpty": "No saved outfits yet. Put one together on the main page and save it.",
+  "outfitUsualWeekday": "{weekday, select, 1{mostly on Mondays} 2{mostly on Tuesdays} 3{mostly on Wednesdays} 4{mostly on Thursdays} 5{mostly on Fridays} 6{mostly on Saturdays} 7{mostly on Sundays} other{}}",
+  "wearToday": "Wearing it today",
+  "outfitWornToday": "Logged today",
+  "editOnCanvas": "Put on canvas",
+  "diaryRemoveEntryTitle": "Remove from the diary?",
+  "diaryRemoveEntryMessage": "This outfit will be removed from the day.",
+  "nameTaken": "That name is already taken.",
+  "onboardingStart": "Get started",
+  "onboardingLooksTitle": "Look",
+  "onboardingLooksBody": "How the app should look — tap the one you like.",
+  "onboardingWardrobeTitle": "Your wardrobe",
+  "onboardingWardrobeBody": "Give it a name — say “Home”. It starts with cards for tops, bottoms and shoes. More kinds of clothing, and more wardrobes (cottage, office…), can be added in settings any time.",
+  "onboardingReminderTitle": "Daily reminder",
+  "onboardingReminderBody": "The diary is what shows what you wear most and what just sits in the closet. The reminder nudges you to log today's outfit — feel free to leave it off.",
+  "tourAddTitle": "Add your first pieces",
+  "tourAddBody": "Take or pick a few photos — say a top, trousers and shoes. Colors and names fill in by themselves.",
+  "tourAddButton": "Add clothes",
+  "tourAddMore": "Add more",
+  "tourCanvasTitle": "Your first outfit",
+  "tourCanvasBody": "Your clothes are on the canvas. Tap a card to pick another piece, hold it to move it, pinch to resize. Then save the outfit.",
+  "tourOutfitsBody": "Your saved outfits live here. Search them by clothes, heart your favorites, and tap one for its detail.",
+  "tourDiaryBody": "Log what you wear — with the + button or by tapping a day. The entries add up to stats: what you wear most, and what you don't.",
+  "tourSettingsBody": "Here you can change the kinds and types of clothing, wardrobes, look, language and the daily reminder, and back up your data. The gear at the top right brings you back any time.",
+  "languageSystemShort": "System",
+  "tourNext": "Next",
+  "tourSkip": "Skip",
+  "tourClose": "End the tour"
 }

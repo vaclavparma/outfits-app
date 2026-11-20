@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.6.0+9
+version: 2.0.0+10
 
 environment:
   sdk: ^3.9.2
@@ -40,7 +40,14 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
-  reorderable_grid_view: ^2.2.8
+  flutter_local_notifications: ^22.3.2
+  timezone: ^0.11.2
+  flutter_timezone: ^5.1.1
+  in_app_review: ^2.0.12
+  archive: ^4.5.2
+  share_plus: ^13.3.1
+  file_selector: ^1.1.0
+  reorderable_grid: ^1.0.13
 
 dev_dependencies:
   flutter_test:
@@ -56,11 +63,20 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
 
 flutter_native_splash:
+  # The icon with rounded corners, as on the home screen — a plain square
+  # would sit there as a block of its own background.
   color: "#faf8f5"
-  image: assets/icon/app_icon.png
+  image: assets/icon/splash_icon.png
+  # Dark mode: the app's own dark background (AppPalette.dark), so there's
+  # no white flash before it.
+  color_dark: "#141413"
+  image_dark: assets/icon/splash_icon.png
   android_12:
     color: "#faf8f5"
     image: assets/icon/app_icon.png
+    color_dark: "#141413"
+    # Android 12+ crops the splash icon into a circle anyway.
+    image_dark: assets/icon/app_icon.png
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -80,6 +96,8 @@ flutter:
     # In-app copy (onboarding, about); the full-size app_icon.png is only
     # the source for the launcher icons and splash screen generators.
     - assets/icon/app_icon_small.png
+    # Garments shown in the onboarding.
+    - assets/examples/
 
   # Bundled locally (not fetched via google_fonts at runtime) so the app
   # works fully offline — see lib/theme.dart.

@@ -1,6 +1,11 @@
+import 'dart:io';
+import 'dart:math' as math;
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import 'l10n/app_localizations.dart';
@@ -8,12 +13,6 @@ import 'models.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
 import 'widgets.dart';
-
-const Map<WardrobeZone, String> _zoneDefaultCategory = {
-  WardrobeZone.top: 'horni',
-  WardrobeZone.bottom: 'dolni',
-  WardrobeZone.shoes: 'boty',
-};
 
 /// [title] is resolved inside the sheet's own builder (via [sheetContext]),
 /// not by the caller, so it stays correct if the locale changes while the
@@ -186,23 +185,22 @@ TextStyle get _sectionLabelStyle => AppText.mono(
   color: AppColors.mutedSoft,
 );
 
-void openPickSheet(BuildContext context, WardrobeZone zone) {
-  String title(BuildContext ctx) {
-    final l10n = AppLocalizations.of(ctx)!;
-    return switch (zone) {
-      WardrobeZone.top => l10n.pickTopTitle,
-      WardrobeZone.bottom => l10n.pickBottomTitle,
-      WardrobeZone.shoes => l10n.pickShoesTitle,
-    };
-  }
-
-  _showSheet(context, title, _PickGrid(zone: zone, hostContext: context));
+/// Picks what a canvas card shows: any item of its kind, filtered by type
+/// and search, or a new one added right here.
+void openPickSheet(BuildContext context, String slotId) {
+  final kindId = context.read<WardrobeStore>().slotById(slotId)?.kindId;
+  if (kindId == null) return;
+  _showSheet(
+    context,
+    (ctx) => ctx.read<WardrobeStore>().kindName(kindId),
+    _PickGrid(slotId: slotId, hostContext: context),
+  );
 }
 
 class _PickGrid extends StatefulWidget {
-  final WardrobeZone zone;
+  final String slotId;
   final BuildContext hostContext;
-  const _PickGrid({required this.zone, required this.hostContext});
+  const _PickGrid({required this.slotId, required this.hostContext});
 
   @override
   State<_PickGrid> createState() => _PickGridState();
@@ -210,100 +208,76 @@ class _PickGrid extends StatefulWidget {
 
 class _PickGridState extends State<_PickGrid> {
   String _query = '';
+  String? _tab;
 
-  WardrobeZone get zone => widget.zone;
-  BuildContext get hostContext => widget.hostContext;
-
-  void _addNew(BuildContext context) {
+  void _addNew(BuildContext context, String kindId) {
     Navigator.of(context).pop();
+    final host = widget.hostContext;
     openAddItemSheet(
-      hostContext,
-      presetCategory: _zoneDefaultCategory[zone],
-      onAdded: (item) {
-        final store = hostContext.read<WardrobeStore>();
-        final idx = store.zoneList(zone).indexWhere((i) => i.id == item.id);
-        if (idx >= 0) store.selectIndex(zone, idx);
-      },
+      host,
+      presetKind: kindId,
+      presetType: _tab,
+      onAdded: (item) => host.read<WardrobeStore>().setSlotItem(widget.slotId, item.id),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
-    final fullList = store.zoneList(zone);
-    final current = store.at(fullList, zone);
-
-    // The top zone spans two categories (horní díl + šaty), each with its
-    // own folders — offer the union of both rather than picking one.
-    final catsInZone = fullList.map((it) => it.cat).toSet();
-    final allFolders = <String>[];
-    for (final c in catsInZone) {
-      for (final f in store.foldersFor(c)) {
-        if (!allFolders.contains(f)) allFolders.add(f);
-      }
-    }
-    final filtered = fullList
-        .where((it) => store.folderFilter == null || it.folder == store.folderFilter)
-        .where((it) => matchesSearch(it, _query, categoryLabel: categoryLabel(context, it.cat)))
+    final l10n = AppLocalizations.of(context)!;
+    final slot = store.slotById(widget.slotId);
+    if (slot == null) return const SizedBox.shrink();
+    final kind = store.kindById(slot.kindId);
+    final all = store.itemsOfKind(slot.kindId);
+    final current = store.itemInSlot(slot.id);
+    final tabs = typeTabsFor(kind, all, l10n);
+    if (!tabs.any((t) => t.key == _tab)) _tab = null;
+    final filtered = all
+        .where((it) => inTypeTab(it, _tab))
+        .where((it) => textsMatchSearch(store.searchTexts(it), _query))
         .toList();
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: SearchField(
-            fillColor: AppColors.background,
-            onChanged: (v) => setState(() => _query = v),
-          ),
-        ),
-        if (allFolders.isNotEmpty)
+        if (all.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(bottom: 14),
-            child: Wrap(
-              spacing: 7,
-              runSpacing: 7,
-              children: [
-                for (final f in allFolders)
-                  SelectChip(
-                    label: f,
-                    active: store.folderFilter == f,
-                    onTap: () => store.toggleFolderFilter(f),
-                  ),
-              ],
+            padding: const EdgeInsets.only(bottom: 8),
+            child: SearchField(
+              fillColor: AppColors.background,
+              onChanged: (v) => setState(() => _query = v),
             ),
+          ),
+        if (tabs.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: TypeTabs(tabs: tabs, selected: _tab, onSelect: (k) => setState(() => _tab = k)),
           ),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: filtered.length + 1,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: gridColumns(context, 3),
             mainAxisSpacing: 9,
             crossAxisSpacing: 9,
             childAspectRatio: 100 / 124,
           ),
           itemBuilder: (context, i) {
             if (i == filtered.length) {
-              return AddTile(
-                label: AppLocalizations.of(context)!.add,
-                onTap: () => _addNew(context),
-              );
+              return AddTile(label: l10n.add, onTap: () => _addNew(context, slot.kindId));
             }
             final it = filtered[i];
             return GarmentCard(
               width: double.infinity,
               height: double.infinity,
-              slotLabel: shortCategoryLabel(context, it.cat).toLowerCase(),
-              caption: it.folder ?? '',
               imagePath: it.imagePath,
-              borderColor: current?.id == it.id
-                  ? AppColors.ink
-                  : AppColors.cardBorder,
+              semanticLabel: store.displayName(it),
+              borderColor: current?.id == it.id ? AppColors.ink : AppColors.cardBorder,
               onTap: () {
-                final actualIndex = fullList.indexWhere((x) => x.id == it.id);
-                store.selectIndex(zone, actualIndex);
+                Haptics.tick();
+                store.setSlotItem(slot.id, it.id);
                 Navigator.of(context).pop();
               },
             );
@@ -314,219 +288,65 @@ class _PickGridState extends State<_PickGrid> {
   }
 }
 
-void openLayerSheet(BuildContext context, {int? replaceIndex}) {
-  _showSheet(
-    context,
-    (ctx) => replaceIndex == null
-        ? AppLocalizations.of(ctx)!.addLayerTitle
-        : AppLocalizations.of(ctx)!.changeLayerTitle,
-    _LayerChoices(replaceIndex: replaceIndex),
-  );
-}
-
-class _LayerChoices extends StatefulWidget {
-  final int? replaceIndex;
-  const _LayerChoices({this.replaceIndex});
-
-  @override
-  State<_LayerChoices> createState() => _LayerChoicesState();
-}
-
-class _LayerChoicesState extends State<_LayerChoices> {
-  String _query = '';
-
-  @override
-  Widget build(BuildContext context) {
-    final replaceIndex = widget.replaceIndex;
-    final store = context.watch<WardrobeStore>();
-    final l10n = AppLocalizations.of(context)!;
-    if (replaceIndex == null && store.layers.length >= WardrobeStore.kMaxLayers) {
-      return Text(
-        l10n.layerLimitMessage(WardrobeStore.kMaxLayers),
-        style: AppText.sans(size: 12, color: AppColors.mutedTag),
-      );
-    }
-    // In replace mode, the layer being swapped stays selectable (it's not
-    // "already used" from the user's point of view — it's what's on offer).
-    // The item currently worn as the main top is excluded outright — it
-    // can't also be layered over itself (most visible with a sparse
-    // wardrobe, where it'd otherwise be the only "layer" on offer).
-    final currentTopId = store.at(store.topList, WardrobeZone.top)?.id;
-    final available = store
-        .byCat('horni')
-        .where(
-          (it) =>
-              it.id != currentTopId &&
-              (!store.layers.contains(it.id) ||
-                  (replaceIndex != null && store.layers[replaceIndex] == it.id)),
-        )
-        .toList();
-    if (available.isEmpty) {
-      return Text(
-        l10n.noMoreLayers,
-        style: AppText.sans(size: 12, color: AppColors.mutedTag),
-      );
-    }
-    final availableFolders = store.foldersFor('horni');
-    final choices = available
-        .where((it) => store.folderFilter == null || it.folder == store.folderFilter)
-        .where((it) => matchesSearch(it, _query, categoryLabel: categoryLabel(context, it.cat)))
-        .toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: SearchField(
-            fillColor: AppColors.background,
-            onChanged: (v) => setState(() => _query = v),
-          ),
-        ),
-        if (availableFolders.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Wrap(
-              spacing: 7,
-              runSpacing: 7,
-              children: [
-                for (final f in availableFolders)
-                  SelectChip(
-                    label: f,
-                    active: store.folderFilter == f,
-                    onTap: () => store.toggleFolderFilter(f),
-                  ),
-              ],
-            ),
-          ),
-        if (choices.isEmpty)
-          Text(
-            _query.trim().isEmpty ? l10n.noMoreLayers : l10n.nothingFound,
-            style: AppText.sans(size: 12, color: AppColors.mutedTag),
-          ),
-        for (final it in choices)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 7),
-            child: GestureDetector(
-              onTap: () {
-                if (replaceIndex != null) {
-                  store.setLayer(replaceIndex, it.id);
-                } else {
-                  store.addLayer(it.id);
-                }
-                Navigator.of(context).pop();
-              },
-              child: Container(
-                padding: const EdgeInsets.all(9),
-                decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.rowBorder),
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 64,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: AppColors.cardFill,
-                        border: Border.all(color: AppColors.cardBorder),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: it.imagePath == null
-                          ? const DiagonalStripes()
-                          : GarmentImage(it.imagePath!),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (it.name != null)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 4),
-                              child: Text(
-                                it.name!,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppText.sans(size: 13, color: AppColors.ink),
-                              ),
-                            ),
-                          Text(
-                            it.folder ?? l10n.noFolder,
-                            style: AppText.mono(
-                              size: 8.5,
-                              letterSpacing: 0.4,
-                              color: AppColors.mutedTag,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
+/// [presetKind] and [presetType] preselect where the new clothing goes
+/// (e.g. the wardrobe section or canvas card it was added from); both can
+/// still be changed in the form.
 void openAddItemSheet(
   BuildContext context, {
-  String? presetCategory,
-  String? presetFolder,
+  String? presetKind,
+  String? presetType,
   void Function(ClothingItem item)? onAdded,
 }) {
   _showSheet(
     context,
     (ctx) => AppLocalizations.of(ctx)!.addItemTitle,
     _AddItemForm(
-      presetCategory: presetCategory,
-      presetFolder: presetFolder,
+      presetKind: presetKind,
+      presetType: presetType,
       onAdded: onAdded,
     ),
   );
 }
 
 class _AddItemForm extends StatefulWidget {
-  final String? presetCategory;
-  final String? presetFolder;
+  final String? presetKind;
+  final String? presetType;
   final void Function(ClothingItem item)? onAdded;
 
-  const _AddItemForm({this.presetCategory, this.presetFolder, this.onAdded});
+  const _AddItemForm({this.presetKind, this.presetType, this.onAdded});
 
   @override
   State<_AddItemForm> createState() => _AddItemFormState();
 }
 
 class _AddItemFormState extends State<_AddItemForm> {
-  late String _cat;
-  String? _folder;
+  String? _kind;
+  String? _type;
   bool _busy = false;
-
-  /// Whether the category/folder are fixed by the caller (opened from
-  /// inside a specific folder) rather than chosen in this form.
-  bool get _fixedFolder => widget.presetFolder != null;
 
   @override
   void initState() {
     super.initState();
-    _cat = widget.presetCategory ?? 'boty';
-    _folder = widget.presetFolder ?? _defaultFolderFor(_cat);
+    final store = context.read<WardrobeStore>();
+    final kind = store.kindById(widget.presetKind ?? '') ?? store.kinds.firstOrNull;
+    _kind = kind?.id;
+    _type = (kind?.typeById(widget.presetType) ?? kind?.types.firstOrNull)?.id;
   }
 
-  /// Every item needs a folder, so default to whatever folder filter is
-  /// active in the wardrobe grid (if it belongs to this category), else the
-  /// first folder that exists for it, else [WardrobeStore.fallbackFolder] —
-  /// a category with no folders yet must still be addable to (otherwise a
-  /// brand-new wardrobe can never add its first item).
-  String _defaultFolderFor(String cat) {
-    final store = context.read<WardrobeStore>();
-    final folders = store.foldersFor(cat);
-    if (folders.contains(store.folderFilter)) return store.folderFilter!;
-    return folders.isNotEmpty ? folders.first : store.fallbackFolder;
+  Future<void> _newType(WardrobeStore store, String kindId) async {
+    final l10n = AppLocalizations.of(context)!;
+    final name = await promptTextDialog(
+      context,
+      title: l10n.newTypeTitle,
+      initialValue: '',
+      hintText: l10n.newTypeHint,
+      confirmLabel: l10n.create,
+      isTaken: (n) => store.typeNameTaken(kindId, n),
+    );
+    if (name == null) return;
+    final type = store.addType(kindId, name);
+    if (type != null) Haptics.done();
+    if (type != null && mounted) setState(() => _type = type.id);
   }
 
   /// Longest edge a stored photo is scaled down to (aspect ratio kept). The
@@ -535,12 +355,13 @@ class _AddItemFormState extends State<_AddItemForm> {
   static const double _maxPhotoEdge = 1600;
 
   Future<void> _pick(ImageSource source) async {
-    if (_busy || _folder == null) return;
+    final kind = _kind, type = _type;
+    if (_busy || kind == null || type == null) return;
     setState(() => _busy = true);
     try {
       final picker = ImagePicker();
       // The gallery lets you select several photos at once — handy for
-      // adding a handful of items of the same category/folder in one go.
+      // adding a handful of items of the same kind and type in one go.
       // The camera can only ever produce one photo per capture.
       final files = source == ImageSource.gallery
           ? await picker.pickMultiImage(
@@ -560,12 +381,13 @@ class _AddItemFormState extends State<_AddItemForm> {
       if (!mounted) return;
       final store = context.read<WardrobeStore>();
       final l10n = AppLocalizations.of(context)!;
-      final label = categoryLabel(context, _cat);
+      final label = store.kindName(kind);
       final result = await store.addItems(
-        _cat,
-        _folder!,
+        kind,
+        type,
         sourceImagePaths: files.map((f) => f.path).toList(),
       );
+      Haptics.done();
       store.flash(
         files.length > 1
             ? l10n.toastSavedMultiple(files.length, label)
@@ -574,7 +396,19 @@ class _AddItemFormState extends State<_AddItemForm> {
             : l10n.toastSavedWithPhoto(label),
       );
       widget.onAdded?.call(result.items.first);
-      if (mounted) Navigator.of(context).pop();
+      // Only if this sheet is still the one on top: it may have been closed
+      // while the camera was open — and popping anyway would then close the
+      // home screen underneath, leaving a black screen.
+      if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) Navigator.of(context).pop();
+    } on PlatformException catch (e) {
+      // No access to the camera or photos (or no camera at all).
+      if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      await infoDialog(
+        context,
+        title: l10n.photoAccessTitle,
+        message: e.code.contains('access_denied') ? l10n.photoAccessDenied : l10n.photoAccessFailed,
+      );
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -584,51 +418,48 @@ class _AddItemFormState extends State<_AddItemForm> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final store = context.watch<WardrobeStore>();
-    final categories = store.visibleCategories;
-    final folders = store.foldersFor(_cat);
-    final canAdd = _folder != null;
+    final kind = store.kindById(_kind ?? '');
+    final kinds = store.kinds;
+    final canAdd = kind != null && kind.typeById(_type) != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (!_fixedFolder) ...[
-          Text(l10n.sectionCategory, style: _sectionLabelStyle),
+        Text(l10n.sectionKind, style: _sectionLabelStyle),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 7,
+          runSpacing: 7,
+          children: [
+            for (final k in kinds)
+              SelectChip(
+                label: k.name,
+                active: _kind == k.id,
+                mono: false,
+                height: 34,
+                // A type belongs to one kind, so switching kind starts
+                // on that kind's first type.
+                onTap: () => setState(() {
+                  _kind = k.id;
+                  _type = k.types.firstOrNull?.id;
+                }),
+              ),
+          ],
+        ),
+        if (kind != null) ...[
+          const SizedBox(height: 18),
+          Text(l10n.sectionType, style: _sectionLabelStyle),
           const SizedBox(height: 8),
           Wrap(
             spacing: 7,
             runSpacing: 7,
             children: [
-              for (final c in categories)
-                SelectChip(
-                  label: categoryLabel(context, c.key),
-                  active: _cat == c.key,
-                  mono: false,
-                  height: 34,
-                  // A folder belongs to one category, so switching category
-                  // picks a fresh default folder for the new one.
-                  onTap: () => setState(() {
-                    _cat = c.key;
-                    _folder = _defaultFolderFor(_cat);
-                  }),
-                ),
+              for (final t in kind.types)
+                SelectChip(label: t.name, active: _type == t.id, onTap: () => setState(() => _type = t.id)),
+              SelectChip(label: '+ ${l10n.addTypeChip}', active: false, choice: false, onTap: () => _newType(store, kind.id)),
             ],
           ),
-          const SizedBox(height: 18),
-          Text(l10n.sectionFolder, style: _sectionLabelStyle),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: [
-              for (final f in folders)
-                SelectChip(
-                  label: f,
-                  active: _folder == f,
-                  onTap: () => setState(() => _folder = f),
-                ),
-            ],
-          ),
-          const SizedBox(height: 18),
         ],
+        const SizedBox(height: 18),
         Row(
           children: [
             Expanded(
@@ -695,53 +526,45 @@ class _AddItemFormState extends State<_AddItemForm> {
   }
 }
 
-/// [browseIds] are the items shown alongside [item] where it was opened
-/// from (a folder, search results), in that order — swiping sideways in the
-/// sheet steps through them.
-void openItemSheet(BuildContext context, ClothingItem item, {List<String>? browseIds}) {
-  final browser = GlobalKey<_ItemBrowserState>();
-  _showSheet(
-    context,
-    (ctx) => AppLocalizations.of(ctx)!.itemDetailTitle,
-    _ItemBrowser(key: browser, initialId: item.id, ids: browseIds ?? [item.id]),
-    // Photo + five detail fields + actions: needs more room than most sheets.
-    maxHeightFactor: 0.92,
-    // The whole sheet is the swipe area, header included.
-    onSwipe: (finger) => browser.currentState?.swipe(finger),
+/// Opens an item's detail, full screen above the tab bar. [browseIds] are
+/// the items shown alongside [item] where it was opened from (a type, search
+/// results, stats), in that order — swiping sideways steps through them.
+void openItemDetail(BuildContext context, ClothingItem item, {List<String>? browseIds}) {
+  Navigator.of(context, rootNavigator: true).push(
+    MaterialPageRoute(builder: (_) => _ItemPage(initialId: item.id, ids: browseIds ?? [item.id])),
   );
 }
 
-/// Steps through [ids] (see [step]) — driven by a swipe anywhere on the
-/// sheet. Stops at either end.
-class _ItemBrowser extends StatefulWidget {
+/// The detail page: the item's type as the title, its detail (swipe
+/// anywhere for the next/previous one), and the actions pinned below.
+class _ItemPage extends StatefulWidget {
   final String initialId;
   final List<String> ids;
-  const _ItemBrowser({super.key, required this.initialId, required this.ids});
+  const _ItemPage({required this.initialId, required this.ids});
 
   @override
-  State<_ItemBrowser> createState() => _ItemBrowserState();
+  State<_ItemPage> createState() => _ItemPageState();
 }
 
-class _ItemBrowserState extends State<_ItemBrowser> {
+class _ItemPageState extends State<_ItemPage> {
   late String _currentId = widget.initialId;
+
   /// Which way the content slides: the finger's direction (+1 right).
   int _slide = 1;
 
   /// Items can't be added while browsing, but one could be deleted or moved.
-  List<String> _liveIds(WardrobeStore store) =>
-      widget.ids.where((id) => store.itemById(id) != null).toList();
+  List<String> _liveIds(WardrobeStore store) => widget.ids.where((id) => store.itemById(id) != null).toList();
 
   /// A flick with the finger moving left (-1) goes to the next item, right
   /// (+1) to the previous one — like flipping pages or photos. The content
-  /// slides along with the finger.
-  void swipe(int finger) {
-    final delta = -finger;
+  /// slides along with the finger. Stops at either end.
+  void _swipe(int finger) {
     final ids = _liveIds(context.read<WardrobeStore>());
     final index = ids.indexOf(_currentId);
-    final next = index + delta;
+    final next = index - finger;
     if (index < 0 || next < 0 || next >= ids.length) return;
     FocusManager.instance.primaryFocus?.unfocus();
-    HapticFeedback.selectionClick();
+    Haptics.tick();
     setState(() {
       _slide = finger;
       _currentId = ids[next];
@@ -750,46 +573,128 @@ class _ItemBrowserState extends State<_ItemBrowser> {
 
   @override
   Widget build(BuildContext context) {
-    final ids = _liveIds(context.watch<WardrobeStore>());
-    final index = ids.indexOf(_currentId);
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final cur = store.itemById(_currentId);
+    if (cur == null) {
+      // Deleted or moved away — nothing left to show. (Usually whatever did
+      // it closes this page itself; only if not, close it here.)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) Navigator.of(context).pop();
+      });
+      return Scaffold(backgroundColor: AppColors.background);
+    }
 
-    return AnimatedSwitcher(
-        duration: const Duration(milliseconds: 220),
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
-        layoutBuilder: (current, previous) => Stack(
-          alignment: Alignment.topCenter,
-          children: [...previous, ?current],
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: ContentWidth(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 8, 20, 4),
+                child: Row(
+                  children: [
+                    const AppBackButton(),
+                    // Next to the back arrow, the title goes back too (as
+                    // on iOS).
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => Navigator.of(context).pop(),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Text(
+                              store.typeName(cur) ?? store.kindName(cur.cat),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppText.sans(size: 16, weight: FontWeight.w500, color: AppColors.ink),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: _SheetSwipe(
+                  onSwipe: _swipe,
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                    child: AnimatedSwitcher(
+                      duration: motion(const Duration(milliseconds: 220)),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      layoutBuilder: (current, previous) => Stack(
+                        alignment: Alignment.topCenter,
+                        children: [...previous, ?current],
+                      ),
+                      // Content moves with the finger: the old item leaves the
+                      // way the finger went, the new one follows in from the
+                      // opposite side. With Reduce Motion it only cross-fades.
+                      transitionBuilder: (child, animation) {
+                        final incoming = child.key == ValueKey(_currentId);
+                        final dx = reduceMotion ? 0.0 : (incoming ? -_slide : _slide) * 0.25;
+                        return FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: Tween(begin: Offset(dx, 0), end: Offset.zero).animate(animation),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: _ItemDetail(key: ValueKey(_currentId), itemId: _currentId),
+                    ),
+                  ),
+                ),
+              ),
+              _DetailActionBar(
+                // A fresh question for each item browsed to.
+                key: ValueKey(cur.id),
+                deleteMessage: l10n.deleteItemMessage,
+                // Close the page first: once the item is gone, it would close
+                // itself too — and a second pop after that would close the
+                // home screen.
+                onDelete: () => _closeThen(context, () => store.deleteItem(cur)),
+                actions: [
+                  Expanded(
+                    child: _DetailAction(
+                      label: l10n.done,
+                      filled: true,
+                      textColor: Colors.white,
+                      onTap: () => Navigator.of(context).pop(),
+                    ),
+                  ),
+                  const SizedBox(width: 9),
+                  _DetailIconAction(
+                    icon: Icons.drive_file_move_outline,
+                    label: l10n.moveTitle,
+                    onTap: () => _showSheet(
+                      context,
+                      (ctx) => AppLocalizations.of(ctx)!.moveTitle,
+                      _MoveItem(itemId: cur.id),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-        // Content moves with the finger: the old item leaves the way the
-        // finger went, the new one follows in from the opposite side.
-        transitionBuilder: (child, animation) {
-          final incoming = child.key == ValueKey(_currentId);
-          final dx = (incoming ? -_slide : _slide) * 0.25;
-          return FadeTransition(
-            opacity: animation,
-            child: SlideTransition(
-              position: Tween(begin: Offset(dx, 0), end: Offset.zero).animate(animation),
-              child: child,
-            ),
-          );
-        },
-        child: _ItemDetail(
-          key: ValueKey(_currentId),
-          itemId: _currentId,
-          position: ids.length > 1 && index >= 0 ? (index: index + 1, count: ids.length) : null,
-        ),
+      ),
     );
   }
 }
 
+/// One item: photo, name (its own, or made up from color and type), kind
+/// and type with its colors, wear stats, and the optional details.
 class _ItemDetail extends StatefulWidget {
   final String itemId;
 
-  /// 1-based place among the items being browsed, if there's more than one.
-  final ({int index, int count})? position;
-
-  const _ItemDetail({super.key, required this.itemId, this.position});
+  const _ItemDetail({super.key, required this.itemId});
 
   @override
   State<_ItemDetail> createState() => _ItemDetailState();
@@ -828,363 +733,629 @@ class _ItemDetailState extends State<_ItemDetail> {
     final itemId = widget.itemId;
     final cur = store.itemById(itemId);
     if (cur == null) return const SizedBox.shrink();
+    final autoName = store.displayName(ClothingItem(id: cur.id, cat: cur.cat, typeId: cur.typeId, colors: cur.colors));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // A short hold opens the photo full screen, as on the outfit tab.
-        GarmentCard(
-          width: double.infinity,
-          height: 220,
-          imagePath: cur.imagePath,
-          zoomable: true,
+        // A tap opens the photo full screen.
+        Semantics(
+          button: cur.imagePath != null,
+          label: cur.imagePath == null ? null : l10n.showPhoto,
+          child: GarmentCard(
+            width: double.infinity,
+            height: 320,
+            imagePath: cur.imagePath,
+            onTap: switch (cur.imagePath) {
+              final path? => () => openPhotoViewer(context, path),
+              null => null,
+            },
+          ),
+        ),
+        const SizedBox(height: 18),
+        // The name, edited right in the title. Until one is typed, the
+        // made-up one (from color and type) shows in its place.
+        TextField(
+          controller: _name,
+          onChanged: (v) => store.setItemInfo(itemId, name: v),
+          onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+          textCapitalization: TextCapitalization.sentences,
+          // Wraps like a title, but Return finishes rather than
+          // starting a new line.
+          minLines: 1,
+          maxLines: 3,
+          keyboardType: TextInputType.text,
+          textInputAction: TextInputAction.done,
+          decoration: InputDecoration(
+            hintText: autoName,
+            hintStyle: _itemTitleStyle,
+            isDense: true,
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.zero,
+          ),
+          style: _itemTitleStyle,
         ),
         const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
               child: Text(
-                categoryLabel(context, cur.cat),
+                [store.kindName(cur.cat), ?store.typeName(cur)].join(' · '),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppText.sans(size: 15, color: AppColors.ink),
+                style: AppText.sans(size: 15, color: AppColors.muted),
               ),
             ),
-            if (widget.position case final pos?)
-              Text(
-                '${pos.index} / ${pos.count}',
-                style: AppText.mono(size: 10, letterSpacing: 0.8, color: AppColors.mutedSoft),
+            // Colors detected from the photo; tap to correct them. Hidden
+            // until detection (a background pass after startup) has run,
+            // rather than flashing an empty bar.
+            if (cur.imagePath != null && cur.colors != null)
+              Semantics(
+                button: true,
+                label: l10n.colorsEdit,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _openColorEditor(context, cur.id),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 0, 12),
+                    child: ColorBar(colors: cur.colors!),
+                  ),
+                ),
               ),
           ],
         ),
-        const SizedBox(height: 14),
-        _InfoField(
-          label: l10n.sectionItemName,
-          hint: l10n.itemNameHint,
-          controller: _name,
-          onChanged: (v) => store.setItemInfo(itemId, name: v),
-        ),
-        _InfoField(
-          label: l10n.sectionSeller,
-          hint: l10n.sellerHint,
-          controller: _seller,
-          onChanged: (v) => store.setItemInfo(itemId, seller: v),
-        ),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: _InfoField(
+        const SizedBox(height: 10),
+        _ItemWearStats(item: cur),
+        const SizedBox(height: 22),
+        Text(l10n.sectionDetails.toUpperCase(), style: _sectionLabelStyle),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            border: Border.all(color: AppColors.rowBorder),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            children: [
+              _InfoRow(
+                label: l10n.sectionSeller,
+                hint: l10n.sellerHint,
+                controller: _seller,
+                onChanged: (v) => store.setItemInfo(itemId, seller: v),
+              ),
+              _InfoRow(
                 label: l10n.sectionSize,
                 hint: l10n.sizeHint,
                 controller: _size,
                 onChanged: (v) => store.setItemInfo(itemId, size: v),
               ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: _InfoField(
+              _InfoRow(
                 label: l10n.sectionPrice,
                 hint: l10n.priceHint,
                 controller: _price,
                 onChanged: (v) => store.setItemInfo(itemId, price: v),
               ),
-            ),
-          ],
-        ),
-        _InfoField(
-          label: l10n.sectionNote,
-          hint: l10n.noteHint,
-          controller: _note,
-          multiline: true,
-          onChanged: (v) => store.setItemInfo(itemId, note: v),
-        ),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            Expanded(
-              child: _DetailAction(
-                label: l10n.useInOutfit,
-                filled: true,
-                textColor: Colors.white,
-                onTap: () {
-                  // A top can go in several places — ask where.
-                  if (cur.cat == 'horni') {
-                    _showSheet(
-                      context,
-                      (ctx) => AppLocalizations.of(ctx)!.wearWhereTitle,
-                      _WearTopChoices(item: cur),
-                    );
-                    return;
-                  }
-                  store.useItem(cur);
-                  _backToOutfit(context);
-                },
+              _InfoRow(
+                label: l10n.sectionNote,
+                hint: l10n.noteHint,
+                controller: _note,
+                multiline: true,
+                last: true,
+                onChanged: (v) => store.setItemInfo(itemId, note: v),
               ),
-            ),
-            const SizedBox(width: 9),
-            Expanded(
-              child: _DetailAction(
-                label: l10n.done,
-                textColor: AppColors.ink,
-                onTap: () => Navigator.of(context).pop(),
-              ),
-            ),
-            const SizedBox(width: 9),
-            _DetailIconAction(
-              icon: Icons.drive_file_move_outline,
-              label: l10n.moveTitle,
-              onTap: () => _showSheet(
-                context,
-                (ctx) => AppLocalizations.of(ctx)!.moveTitle,
-                _MoveItem(itemId: itemId),
-              ),
-            ),
-            const SizedBox(width: 9),
-            _DetailIconAction(
-              icon: Icons.delete_outline,
-              label: l10n.delete,
-              onTap: () => _confirmDeleteItem(context, store, cur),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
   }
 }
 
-void openSaveOutfitSheet(BuildContext context) {
-  _showSheet(
-    context,
-    (ctx) => AppLocalizations.of(ctx)!.saveOutfitButton,
-    const _SaveOutfitForm(),
-  );
-}
+TextStyle get _itemTitleStyle => AppText.sans(size: 28, weight: FontWeight.w300, color: AppColors.ink, letterSpacing: -0.3);
 
-class _SaveOutfitForm extends StatefulWidget {
-  const _SaveOutfitForm();
-
-  @override
-  State<_SaveOutfitForm> createState() => _SaveOutfitFormState();
-}
-
-class _SaveOutfitFormState extends State<_SaveOutfitForm> {
-  final _nameController = TextEditingController();
-  String? _selectedCol;
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
+/// How much an item gets worn, from the diary: times worn, when last, the
+/// price per wear (if a price is filled in), and this month day by day.
+class _ItemWearStats extends StatelessWidget {
+  final ClothingItem item;
+  const _ItemWearStats({required this.item});
 
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
     final l10n = AppLocalizations.of(context)!;
-    final hasCols = store.cols.isNotEmpty;
-    _selectedCol ??= hasCols ? store.cols.first : null;
+    final locale = Localizations.localeOf(context).toString();
+    final stats = store.wearStats[item.id];
+    final count = stats?.count ?? 0;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final last = stats?.last;
+    final ago = last == null ? null : daysBetween(last, today);
+    final perWear = count == 0 ? null : pricePerWear(item.price, count, locale);
+    final worn = store.daysWornIn(item.id, now);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(l10n.sectionOutfitName, style: _sectionLabelStyle),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _nameController,
-          decoration: InputDecoration(
-            hintText: l10n.outfitNameHint,
-            hintStyle: AppText.sans(size: 14, color: AppColors.mutedTag),
-            filled: true,
-            fillColor: AppColors.background,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: AppColors.cardBorder),
-            ),
+        _WearTiles([
+          _WearTile(value: l10n.timesWorn(count), label: l10n.itemWornLabel),
+          _WearTile(
+            value: switch (ago) {
+              null => l10n.statsNever,
+              0 => l10n.itemLastToday,
+              1 => l10n.itemLastYesterday,
+              final n => l10n.statsDaysAgo(n),
+            },
+            label: l10n.itemLastWornLabel,
+            small: true,
           ),
-          style: AppText.sans(size: 14, color: AppColors.ink),
-        ),
-        const SizedBox(height: 18),
-        Text(l10n.sectionCollection, style: _sectionLabelStyle),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 7,
-          runSpacing: 7,
-          children: [
-            for (final c in store.cols)
-              SelectChip(
-                label: c,
-                active: _selectedCol == c,
-                mono: false,
-                height: 34,
-                onTap: () => setState(() => _selectedCol = c),
-              ),
-          ],
-        ),
-        const SizedBox(height: 18),
-        GestureDetector(
-          onTap: () async {
-            final existing = store.findSavedCopyOfCurrentOutfit();
-            if (existing != null) {
-              final saveAnyway = await confirmDialog(
-                context,
-                title: l10n.outfitAlreadySavedTitle,
-                message: l10n.outfitAlreadySavedMessage(existing.name, existing.wardrobe, existing.col),
-                confirmLabel: l10n.saveAnyway,
-              );
-              if (!saveAnyway || !context.mounted) return;
-            }
-            final result = await store.saveOutfit(
-              rawName: _nameController.text,
-              targetCol: _selectedCol ?? '',
-              defaultName: l10n.defaultOutfitName,
-            );
-            store.flash(l10n.toastOutfitSaved(result.name, result.col));
-            if (context.mounted) Navigator.of(context).pop();
-          },
-          child: Container(
-            height: 48,
-            decoration: BoxDecoration(
-              color: AppColors.accent,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              l10n.save,
-              style: AppText.sans(
-                size: 13,
-                weight: FontWeight.w500,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
+          _WearTile(value: perWear ?? '–', label: l10n.itemPerWearLabel),
+        ]),
+        const SizedBox(height: 14),
+        Text(DateFormat.LLLL(locale).format(now).toUpperCase(), style: _sectionLabelStyle),
+        const SizedBox(height: 6),
+        _MonthStrip(worn: worn),
       ],
     );
   }
 }
 
-/// Closes the sheets so the outfit tab (which the store just switched to)
-/// shows. A folder the item sheet was opened from stays open in the
-/// wardrobe tab's own stack, for when you go back there.
-void _backToOutfit(BuildContext context) =>
-    Navigator.of(context).popUntil((route) => route.isFirst);
+/// The current month, a square per day: days in [worn] (day numbers)
+/// filled, the rest of the month still to come dimmed.
+class _MonthStrip extends StatelessWidget {
+  final Set<int> worn;
+  const _MonthStrip({required this.worn});
 
-/// Where in the outfit a top should go: the top itself, one of the current
-/// layers (replacing it), or a new layer — each shown with what's there now.
-class _WearTopChoices extends StatelessWidget {
-  final ClothingItem item;
-  const _WearTopChoices({required this.item});
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final days = DateUtils.getDaysInMonth(now.year, now.month);
+    return Row(
+      children: [
+        for (var d = 1; d <= days; d++)
+          Expanded(
+            child: Container(
+              height: 14,
+              margin: EdgeInsets.only(left: d == 1 ? 0 : 2.5),
+              decoration: BoxDecoration(
+                color: worn.contains(d)
+                    ? AppColors.accentText
+                    : d > now.day
+                    ? AppColors.cardFill.withValues(alpha: 0.5)
+                    : AppColors.cardBorder,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// [price] (as typed: "499 Kč", "$29", "1 290,50 €") divided by [wears], in
+/// the same notation; `null` if it has no number in it.
+String? pricePerWear(String? price, int wears, String locale) {
+  if (price == null || wears <= 0) return null;
+  final match = RegExp(r'\d[\d\s\u00a0.,]*').firstMatch(price);
+  if (match == null) return null;
+  final digits = match.group(0)!.replaceAll(RegExp(r'[\s\u00a0]'), '').replaceAll(RegExp(r'[.,]$'), '');
+  // The last separator followed by one or two digits is the decimal one;
+  // any other separators group thousands.
+  final dec = RegExp(r'[.,](\d{1,2})$').firstMatch(digits);
+  final sep = dec == null ? null : digits[dec.start];
+  final whole = (dec == null ? digits : digits.substring(0, dec.start)).replaceAll(RegExp(r'[.,]'), '');
+  final value = double.tryParse(dec == null ? whole : '$whole.${dec.group(1)}');
+  if (value == null) return null;
+  final each = value / wears;
+  final decimalSep = sep ?? (locale.startsWith('cs') ? ',' : '.');
+  final shown = each >= 10 || each == each.roundToDouble()
+      ? each.round().toString()
+      : each.toStringAsFixed(1).replaceAll('.', decimalSep);
+  return price.replaceRange(match.start, match.start + match.group(0)!.trimRight().length, shown);
+}
+
+/// [_WearTile]s side by side, all as tall as the tallest.
+class _WearTiles extends StatelessWidget {
+  final List<Widget> tiles;
+  const _WearTiles(this.tiles);
+
+  @override
+  Widget build(BuildContext context) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final (i, t) in tiles.indexed) ...[
+            if (i > 0) const SizedBox(width: 8),
+            Expanded(child: t),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _WearTile extends StatelessWidget {
+  final String value;
+  final String label;
+
+  /// For a longer value ("před 12 dny") rather than a figure.
+  final bool small;
+
+  const _WearTile({required this.value, required this.label, this.small = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      // At least this tall; more with large text.
+      constraints: const BoxConstraints(minHeight: 72),
+      padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        border: Border.all(color: AppColors.rowBorder),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      // Values sit on one line across the row, whatever their size, and
+      // the labels along the bottom (the row makes its tiles equally tall —
+      // see [_WearTiles]).
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          SizedBox(
+            height: MediaQuery.textScalerOf(context).scale(30),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.bottomLeft,
+              child: Text(
+                value,
+                maxLines: 1,
+                style: AppText.sans(size: small ? 16 : 24, weight: FontWeight.w300, color: AppColors.ink),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.mono(size: 9, letterSpacing: 0.3, color: AppColors.mutedTag)),
+        ],
+      ),
+    );
+  }
+}
+
+void _openColorEditor(BuildContext context, String itemId) {
+  _showSheet(
+    context,
+    (ctx) => AppLocalizations.of(ctx)!.colorsTitle,
+    _ColorEditor(itemId: itemId),
+    maxHeightFactor: 0.92,
+  );
+}
+
+/// Corrects an item's colors by picking them from its photo: choose a slot
+/// (1–3) below the photo, then tap the spot on the photo to take its color.
+/// Every change is saved right away, like the item's other details.
+class _ColorEditor extends StatefulWidget {
+  final String itemId;
+  const _ColorEditor({required this.itemId});
+
+  @override
+  State<_ColorEditor> createState() => _ColorEditorState();
+}
+
+class _ColorEditorState extends State<_ColorEditor> {
+  static const _photoHeight = 300.0;
+
+  /// Decoded at a modest size — enough to pick from, cheap to hold.
+  static const _sampleSide = 600;
+
+  int _selected = 0;
+  ({ByteData pixels, int width, int height})? _sample;
+  Offset? _marker;
+
+  @override
+  void initState() {
+    super.initState();
+    _decode();
+  }
+
+  Future<void> _decode() async {
+    final path = context.read<WardrobeStore>().itemById(widget.itemId)?.imagePath;
+    if (path == null) return;
+    try {
+      final bytes = await File(path).readAsBytes();
+      final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+      final descriptor = await ui.ImageDescriptor.encoded(buffer);
+      final landscape = descriptor.width >= descriptor.height;
+      final codec = await descriptor.instantiateCodec(
+        targetWidth: landscape ? _sampleSide : null,
+        targetHeight: landscape ? null : _sampleSide,
+      );
+      final image = (await codec.getNextFrame()).image;
+      final pixels = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+      final w = image.width, h = image.height;
+      image.dispose();
+      codec.dispose();
+      descriptor.dispose();
+      buffer.dispose();
+      if (pixels != null && mounted) setState(() => _sample = (pixels: pixels, width: w, height: h));
+    } catch (_) {
+      // Unreadable photo: nothing to pick from; the rest still works.
+    }
+  }
+
+  /// Average of a small square around the pixel, so fabric texture and
+  /// JPEG noise don't decide the color.
+  int _colorAt(int px, int py) {
+    final s = _sample!;
+    var r = 0, g = 0, b = 0, n = 0;
+    for (var y = math.max(0, py - 2); y <= math.min(s.height - 1, py + 2); y++) {
+      for (var x = math.max(0, px - 2); x <= math.min(s.width - 1, px + 2); x++) {
+        final o = (y * s.width + x) * 4;
+        r += s.pixels.getUint8(o);
+        g += s.pixels.getUint8(o + 1);
+        b += s.pixels.getUint8(o + 2);
+        n++;
+      }
+    }
+    return 0xFF000000 | (r ~/ n) << 16 | (g ~/ n) << 8 | (b ~/ n);
+  }
 
   @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
     final l10n = AppLocalizations.of(context)!;
-    final top = store.at(store.topList, WardrobeZone.top);
-    final isWorn = top?.id == item.id || store.layers.contains(item.id);
+    final item = store.itemById(widget.itemId);
+    if (item == null || item.imagePath == null) return const SizedBox.shrink();
+    final colors = item.colors ?? const <int>[];
+    final selected = colors.isEmpty ? 0 : _selected.clamp(0, colors.length - 1);
 
-    Widget row({required String label, required ClothingItem? occupant, required VoidCallback onTap, bool isNew = false}) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 7),
-        child: GestureDetector(
-          onTap: () {
-            onTap();
-            _backToOutfit(context);
-          },
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.rowBorder),
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    color: isNew ? null : AppColors.cardFill,
-                    border: Border.all(color: isNew ? AppColors.dashedBorder : AppColors.cardBorder),
-                    borderRadius: BorderRadius.circular(9),
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  alignment: Alignment.center,
-                  child: isNew
-                      ? Text('+', style: AppText.sans(size: 20, weight: FontWeight.w300, color: AppColors.mutedSoft))
-                      : occupant?.imagePath == null
-                      ? const DiagonalStripes()
-                      : GarmentImage(occupant!.imagePath!),
-                ),
-                const SizedBox(width: 12),
-                Expanded(child: Text(label, style: AppText.sans(size: 14, color: AppColors.ink))),
-                if (occupant?.id == item.id)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 6),
-                    child: Text(
-                      l10n.wornHere,
-                      style: AppText.mono(size: 8.5, letterSpacing: 0.4, color: AppColors.mutedTag),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      );
+    void setSlot(int color) {
+      final next = [...colors];
+      if (next.isEmpty) {
+        next.add(color);
+      } else {
+        next[selected] = color;
+      }
+      store.setItemColors(item.id, next);
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        row(label: l10n.wearAsTop, occupant: top, onTap: () => store.useItem(item)),
-        for (var i = 0; i < store.layers.length; i++)
-          row(
-            label: l10n.wearAsLayer(i + 1),
-            occupant: store.itemById(store.layers[i]),
-            onTap: () => store.wearAsLayer(item, i),
+        Text(l10n.colorsHint, style: AppText.sans(size: 12.5, color: AppColors.mutedTag, height: 1.4)),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: _photoHeight,
+          width: double.infinity,
+          child: LayoutBuilder(
+            builder: (context, box) {
+              final sample = _sample;
+              // Where the photo actually sits inside the box (BoxFit.contain).
+              Rect? photoRect;
+              if (sample != null) {
+                final scale = math.min(box.maxWidth / sample.width, box.maxHeight / sample.height);
+                final w = sample.width * scale, h = sample.height * scale;
+                photoRect = Rect.fromLTWH((box.maxWidth - w) / 2, (box.maxHeight - h) / 2, w, h);
+              }
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: GestureDetector(
+                  onTapDown: (d) {
+                    final r = photoRect;
+                    if (r == null || !r.contains(d.localPosition)) return;
+                    final px = ((d.localPosition.dx - r.left) / r.width * sample!.width).floor();
+                    final py = ((d.localPosition.dy - r.top) / r.height * sample.height).floor();
+                    Haptics.tick();
+                    setState(() => _marker = d.localPosition);
+                    setSlot(_colorAt(px, py));
+                  },
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: ColoredBox(
+                          color: Colors.white,
+                          child: Image.file(File(item.imagePath!), fit: BoxFit.contain),
+                        ),
+                      ),
+                      if (_marker case final m? when colors.isNotEmpty)
+                        Positioned(
+                          left: m.dx - 14,
+                          top: m.dy - 14,
+                          child: IgnorePointer(
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                color: Color(colors[selected]),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 3),
+                                boxShadow: const [BoxShadow(color: Color(0x55000000), blurRadius: 6)],
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
-        if (!isWorn && store.layers.length < WardrobeStore.kMaxLayers)
-          row(
-            label: l10n.wearAsNewLayer,
-            occupant: null,
-            isNew: true,
-            onTap: () => store.wearAsLayer(item, store.layers.length),
-          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            for (final (i, c) in colors.indexed) ...[
+              Semantics(
+                button: true,
+                selected: i == selected,
+                label: l10n.colorSlot(i + 1),
+                child: GestureDetector(
+                  onTap: () {
+                    if (i != selected) Haptics.tick();
+                    setState(() {
+                      _selected = i;
+                      _marker = null;
+                    });
+                  },
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Color(c),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: i == selected ? AppColors.accent : AppColors.cardBorder,
+                        width: i == selected ? 3 : 1,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+            ],
+            if (colors.length < 3)
+              Semantics(
+                button: true,
+                label: l10n.colorAdd,
+                child: GestureDetector(
+                  onTap: () {
+                    // A new slot starts as a copy of the selected color; a tap
+                    // on the photo then sets it.
+                    final next = [...colors, colors.isEmpty ? 0xFFBDBDBD : colors[selected]];
+                    Haptics.tick();
+                    store.setItemColors(item.id, next);
+                    setState(() {
+                      _selected = next.length - 1;
+                      _marker = null;
+                    });
+                  },
+                  child: Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.dashedBorder),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(Icons.add, size: 20, color: AppColors.mutedSoft),
+                  ),
+                ),
+              ),
+            const Spacer(),
+            if (colors.length > 1)
+              IconButton(
+                tooltip: l10n.colorRemove,
+                onPressed: () {
+                  Haptics.tick();
+                  store.setItemColors(item.id, [...colors]..removeAt(selected));
+                  setState(() {
+                    _selected = math.max(0, selected - 1);
+                    _marker = null;
+                  });
+                },
+                icon: Icon(Icons.delete_outline, size: 20, color: AppColors.muted),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        TextButton.icon(
+          onPressed: () {
+            setState(() {
+              _selected = 0;
+              _marker = null;
+            });
+            Haptics.done();
+            store.redetectColors(item.id);
+          },
+          icon: Icon(Icons.auto_awesome_outlined, size: 18, color: AppColors.accentText),
+          label: Text(l10n.colorsRedetect, style: AppText.sans(size: 13, color: AppColors.accentText)),
+        ),
       ],
     );
   }
 }
 
-/// Where an item can be moved, grouped by wardrobe: the other folders of
-/// its category here, then each other wardrobe's folders for that category
-/// — plus the item's current folder name wherever it doesn't exist yet
-/// (created on move). One tap moves it; that takes it out of the folder
-/// being viewed, so both this sheet and the item sheet under it close.
-class _MoveItem extends StatelessWidget {
+/// Saves what's on the canvas — after a confirmation if exactly these
+/// clothes are already saved (here or in another wardrobe).
+/// Returns whether it saved (not when cancelled, or nothing to save).
+Future<bool> saveCurrentOutfit(BuildContext context) async {
+  final store = context.read<WardrobeStore>();
+  final l10n = AppLocalizations.of(context)!;
+  if (store.currentOutfitItems.isEmpty) {
+    store.flash(l10n.diaryCanvasEmpty);
+    return false;
+  }
+  final existing = store.findSavedCopyOfCurrentOutfit();
+  if (existing != null) {
+    final saveAnyway = await confirmDialog(
+      context,
+      title: l10n.outfitAlreadySavedTitle,
+      message: existing.here ? l10n.outfitAlreadySavedHere : l10n.outfitAlreadySavedIn(existing.wardrobe),
+      confirmLabel: l10n.saveAnyway,
+    );
+    if (!saveAnyway) return false;
+  }
+  // No toast: the save button turns into "Saved" (see OutfitTab).
+  if (!await store.saveOutfit()) return false;
+  Haptics.done();
+  return true;
+}
+
+/// Closes the top [count] screens, then does [then] once the last one has
+/// slid away — so a page doesn't go blank on its way out because what it
+/// shows was just deleted (or moved) from under it.
+Future<void> _closeThen(BuildContext context, Future<void> Function() then, {int count = 1}) async {
+  final nav = Navigator.of(context);
+  Route<dynamic>? last;
+  for (var i = 0; i < count; i++) {
+    // The route on top, without popping anything.
+    nav.popUntil((route) {
+      last = route;
+      return true;
+    });
+    nav.pop();
+  }
+  if (last case final TransitionRoute<dynamic> route) await route.completed;
+  await then();
+}
+
+/// Closes the sheets so the outfit tab (which the store just switched to)
+/// shows.
+void _backToOutfit(BuildContext context) =>
+    Navigator.of(context).popUntil((route) => route.isFirst);
+
+/// Where an item can be moved: another type, another kind (and a type
+/// there), or another wardrobe. Picking a type moves it right away and
+/// returns to its detail; another wardrobe takes it out of this one, so
+/// the detail closes too.
+class _MoveItem extends StatefulWidget {
   final String itemId;
   const _MoveItem({required this.itemId});
 
   @override
+  State<_MoveItem> createState() => _MoveItemState();
+}
+
+class _MoveItemState extends State<_MoveItem> {
+  /// The kind whose types are on offer — the item's own until another is
+  /// picked.
+  String? _kind;
+
+  @override
   Widget build(BuildContext context) {
     final store = context.watch<WardrobeStore>();
     final l10n = AppLocalizations.of(context)!;
-    final cur = store.itemById(itemId);
+    final cur = store.itemById(widget.itemId);
     if (cur == null) return const SizedBox.shrink();
-    // The item sheet is opened from inside the item's own folder, so only
-    // the *other* folders are offered here.
-    final otherFolders = store.foldersFor(cur.cat).where((f) => f != cur.folder).toList();
+    final kind = store.kindById(_kind ?? cur.cat) ?? store.kindById(cur.cat);
+    final kinds = store.kinds;
     final otherWardrobes = store.wardrobes.where((w) => w.id != store.activeWardrobeId).toList();
-    final currentFolder = cur.folder ?? store.fallbackFolder;
+    bool isCurrent(String typeId) => kind?.id == cur.cat && cur.typeId == typeId;
 
-    void closeBoth() => Navigator.of(context)
-      ..pop()
-      ..pop();
-
-    if (otherFolders.isEmpty && otherWardrobes.isEmpty) {
-      return Text(
-        l10n.nothingToMoveTo,
-        style: AppText.sans(size: 12.5, color: AppColors.mutedTag, height: 1.4),
-      );
+    void moveTo(String typeId) {
+      if (kind == null || isCurrent(typeId)) return;
+      Haptics.done();
+      store.moveItem(cur.id, kind.id, typeId);
+      Navigator.of(context).pop();
     }
 
     Widget section(String label, List<Widget> chips) => Padding(
@@ -1202,33 +1373,38 @@ class _MoveItem extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (otherFolders.isNotEmpty)
-          section(l10n.moveInThisWardrobe, [
-            for (final f in otherFolders)
+        // Most often it's the wardrobe that changes, so that's first.
+        if (otherWardrobes.isNotEmpty)
+          section(l10n.sectionWardrobe, [
+            for (final w in otherWardrobes)
               SelectChip(
-                label: f,
+                label: w.name,
                 active: false,
+                mono: false,
+                height: 34,
+                choice: false,
+                // Out of this wardrobe, so the item's page closes too.
                 onTap: () {
-                  store.setFolder(cur.id, f);
-                  closeBoth();
+                  Haptics.done();
+                  store.flash(l10n.toastMovedToWardrobe(w.name));
+                  _closeThen(context, () => store.moveItemToWardrobe(cur.id, w.id), count: 2);
                 },
               ),
           ]),
-        for (final w in otherWardrobes)
-          section(l10n.moveInWardrobe(w.name), [
-            for (final f in [
-              ...store.foldersIn(w.id, cur.cat),
-              if (!store.foldersIn(w.id, cur.cat).contains(currentFolder)) currentFolder,
-            ])
-              SelectChip(
-                label: store.foldersIn(w.id, cur.cat).contains(f) ? f : '+ $f',
-                active: false,
-                onTap: () {
-                  store.moveItemToWardrobe(cur.id, w.id, folder: f);
-                  store.flash(l10n.toastMovedToWardrobe(w.name, f));
-                  closeBoth();
-                },
-              ),
+        section(l10n.sectionKind, [
+          for (final k in kinds)
+            SelectChip(
+              label: k.name,
+              active: k.id == kind?.id,
+              mono: false,
+              height: 34,
+              onTap: () => setState(() => _kind = k.id),
+            ),
+        ]),
+        if (kind != null)
+          section(l10n.sectionType, [
+            for (final t in kind.types)
+              SelectChip(label: t.name, active: isCurrent(t.id), choice: false, onTap: () => moveTo(t.id)),
           ]),
       ],
     );
@@ -1270,6 +1446,87 @@ class _DetailIconAction extends StatelessWidget {
   }
 }
 
+/// The actions pinned at the bottom of a detail page, ending with delete.
+/// Deleting asks right there rather than in a dialog: the row turns into
+/// "Cancel" and "Delete for good", under a line on what's about to go.
+class _DetailActionBar extends StatefulWidget {
+  final List<Widget> actions;
+  final String deleteMessage;
+  final Future<void> Function() onDelete;
+
+  const _DetailActionBar({super.key, required this.actions, required this.deleteMessage, required this.onDelete});
+
+  @override
+  State<_DetailActionBar> createState() => _DetailActionBarState();
+}
+
+class _DetailActionBarState extends State<_DetailActionBar> {
+  bool _confirming = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 10),
+      decoration: BoxDecoration(border: Border(top: BorderSide(color: AppColors.hairline))),
+      child: AnimatedSize(
+        duration: motion(const Duration(milliseconds: 160)),
+        alignment: Alignment.bottomCenter,
+        child: _confirming
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      '${widget.deleteMessage} ${l10n.actionCannotBeUndone}',
+                      textAlign: TextAlign.center,
+                      style: AppText.sans(size: 13, color: AppColors.label, height: 1.4),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _DetailAction(
+                          label: l10n.cancel,
+                          textColor: AppColors.ink,
+                          onTap: () => setState(() => _confirming = false),
+                        ),
+                      ),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: _DetailAction(
+                          label: l10n.deleteForGood,
+                          filled: true,
+                          fill: AppColors.danger,
+                          textColor: Colors.white,
+                          onTap: () {
+                            Haptics.remove();
+                            widget.onDelete();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  ...widget.actions,
+                  const SizedBox(width: 9),
+                  _DetailIconAction(
+                    icon: Icons.delete_outline,
+                    label: l10n.delete,
+                    onTap: () => setState(() => _confirming = true),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
 /// A pill button in the item detail's action row — filled accent, or
 /// outlined. A label too long for its share of the row wraps onto a second
 /// line rather than shrinking (scaling "Použít v outfitu" down to fit got
@@ -1280,11 +1537,15 @@ class _DetailAction extends StatelessWidget {
   final Color textColor;
   final bool filled;
 
+  /// The fill when [filled]; the accent by default.
+  final Color? fill;
+
   const _DetailAction({
     required this.label,
     required this.onTap,
     required this.textColor,
     this.filled = false,
+    this.fill,
   });
 
   @override
@@ -1292,10 +1553,11 @@ class _DetailAction extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 46,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        // Grows for a label that wraps with large text.
+        constraints: const BoxConstraints(minHeight: 46),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: filled ? AppColors.accent : null,
+          color: filled ? fill ?? AppColors.accent : null,
           borderRadius: BorderRadius.circular(23),
           border: filled ? null : Border.all(color: AppColors.cardBorder),
         ),
@@ -1317,61 +1579,68 @@ class _DetailAction extends StatelessWidget {
   }
 }
 
-/// One optional, labelled free-text detail of a clothing item — same look
-/// as the outfit-name field in the save sheet.
-class _InfoField extends StatelessWidget {
+/// One optional detail of a clothing item, as a row of the details card:
+/// a small label on the left, the text field filling the rest.
+class _InfoRow extends StatelessWidget {
   final String label;
   final String hint;
   final TextEditingController controller;
   final ValueChanged<String> onChanged;
   final bool multiline;
+  final bool last;
 
-  const _InfoField({
+  const _InfoRow({
     required this.label,
     required this.hint,
     required this.controller,
     required this.onChanged,
     this.multiline = false,
+    this.last = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: BorderSide(color: AppColors.cardBorder),
-    );
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      constraints: const BoxConstraints(minHeight: 52),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        border: last ? null : Border(bottom: BorderSide(color: AppColors.rowBorder)),
+      ),
+      child: Row(
+        crossAxisAlignment: multiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
         children: [
-          Text(label, style: _sectionLabelStyle),
-          const SizedBox(height: 5),
-          TextField(
-            controller: controller,
-            onChanged: onChanged,
-            // Text fields share one tap region, so moving between fields
-            // keeps the keyboard up; anywhere else hides it.
-            onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-            textCapitalization: TextCapitalization.sentences,
-            minLines: multiline ? 2 : 1,
-            maxLines: multiline ? 5 : 1,
-            // A one-line field would otherwise claim every sideways drag to
-            // scroll its text — swallowing the swipe to the next item. It
-            // still scrolls itself to the caret while typing.
-            scrollPhysics: multiline ? null : const NeverScrollableScrollPhysics(),
-            keyboardType: multiline ? TextInputType.multiline : TextInputType.text,
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: AppText.sans(size: 14, color: AppColors.mutedTag),
-              filled: true,
-              fillColor: AppColors.background,
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-              border: border,
-              enabledBorder: border,
+          Padding(
+            padding: EdgeInsets.only(top: multiline ? 18 : 0),
+            child: SizedBox(
+              width: 86,
+              child: Text(label, style: AppText.mono(size: 9.5, letterSpacing: 0.4, color: AppColors.mutedTag)),
             ),
-            style: AppText.sans(size: 14, color: AppColors.ink),
+          ),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              onChanged: onChanged,
+              // Text fields share one tap region, so moving between fields
+              // keeps the keyboard up; anywhere else hides it.
+              onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+              textCapitalization: TextCapitalization.sentences,
+              // A note starts two lines tall, so there's clearly room.
+              minLines: multiline ? 2 : 1,
+              maxLines: multiline ? 5 : 1,
+              // A one-line field would otherwise claim every sideways drag to
+              // scroll its text — swallowing the swipe to the next item. It
+              // still scrolls itself to the caret while typing.
+              scrollPhysics: multiline ? null : const NeverScrollableScrollPhysics(),
+              keyboardType: multiline ? TextInputType.multiline : TextInputType.text,
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: AppText.sans(size: 15, color: AppColors.mutedTag),
+                isDense: true,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              style: AppText.sans(size: 15, color: AppColors.ink),
+            ),
           ),
         ],
       ),
@@ -1379,134 +1648,95 @@ class _InfoField extends StatelessWidget {
   }
 }
 
-Future<void> _confirmDeleteItem(
-  BuildContext context,
-  WardrobeStore store,
-  ClothingItem item,
-) async {
-  final l10n = AppLocalizations.of(context)!;
-  final confirmed = await confirmDialog(
-    context,
-    title: l10n.deleteItemTitle,
-    message: '${l10n.deleteItemMessage} ${l10n.actionCannotBeUndone}',
-    confirmLabel: l10n.delete,
+/// Deletes [type] of [kind]: an empty type just goes; one with clothes
+/// (in any wardrobe) first asks which of the kind's other types they move
+/// to. A kind's last type can't be deleted.
+Future<void> deleteTypeAskingWhereTo(BuildContext context, ClothingKind kind, ClothingType type) async {
+  final store = context.read<WardrobeStore>();
+  if (kind.types.length < 2) return;
+  final count = store.typeItemCount(kind.id, type.id);
+  if (count == 0) {
+    Haptics.remove();
+    store.deleteType(kind.id, type.id);
+    return;
+  }
+  final target = await showDialog<String>(
+    context: context,
+    builder: (_) => _MoveTypeItemsDialog(kind: kind, type: type, count: count),
   );
-  if (!confirmed) return;
-  await store.deleteItem(item);
-  if (context.mounted) Navigator.of(context).pop();
+  if (target == null) return;
+  Haptics.remove();
+  store.deleteType(kind.id, type.id, moveTo: target);
 }
 
-void openManageWardrobesSheet(BuildContext context) {
-  _showSheet(
-    context,
-    (ctx) => AppLocalizations.of(ctx)!.editWardrobes,
-    const _ManageWardrobes(),
-  );
+/// Deleting a type that has clothes: pick which of the kind's other types
+/// they move to.
+class _MoveTypeItemsDialog extends StatefulWidget {
+  final ClothingKind kind;
+  final ClothingType type;
+  final int count;
+  const _MoveTypeItemsDialog({required this.kind, required this.type, required this.count});
+
+  @override
+  State<_MoveTypeItemsDialog> createState() => _MoveTypeItemsDialogState();
 }
 
-/// Rename/delete any wardrobe (not just the active one) and add new ones.
-class _ManageWardrobes extends StatelessWidget {
-  const _ManageWardrobes();
+class _MoveTypeItemsDialogState extends State<_MoveTypeItemsDialog> {
+  late final _others = widget.kind.types.where((t) => t.id != widget.type.id).toList();
+  late String _target = _others.first.id;
 
   @override
   Widget build(BuildContext context) {
-    final store = context.watch<WardrobeStore>();
     final l10n = AppLocalizations.of(context)!;
-    final canDelete = store.wardrobes.length > 1;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final w in store.wardrobes)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 7),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColors.rowBorder),
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      w.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.sans(
-                        size: 14,
-                        weight: w.id == store.activeWardrobeId ? FontWeight.w500 : FontWeight.w400,
-                        color: AppColors.ink,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => _rename(context, store, w),
-                    icon: Icon(Icons.edit_outlined, size: 18, color: AppColors.mutedSoft),
-                  ),
-                  if (canDelete)
-                    IconButton(
-                      onPressed: () => _delete(context, store, w),
-                      icon: Icon(Icons.delete_outline, size: 18, color: AppColors.accent),
-                    ),
-                ],
-              ),
-            ),
+    return AlertDialog(
+      backgroundColor: AppColors.surface,
+      title: Text(l10n.deleteTypeTitle, style: AppText.sans(size: 16, color: AppColors.ink)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.deleteTypeMoveMessage(widget.type.name, l10n.itemCount(widget.count)),
+            style: AppText.sans(size: 13, color: AppColors.label, height: 1.4),
           ),
-        const SizedBox(height: 4),
-        SizedBox(
-          height: 64,
-          child: AddTile(label: l10n.newWardrobeTile, onTap: () => _add(context, store)),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: [
+              for (final t in _others)
+                SelectChip(
+                  label: t.name,
+                  active: t.id == _target,
+                  mono: false,
+                  height: 34,
+                  onTap: () => setState(() => _target = t.id),
+                ),
+            ],
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.cancel, style: AppText.sans(size: 13, color: AppColors.muted)),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(_target),
+          child: Text(
+            l10n.delete,
+            style: AppText.sans(size: 13, weight: FontWeight.w500, color: AppColors.accentText),
+          ),
         ),
       ],
     );
   }
-
-  Future<void> _rename(BuildContext context, WardrobeStore store, Wardrobe w) async {
-    final l10n = AppLocalizations.of(context)!;
-    final name = await promptTextDialog(
-      context,
-      title: l10n.renameWardrobeTitle,
-      initialValue: w.name,
-      confirmLabel: l10n.save,
-    );
-    if (name != null) await store.renameWardrobe(w.id, name);
-  }
-
-  Future<void> _delete(BuildContext context, WardrobeStore store, Wardrobe w) async {
-    final l10n = AppLocalizations.of(context)!;
-    final confirmed = await confirmDialog(
-      context,
-      title: l10n.deleteWardrobeTitle,
-      message: l10n.deleteWardrobeMessage(w.name),
-      confirmLabel: l10n.delete,
-    );
-    if (confirmed) await store.deleteWardrobe(w.id);
-  }
-
-  Future<void> _add(BuildContext context, WardrobeStore store) async {
-    final l10n = AppLocalizations.of(context)!;
-    final name = await promptTextDialog(
-      context,
-      title: l10n.newWardrobe,
-      initialValue: '',
-      hintText: l10n.newWardrobeHint,
-      confirmLabel: l10n.create,
-    );
-    if (name != null) await store.addWardrobe(name);
-  }
-}
-
-void openSettingsSheet(BuildContext context) {
-  _showSheet(
-    context,
-    (ctx) => AppLocalizations.of(ctx)!.settingsTitle,
-    const SettingsContent(),
-  );
 }
 
 class SettingsContent extends StatelessWidget {
-  const SettingsContent({super.key});
+  /// The settings screen sets its section headings in capitals.
+  final bool uppercaseLabels;
+  const SettingsContent({super.key, this.uppercaseLabels = false});
 
   @override
   Widget build(BuildContext context) {
@@ -1516,9 +1746,9 @@ class SettingsContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(l10n.sectionAppearance, style: _sectionLabelStyle),
+        SettingsSectionLabel(l10n.sectionAppearance, uppercase: uppercaseLabels),
         const SizedBox(height: 8),
-        _SettingsCard(
+        SettingsCard(
           child: Wrap(
             spacing: 7,
             runSpacing: 7,
@@ -1539,9 +1769,9 @@ class SettingsContent extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 22),
-        Text(l10n.sectionLanguage, style: _sectionLabelStyle),
+        SettingsSectionLabel(l10n.sectionLanguage, uppercase: uppercaseLabels),
         const SizedBox(height: 8),
-        _SettingsCard(
+        SettingsCard(
           child: Wrap(
             spacing: 7,
             runSpacing: 7,
@@ -1573,86 +1803,570 @@ class SettingsContent extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 22),
-        Text(l10n.sectionOther, style: _sectionLabelStyle),
-        const SizedBox(height: 8),
-        _SettingsCard(
-          child: _ToggleRow(
-            label: l10n.showDressesLabel,
-            hint: l10n.showDressesHint,
-            value: store.showDresses,
-            onChanged: store.setShowDresses,
-          ),
-        ),
       ],
     );
   }
 }
 
-/// Shared bordered-card chrome for a settings section — used for the
-/// language picker and every on/off row, so they all read as one family of
-/// controls instead of the language picker looking like a bare label.
-class _SettingsCard extends StatelessWidget {
+/// Shared card chrome for a settings section — the pickers, the on/off
+/// rows, the wardrobe list and the app card all read as one family.
+class SettingsCard extends StatelessWidget {
   final Widget child;
-  const _SettingsCard({required this.child});
+  final EdgeInsetsGeometry padding;
+  const SettingsCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: padding,
       decoration: BoxDecoration(
+        color: AppColors.surface,
         border: Border.all(color: AppColors.rowBorder),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: child,
     );
   }
 }
 
-/// A settings on/off row: label + explanatory hint on the left, switch on
-/// the right.
-class _ToggleRow extends StatelessWidget {
-  final String label;
-  final String hint;
-  final bool value;
-  final ValueChanged<bool> onChanged;
+/// A settings section's small mono heading ("vzhled", "jazyk"…).
+class SettingsSectionLabel extends StatelessWidget {
+  final String text;
+  final bool uppercase;
+  const SettingsSectionLabel(this.text, {super.key, this.uppercase = false});
 
-  const _ToggleRow({
-    required this.label,
-    required this.hint,
-    required this.value,
-    required this.onChanged,
-  });
+  @override
+  Widget build(BuildContext context) =>
+      Text(uppercase ? text.toUpperCase() : text, style: _sectionLabelStyle);
+}
+
+/// One day of the diary: the outfits written down for it, and buttons to
+/// add the one on the canvas or a saved one.
+void openDiaryDaySheet(BuildContext context, DateTime day) {
+  _showSheet(context, (ctx) => _diaryDayTitle(ctx, day), _DiaryDay(day: day));
+}
+
+String _diaryDayTitle(BuildContext context, DateTime day) {
+  final l10n = AppLocalizations.of(context)!;
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final date = DateFormat.MMMMEEEEd(Localizations.localeOf(context).toString()).format(day);
+  final prefix = day == today
+      ? l10n.diaryToday
+      : day == addDays(today, -1)
+      ? l10n.diaryYesterday
+      : null;
+  return prefix == null ? date : '$prefix · $date';
+}
+
+class _DiaryDay extends StatelessWidget {
+  final DateTime day;
+  const _DiaryDay({required this.day});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final entries = store.diaryOn(day)..sort((a, b) => a.loggedAt.compareTo(b.loggedAt));
+    final canvasHasClothes = store.currentOutfitItems.isNotEmpty;
+    final time = DateFormat.Hm(Localizations.localeOf(context).toString());
+
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: AppText.sans(size: 13, color: AppColors.ink)),
-              const SizedBox(height: 4),
-              Text(
-                hint,
-                style: AppText.sans(
-                  size: 11.5,
-                  color: AppColors.mutedTag,
-                  height: 1.4,
+        Text(
+          entries.isEmpty ? l10n.diaryDayEmpty : l10n.outfitCount(entries.length),
+          style: entries.isEmpty
+              ? AppText.sans(size: 13, color: AppColors.mutedTag)
+              : AppText.mono(size: 10, letterSpacing: 0.5, color: AppColors.mutedTag),
+        ),
+        const SizedBox(height: 14),
+        if (entries.isNotEmpty) ...[
+          SizedBox(
+            height: 244,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: entries.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
+              itemBuilder: (context, i) {
+                final e = entries[i];
+                return GestureDetector(
+                  // Wear it again: onto the canvas.
+                  onTap: () {
+                    Haptics.done();
+                    store.loadDiaryEntry(e);
+                    _backToOutfit(context);
+                  },
+                  child: Container(
+                    width: 176,
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      border: Border.all(color: AppColors.rowBorder),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      children: [
+                        Expanded(child: OutfitPreview(slots: e.slots, itemById: store.itemById, nameOf: store.displayName)),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 0, 0, 0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  time.format(e.loggedAt),
+                                  style: AppText.mono(size: 10, letterSpacing: 0.5, color: AppColors.label),
+                                ),
+                              ),
+                              Semantics(
+                                button: true,
+                                label: l10n.diaryRemoveEntry,
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () async {
+                                    final confirmed = await confirmDialog(
+                                      context,
+                                      title: l10n.diaryRemoveEntryTitle,
+                                      message: l10n.diaryRemoveEntryMessage,
+                                      confirmLabel: l10n.delete,
+                                    );
+                                    if (!confirmed) return;
+                                    Haptics.remove();
+                                    store.deleteDiaryEntry(e.id);
+                                  },
+                                  child: SizedBox(
+                                    width: 40,
+                                    height: 40,
+                                    child: Icon(Icons.close, size: 16, color: AppColors.muted),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 18),
+        ],
+        Row(
+          children: [
+            Expanded(
+              child: _DetailAction(
+                label: '+ ${l10n.diaryFromCanvas}',
+                filled: canvasHasClothes,
+                textColor: canvasHasClothes ? Colors.white : AppColors.mutedSoft,
+                onTap: () {
+                  if (!store.logCanvas(day)) {
+                    store.flash(l10n.diaryCanvasEmpty);
+                    return;
+                  }
+                  Haptics.done();
+                },
+              ),
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: _DetailAction(
+                label: l10n.diaryFromSaved,
+                textColor: AppColors.ink,
+                onTap: () => _showSheet(
+                  context,
+                  (ctx) => AppLocalizations.of(ctx)!.diaryPickSavedTitle,
+                  _PickSavedOutfit(day: day),
+                  maxHeightFactor: 0.92,
                 ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Every saved outfit, newest first — tap one to write it down for [day].
+/// [closeBoth] also closes the sheet this one was opened from, with a toast
+/// saying where it was logged.
+class _PickSavedOutfit extends StatelessWidget {
+  final DateTime day;
+  final bool closeBoth;
+  const _PickSavedOutfit({required this.day, this.closeBoth = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final outfits = store.outfits.reversed.toList();
+    if (outfits.isEmpty) {
+      return Text(l10n.outfitsEmpty, style: AppText.sans(size: 13, color: AppColors.mutedTag, height: 1.4));
+    }
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      crossAxisCount: gridColumns(context, 3),
+      mainAxisSpacing: 9,
+      crossAxisSpacing: 9,
+      childAspectRatio: 0.8,
+      children: [
+        for (final o in outfits)
+          GestureDetector(
+            onTap: () {
+              // An outfit whose clothes have all been deleted has nothing to log.
+              if (!store.logSavedOutfit(day, o)) return;
+              Haptics.done();
+              final nav = Navigator.of(context)..pop();
+              if (closeBoth) {
+                nav.pop();
+                store.flash(l10n.toastLogged(_diaryDayTitle(context, day)));
+              }
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                border: Border.all(color: AppColors.rowBorder),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: OutfitPreview(slots: o.slots, itemById: store.itemById, nameOf: store.displayName),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Logs a worn outfit without going through the calendar: pick the day
+/// (today by default), then the outfit on the canvas or a saved one.
+void openLogOutfitSheet(BuildContext context) {
+  _showSheet(context, (ctx) => AppLocalizations.of(ctx)!.diaryLogOutfit, const _LogOutfit());
+}
+
+class _LogOutfit extends StatefulWidget {
+  const _LogOutfit();
+
+  @override
+  State<_LogOutfit> createState() => _LogOutfitState();
+}
+
+class _LogOutfitState extends State<_LogOutfit> {
+  static DateTime get _today {
+    final n = DateTime.now();
+    return DateTime(n.year, n.month, n.day);
+  }
+
+  late DateTime _day = _today;
+
+  Future<void> _pickDay() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _day,
+      firstDate: DateTime(2000),
+      lastDate: _today,
+    );
+    if (picked != null && mounted) setState(() => _day = DateTime(picked.year, picked.month, picked.day));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final today = _today, yesterday = addDays(today, -1);
+    final other = _day != today && _day != yesterday;
+    final canvasHasClothes = store.currentOutfitItems.isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(l10n.sectionDay, style: _sectionLabelStyle),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 7,
+          runSpacing: 7,
+          children: [
+            SelectChip(
+              label: l10n.diaryToday,
+              active: _day == today,
+              mono: false,
+              height: 34,
+              onTap: () => setState(() => _day = today),
+            ),
+            SelectChip(
+              label: l10n.diaryYesterday,
+              active: _day == yesterday,
+              mono: false,
+              height: 34,
+              onTap: () => setState(() => _day = yesterday),
+            ),
+            SelectChip(
+              label: other ? DateFormat.MMMMEEEEd(Localizations.localeOf(context).toString()).format(_day) : l10n.diaryOtherDay,
+              active: other,
+              mono: false,
+              height: 34,
+              onTap: _pickDay,
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            Expanded(
+              child: _DetailAction(
+                label: '+ ${l10n.diaryFromCanvas}',
+                filled: canvasHasClothes,
+                textColor: canvasHasClothes ? Colors.white : AppColors.mutedSoft,
+                onTap: () {
+                  if (!store.logCanvas(_day)) {
+                    store.flash(l10n.diaryCanvasEmpty);
+                    return;
+                  }
+                  Haptics.done();
+                  store.flash(l10n.toastLogged(_diaryDayTitle(context, _day)));
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: _DetailAction(
+                label: l10n.diaryFromSaved,
+                textColor: AppColors.ink,
+                onTap: () => _showSheet(
+                  context,
+                  (ctx) => AppLocalizations.of(ctx)!.diaryPickSavedTitle,
+                  _PickSavedOutfit(day: _day, closeBoth: true),
+                  maxHeightFactor: 0.92,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// A saved outfit up close: how much it's been worn, what's in it, its
+/// layout, and wearing it today, editing it on the canvas or deleting it.
+void openOutfitDetail(BuildContext context, SavedOutfit outfit) {
+  Navigator.of(context, rootNavigator: true).push(
+    MaterialPageRoute(builder: (_) => _OutfitPage(outfitId: outfit.id)),
+  );
+}
+
+/// A saved outfit's page, laid out like an item's: back and favorite at the
+/// top, the outfit and how it's worn, and the actions pinned below.
+class _OutfitPage extends StatelessWidget {
+  final String outfitId;
+  const _OutfitPage({required this.outfitId});
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final outfit = store.outfits.where((o) => o.id == outfitId).firstOrNull;
+    if (outfit == null) {
+      // Deleted — nothing left to show (see [_ItemPage]).
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (context.mounted && (ModalRoute.of(context)?.isCurrent ?? false)) Navigator.of(context).pop();
+      });
+      return Scaffold(backgroundColor: AppColors.background);
+    }
+    final today = DateUtils.dateOnly(DateTime.now());
+    final wornToday = store.outfitWearDays(outfit).contains(today);
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: ContentWidth(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 8, 8, 4),
+                child: Row(
+                  children: [
+                    const AppBackButton(),
+                    // The title goes back too (see [_ItemPage]).
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () => Navigator.of(context).pop(),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Text(
+                              l10n.tabOutfit,
+                              style: AppText.sans(size: 16, weight: FontWeight.w500, color: AppColors.ink),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Semantics(
+                      button: true,
+                      toggled: outfit.favorite,
+                      label: l10n.favorite,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          Haptics.tick();
+                          store.toggleFavorite(outfit.id);
+                        },
+                        child: SizedBox(
+                          width: 44,
+                          height: 44,
+                          child: Icon(
+                            outfit.favorite ? Icons.favorite : Icons.favorite_border,
+                            size: 22,
+                            color: outfit.favorite ? AppColors.accentText : AppColors.muted,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                  child: _OutfitDetail(outfitId: outfitId),
+                ),
+              ),
+              _DetailActionBar(
+                deleteMessage: l10n.deleteOutfitPlain,
+                onDelete: () => _closeThen(context, () => store.deleteOutfit(outfit.id)),
+                actions: [
+                  Expanded(
+                    child: _DetailAction(
+                      label: wornToday ? l10n.outfitWornToday : l10n.wearToday,
+                      filled: !wornToday,
+                      textColor: wornToday ? AppColors.mutedSoft : Colors.white,
+                      onTap: () {
+                        if (wornToday || !store.logSavedOutfit(today, outfit)) return;
+                        // Stays on the outfit: the button turning into
+                        // "Logged today" (and the month strip) says it's done.
+                        Haptics.done();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 9),
+                  Expanded(
+                    child: _DetailAction(
+                      label: l10n.editOnCanvas,
+                      textColor: AppColors.ink,
+                      onTap: () {
+                        Haptics.done();
+                        store.loadOutfit(outfit);
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
-        const SizedBox(width: 12),
-        Switch.adaptive(
-          value: value,
-          activeThumbColor: AppColors.accent,
-          onChanged: onChanged,
+      ),
+    );
+  }
+}
+
+class _OutfitDetail extends StatelessWidget {
+  final String outfitId;
+  const _OutfitDetail({required this.outfitId});
+
+  /// The weekday it's worn on most, if one clearly stands out (at least
+  /// twice, and more than any other) — 1 = Monday.
+  static int? _usualWeekday(Set<DateTime> days) {
+    if (days.length < 3) return null;
+    final counts = <int, int>{};
+    for (final d in days) {
+      counts.update(d.weekday, (n) => n + 1, ifAbsent: () => 1);
+    }
+    final ranked = counts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    if (ranked.first.value < 2 || (ranked.length > 1 && ranked[1].value == ranked.first.value)) return null;
+    return ranked.first.key;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    final l10n = AppLocalizations.of(context)!;
+    final outfit = store.outfits.where((o) => o.id == outfitId).firstOrNull;
+    if (outfit == null) return const SizedBox.shrink();
+    final now = DateTime.now();
+    final today = DateUtils.dateOnly(now);
+    final days = store.outfitWearDays(outfit);
+    final last = days.isEmpty ? null : days.reduce((a, b) => a.isAfter(b) ? a : b);
+    final thisMonth = {for (final d in days) if (d.year == now.year && d.month == now.month) d.day};
+    final weekday = _usualWeekday(days);
+    final pieces = [
+      for (final id in outfit.itemIds)
+        if (store.itemById(id) case final it?) store.displayName(it).toLowerCase(),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (pieces.isNotEmpty)
+          Text(
+            pieces.join(' · '),
+            style: AppText.mono(size: 10, letterSpacing: 0.3, color: AppColors.mutedTag, height: 1.4),
+          ),
+        const SizedBox(height: 10),
+        Container(
+          height: 420,
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            border: Border.all(color: AppColors.rowBorder),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: OutfitPreview(slots: outfit.slots, itemById: store.itemById, nameOf: store.displayName),
         ),
+        const SizedBox(height: 16),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(DateFormat.LLLL(Localizations.localeOf(context).toString()).format(now).toUpperCase(), style: _sectionLabelStyle),
+            const SizedBox(width: 12),
+            if (weekday != null)
+              Expanded(
+                child: Text(
+                  l10n.outfitUsualWeekday(weekday.toString()),
+                  textAlign: TextAlign.right,
+                  style: AppText.mono(size: 9.5, letterSpacing: 0.3, color: AppColors.mutedTag),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        _MonthStrip(worn: thisMonth),
+        const SizedBox(height: 12),
+        _WearTiles([
+          _WearTile(value: l10n.timesWorn(days.length), label: l10n.itemWornLabel),
+          _WearTile(
+            value: switch (last == null ? null : daysBetween(last, today)) {
+              null => l10n.statsNever,
+              0 => l10n.itemLastToday,
+              1 => l10n.itemLastYesterday,
+              final n => l10n.statsDaysAgo(n),
+            },
+            label: l10n.itemLastWornLabel,
+          ),
+        ]),
       ],
     );
   }

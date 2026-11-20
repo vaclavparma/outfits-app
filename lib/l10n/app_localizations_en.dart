@@ -15,9 +15,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tabWardrobe => 'Wardrobe';
 
   @override
-  String get tabCollections => 'Collections';
-
-  @override
   String get cancel => 'Cancel';
 
   @override
@@ -42,22 +39,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionCannotBeUndone => 'This action can\'t be undone.';
 
   @override
-  String get noFolder => 'no folder';
-
-  @override
   String get rename => 'Rename';
 
   @override
   String get unsortedName => 'Unsorted';
-
-  @override
-  String get addTopPlaceholder => 'Add a top';
-
-  @override
-  String get addBottomPlaceholder => 'Add a bottom';
-
-  @override
-  String get addShoesPlaceholder => 'Add shoes';
 
   @override
   String get shuffleButton => 'Shuffle';
@@ -78,6 +63,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get categoryBoty => 'Shoes';
 
   @override
+  String get defaultTypesTop => 'T-shirts';
+
+  @override
+  String get defaultTypesBottom => 'Trousers';
+
+  @override
+  String get defaultTypesShoes => 'Sneakers';
+
+  @override
   String itemCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -87,15 +81,6 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
-
-  @override
-  String get newCollectionTile => 'new collection';
-
-  @override
-  String get newCollectionDialogTitle => 'New collection';
-
-  @override
-  String get newCollectionHint => 'e.g. Work';
 
   @override
   String outfitCount(int count) {
@@ -109,77 +94,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get collectionEmptyHint =>
-      'Nothing here yet. Save an outfit and pick this collection.';
-
-  @override
-  String get renameCollectionTitle => 'Rename collection';
-
-  @override
-  String get deleteCollectionTitle => 'Delete collection?';
-
-  @override
-  String deleteCollectionMessage(String name) {
-    return 'The collection “$name” and everything in it will be deleted.';
-  }
-
-  @override
   String get deleteOutfitTitle => 'Delete outfit?';
 
   @override
-  String deleteOutfitMessage(String name) {
-    return '“$name” will be deleted.';
-  }
-
-  @override
-  String get pickTopTitle => 'Choose a top or dress';
-
-  @override
-  String get pickBottomTitle => 'Choose a bottom';
-
-  @override
-  String get pickShoesTitle => 'Choose shoes';
-
-  @override
-  String get addLayerTitle => 'Add a layer';
-
-  @override
-  String get changeLayerTitle => 'Change layer';
-
-  @override
-  String layerLimitMessage(int max) {
-    String _temp0 = intl.Intl.pluralLogic(
-      max,
-      locale: localeName,
-      other: 'You can have at most $max extra layers.',
-      one: 'You can have at most $max extra layer.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get noMoreLayers => 'No more layers to add.';
-
-  @override
   String get addItemTitle => 'Add clothing';
-
-  @override
-  String get sectionCategory => 'category';
-
-  @override
-  String get sectionFolder => 'folder';
 
   @override
   String get takePhoto => 'Take photo';
 
   @override
   String get fromGallery => 'From gallery';
-
-  @override
-  String get itemDetailTitle => 'Clothing detail';
-
-  @override
-  String get useInOutfit => 'Use in outfit';
 
   @override
   String get deleteItemTitle => 'Delete this item?';
@@ -191,38 +115,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get moveTitle => 'Move';
 
   @override
-  String get nothingToMoveTo =>
-      'Nowhere to move it yet — create another folder or wardrobe first.';
-
-  @override
-  String get moveInThisWardrobe => 'in this wardrobe';
-
-  @override
-  String moveInWardrobe(String name) {
-    return 'in “$name”';
+  String toastMovedToWardrobe(String name) {
+    return 'Moved to the “$name” wardrobe';
   }
-
-  @override
-  String toastMovedToWardrobe(String name, String folder) {
-    return 'Moved to the “$name” wardrobe · $folder';
-  }
-
-  @override
-  String get wearWhereTitle => 'Where in the outfit?';
-
-  @override
-  String get wearAsTop => 'Top';
-
-  @override
-  String wearAsLayer(int n) {
-    return 'Layer $n';
-  }
-
-  @override
-  String get wearAsNewLayer => 'New layer';
-
-  @override
-  String get wornHere => 'here now';
 
   @override
   String get searchHint => 'Search clothes';
@@ -231,16 +126,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nothingFound => 'Nothing found.';
 
   @override
-  String get sectionItemName => 'name';
-
-  @override
-  String get itemNameHint => 'e.g. Green linen shirt';
-
-  @override
   String get sectionSeller => 'seller';
 
   @override
-  String get sellerHint => 'e.g. Zara';
+  String get sellerHint => 'Your favourite shop';
 
   @override
   String get sectionSize => 'size';
@@ -259,35 +148,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noteHint => 'e.g. wash at 30 °C';
-
-  @override
-  String get sectionOutfitName => 'outfit name';
-
-  @override
-  String get outfitNameHint => 'e.g. Monday meeting';
-
-  @override
-  String get sectionCollection => 'collection';
-
-  @override
-  String get newFolderTile => 'new folder';
-
-  @override
-  String get newFolderDialogTitle => 'New folder';
-
-  @override
-  String get newFolderHint => 'e.g. Shirts';
-
-  @override
-  String get renameFolderTitle => 'Rename folder';
-
-  @override
-  String get deleteFolderTitle => 'Delete folder?';
-
-  @override
-  String deleteFolderMessage(String folder) {
-    return 'The folder “$folder” will be deleted. Items in it will move to “Nezařazené”.';
-  }
 
   @override
   String toastSavedWithPhoto(String category) {
@@ -314,36 +174,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get outfitAlreadySavedTitle => 'Outfit already saved';
 
   @override
-  String outfitAlreadySavedMessage(String name, String wardrobe, String col) {
-    return 'This combination is already saved as “$name” in $wardrobe / $col. Save it anyway?';
-  }
-
-  @override
   String get saveAnyway => 'Save anyway';
-
-  @override
-  String toastOutfitSaved(String name, String col) {
-    return '“$name” saved to the $col collection';
-  }
-
-  @override
-  String defaultOutfitName(int n) {
-    return 'Outfit $n';
-  }
 
   @override
   String get aboutTagline => 'A wardrobe for planning outfits';
 
   @override
-  String get aboutGithub => 'Source code on GitHub';
-
-  @override
-  String get aboutSupport => 'Support development — Buy Me a Coffee';
-
-  @override
   String aboutVersionLine(String version, String buildNumber) {
     return 'v$version ($buildNumber) · Václav Parma';
   }
+
+  @override
+  String get sectionWardrobes => 'wardrobes';
 
   @override
   String get settingsTitle => 'Settings';
@@ -364,21 +206,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get themeDark => 'Dark';
 
   @override
-  String get sectionOther => 'other';
-
-  @override
-  String get showDressesLabel => 'Show dresses in wardrobe';
-
-  @override
-  String get showDressesHint =>
-      'Hides the dresses category in the wardrobe and when adding clothes. Dresses already in your wardrobe stay put.';
-
-  @override
   String get onboardingTitle => 'Welcome to Outfits';
 
   @override
   String get onboardingSubtitle =>
-      'A few things to start — you can change all of them later.';
+      'In a couple of minutes you\'ll set up your wardrobe your way and put together your first outfit. You can change everything later.';
 
   @override
   String get onboardingContinue => 'Continue';
@@ -387,16 +219,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get defaultWardrobeName => 'My wardrobe';
 
   @override
-  String get sectionWardrobeName => 'wardrobe name';
-
-  @override
   String get newWardrobe => 'New wardrobe';
-
-  @override
-  String get newWardrobeTile => 'new wardrobe';
-
-  @override
-  String get editWardrobes => 'Edit wardrobes';
 
   @override
   String get newWardrobeHint => 'e.g. Cottage';
@@ -411,4 +234,536 @@ class AppLocalizationsEn extends AppLocalizations {
   String deleteWardrobeMessage(String name) {
     return 'The wardrobe “$name” will be deleted, along with all its clothes, photos, collections and outfits.';
   }
+
+  @override
+  String get colorsTitle => 'Colors';
+
+  @override
+  String get colorsEdit => 'Edit colors';
+
+  @override
+  String get colorsHint =>
+      'Choose a color below the photo, then tap the spot on the photo to take it from.';
+
+  @override
+  String get colorsRedetect => 'Detect again automatically';
+
+  @override
+  String get colorAdd => 'Add color';
+
+  @override
+  String get colorRemove => 'Remove color';
+
+  @override
+  String colorSlot(int n) {
+    return 'Color $n';
+  }
+
+  @override
+  String get ok => 'OK';
+
+  @override
+  String get sectionKinds => 'kinds and types';
+
+  @override
+  String get addTypeChip => 'type';
+
+  @override
+  String get newKind => 'Custom kind';
+
+  @override
+  String get newKindHint => 'e.g. Hats';
+
+  @override
+  String get renameKindTitle => 'Rename kind';
+
+  @override
+  String get deleteKindTitle => 'Delete kind?';
+
+  @override
+  String deleteKindMessage(String name) {
+    return 'The kind “$name” and its types will be deleted.';
+  }
+
+  @override
+  String get kindNotEmptyTitle => 'Kind isn’t empty';
+
+  @override
+  String kindNotEmptyMessage(String name, String items) {
+    return '“$name” still has $items (counting every wardrobe). Move them to another kind or delete them first.';
+  }
+
+  @override
+  String get newTypeTitle => 'New type';
+
+  @override
+  String get newTypeHint => 'e.g. Shirts';
+
+  @override
+  String get renameTypeTitle => 'Rename type';
+
+  @override
+  String get deleteTypeTitle => 'Delete type?';
+
+  @override
+  String get kindsHint =>
+      'Kinds are the cards on the main page; types sort clothes within a kind. Drag the handle to reorder.';
+
+  @override
+  String get sectionKind => 'kind';
+
+  @override
+  String get sectionType => 'type';
+
+  @override
+  String get sectionWardrobe => 'wardrobe';
+
+  @override
+  String get all => 'All';
+
+  @override
+  String get addClothes => 'Add';
+
+  @override
+  String get canvasEmpty =>
+      'Nothing on the canvas yet.\nAdd cards with the buttons below — hold one to move it, pinch to resize it.';
+
+  @override
+  String get otherTypeName => 'Other';
+
+  @override
+  String get defaultTypesDress => 'Summer';
+
+  @override
+  String deleteTypeMoveMessage(String name, String items) {
+    return '“$name” has $items. Where should they go?';
+  }
+
+  @override
+  String canvasFull(int count) {
+    return 'The canvas holds at most $count cards. Remove one first — hold it and drag it to the bin.';
+  }
+
+  @override
+  String get rateAppHint => 'It helps other people find the app';
+
+  @override
+  String get rateApp => 'Rate Outfits';
+
+  @override
+  String get sectionData => 'Data';
+
+  @override
+  String get exportData => 'Export data';
+
+  @override
+  String get exportDataHint =>
+      'Wardrobes, photos, outfits, diary and settings in one .zip file';
+
+  @override
+  String get importData => 'Import data';
+
+  @override
+  String get importDataHint =>
+      'From a .zip backup — replaces everything in the app now';
+
+  @override
+  String wardrobeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count wardrobes',
+      one: '$count wardrobe',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importConfirmTitle => 'Replace all data?';
+
+  @override
+  String importConfirmMessage(String wardrobes, String items, String outfits) {
+    return 'The backup has $wardrobes, $items and $outfits. It replaces everything in the app now — wardrobes, photos, outfits, diary and settings. To keep what’s here, export it first.';
+  }
+
+  @override
+  String get importConfirm => 'Replace';
+
+  @override
+  String get importDone => 'Data imported';
+
+  @override
+  String get importFailedTitle => 'Import failed';
+
+  @override
+  String get importNotABackup => 'This file isn’t an Outfits backup.';
+
+  @override
+  String get importNewerVersion =>
+      'The backup is from a newer version of Outfits. Update the app and try again.';
+
+  @override
+  String get importFailed =>
+      'The data couldn’t be imported. Everything in the app is as it was.';
+
+  @override
+  String get exportFailed => 'The data couldn’t be exported.';
+
+  @override
+  String get deleteForGood => 'Delete for good';
+
+  @override
+  String get showPhoto => 'Show photo';
+
+  @override
+  String get photoAccessTitle => 'Couldn’t get the photo';
+
+  @override
+  String get photoAccessDenied =>
+      'The app has no access to the camera or photos. Allow it in your phone’s Settings.';
+
+  @override
+  String get photoAccessFailed =>
+      'The camera or gallery couldn’t be opened. Please try again.';
+
+  @override
+  String get pinItem => 'Pin';
+
+  @override
+  String get dropToRemove => 'Drop here to remove';
+
+  @override
+  String get reorder => 'Reorder';
+
+  @override
+  String get newTypeTile => 'new type';
+
+  @override
+  String get tabDiary => 'Diary';
+
+  @override
+  String get diaryCalendar => 'Calendar';
+
+  @override
+  String get diaryStats => 'Stats';
+
+  @override
+  String diaryDaysCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '$count day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get diaryToday => 'Today';
+
+  @override
+  String get diaryYesterday => 'Yesterday';
+
+  @override
+  String get diaryDayEmpty => 'Nothing logged for this day yet.';
+
+  @override
+  String get diaryFromCanvas => 'From canvas';
+
+  @override
+  String get diaryFromSaved => 'From saved';
+
+  @override
+  String get diaryCanvasEmpty => 'There are no clothes on the canvas yet.';
+
+  @override
+  String get diaryPickSavedTitle => 'Saved outfits';
+
+  @override
+  String get diaryRemoveEntry => 'Remove from diary';
+
+  @override
+  String statsDaysLogged(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'days logged this month',
+      one: 'day logged this month',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get statsItemsWorn => 'items worn this month';
+
+  @override
+  String get statsTimesWorn => 'Times worn';
+
+  @override
+  String get statsAllTime => 'all time';
+
+  @override
+  String statsShowAll(int count) {
+    return 'show all $count';
+  }
+
+  @override
+  String get statsShowLess => 'show less';
+
+  @override
+  String get statsNotWorn => 'Not worn lately';
+
+  @override
+  String get statsNever => 'never';
+
+  @override
+  String statsDaysAgo(int n) {
+    return '$n days ago';
+  }
+
+  @override
+  String statsNothingUnworn(int n) {
+    return 'Every piece of clothing got worn at least once in the last $n days.';
+  }
+
+  @override
+  String get statsEmpty =>
+      'Stats show up once you log your first outfit in the calendar.';
+
+  @override
+  String timesWorn(int n) {
+    return '$n×';
+  }
+
+  @override
+  String colorFamily(String color) {
+    String _temp0 = intl.Intl.selectLogic(color, {
+      'white': 'White',
+      'beige': 'Beige',
+      'yellow': 'Yellow',
+      'orange': 'Orange',
+      'red': 'Red',
+      'pink': 'Pink',
+      'purple': 'Purple',
+      'blue': 'Blue',
+      'green': 'Green',
+      'brown': 'Brown',
+      'grey': 'Grey',
+      'black': 'Black',
+      'other': 'Other',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get statsColors => 'Colors';
+
+  @override
+  String get statsInWardrobe => 'in wardrobe';
+
+  @override
+  String get statsWornLabel => 'worn';
+
+  @override
+  String get statsColWardrobe => 'wardrobe';
+
+  @override
+  String get statsNotWornSince => '30+ days';
+
+  @override
+  String get diaryLogOutfit => 'Log an outfit';
+
+  @override
+  String get sectionDay => 'day';
+
+  @override
+  String get diaryOtherDay => 'Other day…';
+
+  @override
+  String toastLogged(String date) {
+    return 'Logged in the diary · $date';
+  }
+
+  @override
+  String get itemWornLabel => 'worn';
+
+  @override
+  String get itemLastWornLabel => 'last worn';
+
+  @override
+  String get itemPerWearLabel => 'per wear';
+
+  @override
+  String get itemLastToday => 'today';
+
+  @override
+  String get itemLastYesterday => 'yesterday';
+
+  @override
+  String get sectionDetails => 'details';
+
+  @override
+  String get reminderTitle => 'What are you wearing today?';
+
+  @override
+  String get reminderBody => 'Log today\'s outfit in your diary.';
+
+  @override
+  String get reminderChannel => 'Diary reminder';
+
+  @override
+  String get sectionDiary => 'diary';
+
+  @override
+  String get reminderLabel => 'Daily reminder';
+
+  @override
+  String get reminderHint =>
+      'Reminds you to log your outfit — only if nothing\'s logged for the day yet.';
+
+  @override
+  String get reminderTime => 'Time';
+
+  @override
+  String get reminderDeniedTitle => 'Notifications are off';
+
+  @override
+  String get reminderDeniedMessage =>
+      'To get the reminder, allow notifications for the app in your phone\'s Settings.';
+
+  @override
+  String get tabOutfits => 'Collection';
+
+  @override
+  String get searchOutfitsHint => 'Search by clothes';
+
+  @override
+  String get filterFavorites => 'Favorites';
+
+  @override
+  String get filterOftenWorn => 'Worn often';
+
+  @override
+  String get favorite => 'Favorite';
+
+  @override
+  String get outfitSaved => 'Saved';
+
+  @override
+  String get outfitAlreadySavedHere =>
+      'You already have this combination among your outfits. Save it anyway?';
+
+  @override
+  String outfitAlreadySavedIn(String wardrobe) {
+    return 'You already have this combination saved in the “$wardrobe” wardrobe. Save it anyway?';
+  }
+
+  @override
+  String get deleteOutfitPlain => 'The outfit will be deleted.';
+
+  @override
+  String get outfitsEmpty =>
+      'No saved outfits yet. Put one together on the main page and save it.';
+
+  @override
+  String outfitUsualWeekday(String weekday) {
+    String _temp0 = intl.Intl.selectLogic(weekday, {
+      '1': 'mostly on Mondays',
+      '2': 'mostly on Tuesdays',
+      '3': 'mostly on Wednesdays',
+      '4': 'mostly on Thursdays',
+      '5': 'mostly on Fridays',
+      '6': 'mostly on Saturdays',
+      '7': 'mostly on Sundays',
+      'other': '',
+    });
+    return '$_temp0';
+  }
+
+  @override
+  String get wearToday => 'Wearing it today';
+
+  @override
+  String get outfitWornToday => 'Logged today';
+
+  @override
+  String get editOnCanvas => 'Put on canvas';
+
+  @override
+  String get diaryRemoveEntryTitle => 'Remove from the diary?';
+
+  @override
+  String get diaryRemoveEntryMessage =>
+      'This outfit will be removed from the day.';
+
+  @override
+  String get nameTaken => 'That name is already taken.';
+
+  @override
+  String get onboardingStart => 'Get started';
+
+  @override
+  String get onboardingLooksTitle => 'Look';
+
+  @override
+  String get onboardingLooksBody =>
+      'How the app should look — tap the one you like.';
+
+  @override
+  String get onboardingWardrobeTitle => 'Your wardrobe';
+
+  @override
+  String get onboardingWardrobeBody =>
+      'Give it a name — say “Home”. It starts with cards for tops, bottoms and shoes. More kinds of clothing, and more wardrobes (cottage, office…), can be added in settings any time.';
+
+  @override
+  String get onboardingReminderTitle => 'Daily reminder';
+
+  @override
+  String get onboardingReminderBody =>
+      'The diary is what shows what you wear most and what just sits in the closet. The reminder nudges you to log today\'s outfit — feel free to leave it off.';
+
+  @override
+  String get tourAddTitle => 'Add your first pieces';
+
+  @override
+  String get tourAddBody =>
+      'Take or pick a few photos — say a top, trousers and shoes. Colors and names fill in by themselves.';
+
+  @override
+  String get tourAddButton => 'Add clothes';
+
+  @override
+  String get tourAddMore => 'Add more';
+
+  @override
+  String get tourCanvasTitle => 'Your first outfit';
+
+  @override
+  String get tourCanvasBody =>
+      'Your clothes are on the canvas. Tap a card to pick another piece, hold it to move it, pinch to resize. Then save the outfit.';
+
+  @override
+  String get tourOutfitsBody =>
+      'Your saved outfits live here. Search them by clothes, heart your favorites, and tap one for its detail.';
+
+  @override
+  String get tourDiaryBody =>
+      'Log what you wear — with the + button or by tapping a day. The entries add up to stats: what you wear most, and what you don\'t.';
+
+  @override
+  String get tourSettingsBody =>
+      'Here you can change the kinds and types of clothing, wardrobes, look, language and the daily reminder, and back up your data. The gear at the top right brings you back any time.';
+
+  @override
+  String get languageSystemShort => 'System';
+
+  @override
+  String get tourNext => 'Next';
+
+  @override
+  String get tourSkip => 'Skip';
+
+  @override
+  String get tourClose => 'End the tour';
 }

@@ -3,55 +3,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'package:reorderable_grid_view/reorderable_grid_view.dart';
+import 'package:reorderable_grid/reorderable_grid.dart';
 
 import 'l10n/app_localizations.dart';
 import 'models.dart';
 import 'theme.dart';
-
-/// How long a press has to hold before a reorderable grid tile picks up —
-/// shorter than the package's ~500ms default (`kLongPressTimeout`) so
-/// reordering feels responsive rather than sluggish.
-const gridDragStartDelay = Duration(milliseconds: 250);
-
-/// Fires the instant a drag actually starts, giving the pickup a tactile
-/// cue (to go with the visual pop in [roundedDragFeedback]) so it's obvious
-/// the tile is now free to move.
-void onGridDragStart(int _) => HapticFeedback.mediumImpact();
-
-/// Drag feedback for a [ReorderableGridView]/[ReorderableSliverGridView] cell
-/// that itself has rounded corners. The package's own default just wraps the
-/// dragged widget in an opaque, square-cornered [Material] — which pokes
-/// sharp white corners out from behind a rounded card the moment it lifts.
-/// This drops that fill (only the card's own already-rounded content shows)
-/// and deepens the shadow for a "lifted" feel.
-///
-/// Takes a screenshot of the tile instead of re-mounting the live widget in
-/// the drag overlay: our cards (e.g. `_FolderCard`) rebuild off
-/// `context.watch`, and the package's own docs/examples call out re-mounting
-/// such a widget fresh in the overlay as unreliable — it showed up here as a
-/// second, half-rendered "ghost" copy layered behind the real drag proxy.
-/// A screenshot is just a static bitmap, so there's nothing left to rebuild.
-/// Trade-off: the package captures + PNG-encodes that bitmap *before*
-/// hiding the original tile and showing this overlay, so there's an
-/// unavoidable one-frame-ish flicker right at pickup — not something this
-/// builder controls, since it only renders what's already inside the
-/// overlay once the package decides to show it.
-DragWidgetBuilderV2 roundedDragFeedback(double radius) => DragWidgetBuilderV2(
-  isScreenshotDragWidget: true,
-  builder: (index, child, screenshot) => Transform.scale(
-    scale: 1.05,
-    child: Material(
-      color: Colors.transparent,
-      elevation: 6,
-      shadowColor: Colors.black.withValues(alpha: 0.35),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),
-      clipBehavior: Clip.antiAlias,
-      child: screenshot == null ? child : Image(image: screenshot, fit: BoxFit.cover),
-    ),
-  ),
-);
 
 /// Diagonal hatch pattern used as a placeholder for garments without a photo,
 /// matching the `repeating-linear-gradient(135deg, ...)` texture in the
@@ -95,6 +53,8 @@ class GarmentImage extends StatelessWidget {
   final String path;
   const GarmentImage(this.path, {super.key});
 
+  static const _decodeStep = 160;
+
   @override
   Widget build(BuildContext context) {
     final dpr = MediaQuery.devicePixelRatioOf(context);
@@ -106,7 +66,11 @@ class GarmentImage extends StatelessWidget {
         child: Image.file(
           File(path),
           fit: BoxFit.contain,
-          cacheWidth: constraints.maxWidth.isFinite ? (constraints.maxWidth * dpr).round() : null,
+          // Decoded at the size shown, rounded up to a step so a card being
+          // pinched doesn't decode again on every frame — and keeps showing
+          // the old decode meanwhile rather than going blank.
+          cacheWidth: constraints.maxWidth.isFinite ? ((constraints.maxWidth * dpr) / _decodeStep).ceil() * _decodeStep : null,
+          gaplessPlayback: true,
           errorBuilder: (context, error, stackTrace) => const DiagonalStripes(),
         ),
       ),
@@ -115,8 +79,8 @@ class GarmentImage extends StatelessWidget {
 }
 
 /// A garment "card": rounded, textured or photo-filled tile with a small
-/// uppercase mono slot label and a name/folder caption, as used across the
-/// outfit builder, wardrobe grid and pick sheets.
+/// uppercase mono slot label and a name/type caption, as used across the
+/// outfit canvas, wardrobe and pick sheets.
 class GarmentCard extends StatelessWidget {
   final double width;
   final double height;
@@ -128,11 +92,13 @@ class GarmentCard extends StatelessWidget {
   final VoidCallback? onTap;
   final void Function(int direction)? onSwipe;
 
-  /// A short hold opens the photo full screen (see [openPhotoViewer]).
-  final bool zoomable;
   final Color? borderColor;
   final List<BoxShadow>? shadow;
   final Alignment captionAlign;
+
+  /// What VoiceOver says the card is (the item's name) — a photo alone
+  /// says nothing. Replaces the card's own captions when given.
+  final String? semanticLabel;
 
   const GarmentCard({
     super.key,
@@ -145,10 +111,10 @@ class GarmentCard extends StatelessWidget {
     this.imagePath,
     this.onTap,
     this.onSwipe,
-    this.zoomable = false,
     this.borderColor,
     this.shadow,
     this.captionAlign = Alignment.bottomLeft,
+    this.semanticLabel,
   });
 
   @override
@@ -160,8 +126,13 @@ class GarmentCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.cardFill,
         borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: borderColor ?? AppColors.cardBorder),
         boxShadow: shadow,
+      ),
+      // The border goes on top: under the photo it would only peek out at
+      // the clipped corners.
+      foregroundDecoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: borderColor ?? AppColors.cardBorder),
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
@@ -175,25 +146,31 @@ class GarmentCard extends StatelessWidget {
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
+                  // Dark enough under the caption for white text to keep
+                  // 4.5:1 even over a white product shot.
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.45)],
-                    stops: const [0.55, 1],
+                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.55), Colors.black.withValues(alpha: 0.65)],
+                    stops: const [0.4, 0.68, 1],
                   ),
                 ),
               ),
             ),
           if (slotLabel != null)
             Positioned(
-              top: 11,
-              left: 12,
-              child: Text(
-                slotLabel!,
-                style: AppText.mono(
-                  size: 8,
-                  letterSpacing: 1.1,
-                  color: hasImage ? Colors.white.withValues(alpha: 0.85) : AppColors.mutedLabel,
+              top: hasImage ? 9 : 11,
+              left: hasImage ? 7 : 12,
+              // On a photo, white on a dark tag, which reads whatever the
+              // photo is like behind it.
+              child: Container(
+                padding: hasImage ? const EdgeInsets.symmetric(horizontal: 5, vertical: 2) : EdgeInsets.zero,
+                decoration: hasImage
+                    ? BoxDecoration(color: Colors.black.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(4))
+                    : null,
+                child: Text(
+                  slotLabel!,
+                  style: AppText.mono(size: 8, letterSpacing: 1.1, color: hasImage ? Colors.white : AppColors.mutedLabel),
                 ),
               ),
             ),
@@ -223,7 +200,7 @@ class GarmentCard extends StatelessWidget {
                         style: AppText.mono(
                           size: 8.5,
                           letterSpacing: 0.6,
-                          color: hasImage ? Colors.white.withValues(alpha: 0.75) : AppColors.mutedTag,
+                          color: hasImage ? Colors.white : AppColors.mutedTag,
                         ),
                       ),
                     ),
@@ -248,20 +225,9 @@ class GarmentCard extends StatelessWidget {
             },
       child: card,
     );
-    final path = imagePath;
-    if (!zoomable || path == null) return gestures;
-    return RawGestureDetector(
-      gestures: {
-        LongPressGestureRecognizer: GestureRecognizerFactoryWithHandlers<LongPressGestureRecognizer>(
-          () => LongPressGestureRecognizer(duration: photoHoldDuration),
-          (r) => r.onLongPress = () {
-            HapticFeedback.mediumImpact();
-            openPhotoViewer(context, path);
-          },
-        ),
-      },
-      child: gestures,
-    );
+    final label = semanticLabel;
+    if (label == null) return gestures;
+    return Semantics(button: onTap != null, label: label, excludeSemantics: true, onTap: onTap, child: gestures);
   }
 }
 
@@ -274,6 +240,10 @@ class SelectChip extends StatelessWidget {
   final double height;
   final bool mono;
 
+  /// A choice ticks when tapped. One that only opens something (a "+ new"
+  /// chip and its dialog) doesn't — the thing it makes says so when done.
+  final bool choice;
+
   const SelectChip({
     super.key,
     required this.label,
@@ -281,15 +251,26 @@ class SelectChip extends StatelessWidget {
     this.onTap,
     this.height = 30,
     this.mono = true,
+    this.choice = true,
   });
+
+  /// Chips are never drawn shorter than this — big enough to hit.
+  static const minHeight = 36.0;
 
   @override
   Widget build(BuildContext context) {
+    final height = math.max(this.height, minHeight);
     final bg = active ? AppColors.accentDark : AppColors.surface;
     final border = active ? AppColors.accentDark : AppColors.chipBorderIdle;
     final color = active ? Colors.white : AppColors.chipTextIdle;
+    final onTap = this.onTap;
     return GestureDetector(
-      onTap: onTap,
+      onTap: onTap == null
+          ? null
+          : () {
+              if (choice) Haptics.tick();
+              onTap();
+            },
       child: Container(
         height: height,
         padding: const EdgeInsets.symmetric(horizontal: 13),
@@ -313,7 +294,7 @@ class SelectChip extends StatelessWidget {
   }
 }
 
-/// Back arrow for the pushed folder/collection screens. Opaque and sized to
+/// Back arrow for pushed screens (a type, settings, an item). Opaque and sized to
 /// a full 48×48 target — a plain GestureDetector only reacts to taps on the
 /// icon's own pixels, which made it easy to miss.
 class AppBackButton extends StatelessWidget {
@@ -321,13 +302,17 @@ class AppBackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => Navigator.of(context).pop(),
-      child: SizedBox(
-        width: 48,
-        height: 48,
-        child: Icon(Icons.arrow_back_ios_new, size: 18, color: AppColors.ink),
+    return Semantics(
+      button: true,
+      label: MaterialLocalizations.of(context).backButtonTooltip,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => Navigator.of(context).pop(),
+        child: SizedBox(
+          width: 48,
+          height: 48,
+          child: Icon(Icons.arrow_back_ios_new, size: 18, color: AppColors.ink),
+        ),
       ),
     );
   }
@@ -341,6 +326,10 @@ class RoundIconButton extends StatelessWidget {
   final Color? background;
   final Color? borderColor;
 
+  /// What VoiceOver calls it, and whether it's switched on (for a toggle).
+  final String? semanticLabel;
+  final bool? toggled;
+
   const RoundIconButton({
     super.key,
     required this.child,
@@ -348,29 +337,38 @@ class RoundIconButton extends StatelessWidget {
     this.size = 40,
     this.background,
     this.borderColor,
+    this.semanticLabel,
+    this.toggled,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: background ?? AppColors.ink,
-          shape: BoxShape.circle,
-          border: borderColor != null ? Border.all(color: borderColor!) : null,
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      toggled: toggled,
+      child: TapArea(
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: background ?? AppColors.ink,
+              shape: BoxShape.circle,
+              border: borderColor != null ? Border.all(color: borderColor!) : null,
+            ),
+            alignment: Alignment.center,
+            child: child,
+          ),
         ),
-        alignment: Alignment.center,
-        child: child,
       ),
     );
   }
 }
 
 /// Dashed-border "+" tile used as the trailing cell in a grid (or list) to
-/// add a new item — a garment, a layer, a collection...
+/// add a new item — a garment, a type...
 class AddTile extends StatelessWidget {
   final VoidCallback onTap;
   final String label;
@@ -409,7 +407,10 @@ class SearchField extends StatefulWidget {
   final ValueChanged<String> onChanged;
   final Color? fillColor;
 
-  const SearchField({super.key, required this.onChanged, this.fillColor});
+  /// Defaults to "search clothes".
+  final String? hint;
+
+  const SearchField({super.key, required this.onChanged, this.fillColor, this.hint});
 
   @override
   State<SearchField> createState() => _SearchFieldState();
@@ -441,12 +442,13 @@ class _SearchFieldState extends State<SearchField> {
       textInputAction: TextInputAction.search,
       style: AppText.sans(size: 14, color: AppColors.ink),
       decoration: InputDecoration(
-        hintText: AppLocalizations.of(context)!.searchHint,
+        hintText: widget.hint ?? AppLocalizations.of(context)!.searchHint,
         hintStyle: AppText.sans(size: 14, color: AppColors.mutedTag),
         prefixIcon: Icon(Icons.search, size: 19, color: AppColors.mutedSoft),
         suffixIcon: _controller.text.isEmpty
             ? null
             : IconButton(
+                tooltip: MaterialLocalizations.of(context).clearButtonTooltip,
                 icon: Icon(Icons.close, size: 17, color: AppColors.mutedSoft),
                 onPressed: () {
                   _controller.clear();
@@ -464,33 +466,8 @@ class _SearchFieldState extends State<SearchField> {
   }
 }
 
-/// Section header used above wardrobe grids and collection lists.
-class SectionHeader extends StatelessWidget {
-  final String title;
-  final String? trailing;
-
-  const SectionHeader({super.key, required this.title, this.trailing});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 9),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: AppText.sans(size: 13, color: AppColors.ink)),
-          if (trailing != null)
-            Text(trailing!, style: AppText.mono(size: 9, letterSpacing: 1, color: AppColors.mutedSoft)),
-        ],
-      ),
-    );
-  }
-}
-
 /// Shared "are you sure" dialog for destructive actions (deleting a
-/// collection, tag, item, outfit...). Returns true only if the user
+/// type, item, outfit...). Returns true only if the user
 /// confirmed.
 Future<bool> confirmDialog(
   BuildContext context, {
@@ -516,13 +493,34 @@ Future<bool> confirmDialog(
           onPressed: () => Navigator.of(dialogContext).pop(true),
           child: Text(
             confirmLabel,
-            style: AppText.sans(size: 13, weight: FontWeight.w500, color: AppColors.accent),
+            style: AppText.sans(size: 13, weight: FontWeight.w500, color: AppColors.accentText),
           ),
         ),
       ],
     ),
   );
   return confirmed == true;
+}
+
+/// A message with a single "OK" — for telling why something can't be done.
+Future<void> infoDialog(BuildContext context, {required String title, required String message}) {
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      backgroundColor: AppColors.surface,
+      title: Text(title, style: AppText.sans(size: 16, color: AppColors.ink)),
+      content: Text(message, style: AppText.sans(size: 13, color: AppColors.label, height: 1.4)),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(),
+          child: Text(
+            AppLocalizations.of(dialogContext)!.ok,
+            style: AppText.sans(size: 13, weight: FontWeight.w500, color: AppColors.accentText),
+          ),
+        ),
+      ],
+    ),
+  );
 }
 
 /// Shared text-entry dialog (used for both renaming and creating) — a
@@ -534,11 +532,17 @@ Future<String?> promptTextDialog(
   required String initialValue,
   String? hintText,
   required String confirmLabel,
+  bool Function(String name)? isTaken,
 }) {
   return showDialog<String>(
     context: context,
-    builder: (dialogContext) =>
-        _TextPromptDialog(title: title, initialValue: initialValue, hintText: hintText, confirmLabel: confirmLabel),
+    builder: (dialogContext) => _TextPromptDialog(
+      title: title,
+      initialValue: initialValue,
+      hintText: hintText,
+      confirmLabel: confirmLabel,
+      isTaken: isTaken,
+    ),
   );
 }
 
@@ -547,7 +551,18 @@ class _TextPromptDialog extends StatefulWidget {
   final String initialValue;
   final String? hintText;
   final String confirmLabel;
-  const _TextPromptDialog({required this.title, required this.initialValue, this.hintText, required this.confirmLabel});
+
+  /// Says a name is already used — shown as an error, and it can't be
+  /// confirmed (neither can a blank one).
+  final bool Function(String name)? isTaken;
+
+  const _TextPromptDialog({
+    required this.title,
+    required this.initialValue,
+    this.hintText,
+    required this.confirmLabel,
+    this.isTaken,
+  });
 
   @override
   State<_TextPromptDialog> createState() => _TextPromptDialogState();
@@ -564,16 +579,24 @@ class _TextPromptDialogState extends State<_TextPromptDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final name = _controller.text.trim();
+    final taken = name.isNotEmpty && (widget.isTaken?.call(name) ?? false);
+    final canConfirm = name.isNotEmpty && !taken;
     return AlertDialog(
       backgroundColor: AppColors.surface,
       title: Text(widget.title, style: AppText.sans(size: 16, color: AppColors.ink)),
       content: TextField(
         controller: _controller,
         autofocus: true,
+        onChanged: (_) => setState(() {}),
+        onSubmitted: (_) {
+          if (canConfirm) Navigator.of(context).pop(_controller.text);
+        },
         style: AppText.sans(size: 14, color: AppColors.ink),
         decoration: InputDecoration(
           hintText: widget.hintText,
           hintStyle: AppText.sans(size: 14, color: AppColors.mutedTag),
+          errorText: taken ? AppLocalizations.of(context)!.nameTaken : null,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         ),
@@ -584,10 +607,14 @@ class _TextPromptDialogState extends State<_TextPromptDialog> {
           child: Text(AppLocalizations.of(context)!.cancel, style: AppText.sans(size: 13, color: AppColors.muted)),
         ),
         TextButton(
-          onPressed: () => Navigator.of(context).pop(_controller.text),
+          onPressed: canConfirm ? () => Navigator.of(context).pop(_controller.text) : null,
           child: Text(
             widget.confirmLabel,
-            style: AppText.sans(size: 13, weight: FontWeight.w500, color: AppColors.accent),
+            style: AppText.sans(
+              size: 13,
+              weight: FontWeight.w500,
+              color: canConfirm ? AppColors.accentText : AppColors.mutedSoft,
+            ),
           ),
         ),
       ],
@@ -595,10 +622,9 @@ class _TextPromptDialogState extends State<_TextPromptDialog> {
   }
 }
 
-/// A compact collage of an outfit's item photos, so it reads at a glance —
-/// one big tile for a single item, a big-plus-stacked split for 2-3, and a
-/// full 2x2 grid for 4. Used both for an outfit's own card and as a
-/// collection's cover preview (its most recent outfit).
+/// A compact collage of item photos, so a group reads at a glance — one
+/// big tile for a single item, a big-plus-stacked split for 2-3, and a full
+/// 2x2 grid for 4. Used for the type folders in the wardrobe.
 class OutfitCollage extends StatelessWidget {
   final List<ClothingItem> items;
   const OutfitCollage({super.key, required this.items});
@@ -653,9 +679,160 @@ class OutfitCollage extends StatelessWidget {
   }
 }
 
-/// How long to hold a garment photo before it opens full screen — shorter
-/// than the system long-press (500 ms) so it feels like a quick peek.
-const photoHoldDuration = Duration(milliseconds: 300);
+/// The app's haptics, by what happened rather than by strength, so the
+/// same kind of moment always feels the same.
+///
+/// Nothing for getting around — opening a sheet, a page or a dialog, going
+/// back, cancelling — nor for typing.
+abstract final class Haptics {
+  /// Something is taken in hand: a card on the canvas held, dragged or
+  /// pinched; a row in settings picked up to reorder.
+  static void pickUp() => HapticFeedback.mediumImpact();
+
+  /// A choice or toggle changes (chips, tabs, the wardrobe, pin, favorite,
+  /// the item on a card, colors), or a threshold is crossed (over the bin,
+  /// a size limit, on to the next item).
+  static void tick() => HapticFeedback.selectionClick();
+
+  /// Something new or changed is kept: an outfit saved or put on the
+  /// canvas, clothes added or moved, a diary entry, a wardrobe, kind or
+  /// type created or renamed, colors detected, a backup imported.
+  static void done() => HapticFeedback.lightImpact();
+
+  /// Something was deleted.
+  static void remove() => HapticFeedback.mediumImpact();
+}
+
+/// A few options side by side in a pill, the selected one filled (the
+/// diary's Calendar / Stats, the look in onboarding). [expand] stretches
+/// it to the width it's given, the options sharing it equally.
+class Segmented extends StatelessWidget {
+  final List<String> labels;
+  final int selected;
+  final ValueChanged<int> onSelect;
+  final double height;
+  final bool expand;
+
+  const Segmented({
+    super.key,
+    required this.labels,
+    required this.selected,
+    required this.onSelect,
+    this.height = 38,
+    this.expand = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Widget option(int i, String label) => Semantics(
+      button: true,
+      selected: i == selected,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          if (i != selected) Haptics.tick();
+          onSelect(i);
+        },
+        child: AnimatedContainer(
+          duration: motion(const Duration(milliseconds: 150)),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: i == selected ? AppColors.ink : null,
+            borderRadius: BorderRadius.circular((height - 4) / 2 - 2),
+          ),
+          child: Text(
+            label.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppText.mono(
+              size: 9.5,
+              letterSpacing: 1,
+              color: i == selected ? AppColors.background : AppColors.muted,
+            ),
+          ),
+        ),
+      ),
+    );
+    return Container(
+      height: height,
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(height / 2),
+        border: Border.all(color: AppColors.cardBorder),
+      ),
+      child: Row(
+        mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+        children: [
+          for (final (i, label) in labels.indexed) expand ? Expanded(child: option(i, label)) : option(i, label),
+        ],
+      ),
+    );
+  }
+}
+
+/// Picks up a tile of a [ReorderableGridView] after a short hold — 250 ms
+/// rather than the system's 500, which felt sluggish — so it can be dragged
+/// to another place. Moving the finger sooner scrolls instead, and letting
+/// go sooner is a tap.
+class GridDragStart extends ReorderableGridDragStartListener {
+  const GridDragStart({super.key, required super.child, required super.index, super.enabled});
+
+  @override
+  MultiDragGestureRecognizer createRecognizer() =>
+      DelayedMultiDragGestureRecognizer(debugOwner: this, delay: const Duration(milliseconds: 250));
+}
+
+/// A grid tile while it's being dragged: lifted onto a shadow, its own
+/// rounded corners ([radius]) kept.
+ReorderItemProxyDecorator liftedTile(double radius) => (child, index, animation) => AnimatedBuilder(
+  animation: animation,
+  builder: (context, child) => Transform.scale(
+    scale: 1 + 0.04 * animation.value,
+    child: Material(
+      color: Colors.transparent,
+      elevation: 8 * animation.value,
+      shadowColor: const Color(0x55000000),
+      borderRadius: BorderRadius.circular(radius),
+      child: child,
+    ),
+  ),
+  child: child,
+);
+
+/// Whether the system asks for less motion (iOS Reduce Motion, Android
+/// Remove animations): then nothing slides across the screen or zooms by
+/// itself — it fades or just appears. Read live, at the moment of the
+/// animation, so a change in settings applies straight away.
+bool get reduceMotion {
+  final f = WidgetsBinding.instance.platformDispatcher.accessibilityFeatures;
+  return f.reduceMotion || f.disableAnimations;
+}
+
+/// [duration] for an animation within a screen — or none, so things just
+/// change, when the system asks for less motion. (Flutter's own animations
+/// only heed Android's setting; iOS's comes as [reduceMotion].)
+Duration motion(Duration duration) => reduceMotion ? Duration.zero : duration;
+
+/// Moving between screens: the platform's own transition — unless the
+/// system asks for less motion; then a screen fades in and out instead of
+/// sliding (on iOS the one beneath slides along at another speed, a
+/// parallax Apple asks to avoid).
+class AppPageTransitions extends PageTransitionsBuilder {
+  const AppPageTransitions();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (reduceMotion) return FadeTransition(opacity: animation, child: child);
+    return const PageTransitionsTheme().buildTransitions(route, context, animation, secondaryAnimation, child);
+  }
+}
 
 /// Opens [path] full screen over everything (sheets included): pinch or
 /// double-tap to zoom, × / back / a downward flick to close.
@@ -687,7 +864,8 @@ class _PhotoViewerState extends State<_PhotoViewer> with SingleTickerProviderSta
   late final AnimationController _zoomAnim = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 220),
-  )..addListener(() => _transform.value = _zoomTween!.evaluate(CurvedAnimation(parent: _zoomAnim, curve: Curves.easeOut)));
+  )..addListener(() => _transform.value = _zoomTween!.evaluate(_zoomCurve));
+  late final _zoomCurve = CurvedAnimation(parent: _zoomAnim, curve: Curves.easeOut);
   Matrix4Tween? _zoomTween;
   Offset? _doubleTapAt;
 
@@ -698,14 +876,45 @@ class _PhotoViewerState extends State<_PhotoViewer> with SingleTickerProviderSta
 
   bool get _zoomed => _transform.value.getMaxScaleOnAxis() > 1.01;
 
+  /// The photo's own size, for telling a tap on it from one beside it.
+  Size? _imageSize;
+  late final ImageStream _imageStream = FileImage(File(widget.path)).resolve(ImageConfiguration.empty);
+  late final _imageListener = ImageStreamListener((info, _) {
+    final size = Size(info.image.width.toDouble(), info.image.height.toDouble());
+    info.dispose();
+    if (mounted) setState(() => _imageSize = size);
+  });
+
+  @override
+  void initState() {
+    super.initState();
+    _imageStream.addListener(_imageListener);
+  }
+
+  /// A tap beside the photo (in the black around it, as zoomed now) closes
+  /// the viewer, like the ×.
+  void _onTapUp(TapUpDetails d, Size box) {
+    final size = _imageSize;
+    if (size == null) return;
+    final fitted = applyBoxFit(BoxFit.contain, size, box).destination;
+    final photo = Alignment.center.inscribe(fitted, Offset.zero & box);
+    if (!photo.contains(_transform.toScene(d.localPosition))) Navigator.of(context).pop();
+  }
+
   @override
   void dispose() {
+    _imageStream.removeListener(_imageListener);
+    _zoomCurve.dispose();
     _zoomAnim.dispose();
     _transform.dispose();
     super.dispose();
   }
 
   void _animateTo(Matrix4 target) {
+    if (reduceMotion) {
+      _transform.value = target;
+      return;
+    }
     _zoomTween = Matrix4Tween(begin: _transform.value.clone(), end: target);
     _zoomAnim.forward(from: 0);
   }
@@ -754,18 +963,21 @@ class _PhotoViewerState extends State<_PhotoViewer> with SingleTickerProviderSta
                     Navigator.of(context).pop();
                   }
                 },
-                child: GestureDetector(
-                  onDoubleTapDown: (d) => _doubleTapAt = d.localPosition,
-                  onDoubleTap: _onDoubleTap,
-                  child: InteractiveViewer(
-                    transformationController: _transform,
-                    minScale: 1,
-                    maxScale: 5,
-                    child: SizedBox.expand(
-                      child: Image.file(
-                        File(widget.path),
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                child: LayoutBuilder(
+                  builder: (context, constraints) => GestureDetector(
+                    onTapUp: (d) => _onTapUp(d, constraints.biggest),
+                    onDoubleTapDown: (d) => _doubleTapAt = d.localPosition,
+                    onDoubleTap: _onDoubleTap,
+                    child: InteractiveViewer(
+                      transformationController: _transform,
+                      minScale: 1,
+                      maxScale: 5,
+                      child: SizedBox.expand(
+                        child: Image.file(
+                          File(widget.path),
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                        ),
                       ),
                     ),
                   ),
@@ -831,4 +1043,236 @@ class ContentWidth extends StatelessWidget {
 int gridColumns(BuildContext context, int phone) {
   final width = math.min(MediaQuery.sizeOf(context).width, kMaxContentWidth);
   return width >= 600 ? phone + 1 : phone;
+}
+
+/// A small rounded bar split into the garment's colors (1–3 equal parts) —
+/// the item detail's color summary. [height] sets the size; the width
+/// follows. Empty [colors] show as a neutral placeholder.
+class ColorBar extends StatelessWidget {
+  final List<int> colors;
+  final double height;
+  const ColorBar({super.key, required this.colors, this.height = 16});
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(height * 0.3);
+    return Container(
+      width: height * 2.6,
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: radius,
+        border: Border.all(color: AppColors.cardBorder),
+        color: AppColors.cardFill,
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        // stretch: a ColoredBox without a child takes the smallest height
+        // it's allowed — 0 in a Row that only loosely bounds the height.
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final c in colors) Expanded(child: ColoredBox(color: Color(c))),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+/// One tab of [TypeTabs]: [key] is a type id, or `null` for "all".
+typedef TypeTab = ({String? key, String label, int count});
+
+/// The type tabs for [items] (all of [kind]): "all", then every type that
+/// has any of them. Empty when that would only repeat "all" — every item
+/// of the same type.
+List<TypeTab> typeTabsFor(ClothingKind? kind, List<ClothingItem> items, AppLocalizations l10n) {
+  final tabs = <TypeTab>[
+    for (final t in kind?.types ?? const <ClothingType>[])
+      if (items.where((i) => i.typeId == t.id).length case final n when n > 0) (key: t.id, label: t.name, count: n),
+  ];
+  if (tabs.length < 2) return const [];
+  return [(key: null, label: l10n.all, count: items.length), ...tabs];
+}
+
+/// Whether [item] belongs under the [TypeTab] with [key].
+bool inTypeTab(ClothingItem item, String? key) => key == null || item.typeId == key;
+
+/// A row of underlined tabs ("Vše 5  Košile 2  Mikiny 3"), scrolling
+/// sideways when they don't fit.
+class TypeTabs extends StatelessWidget {
+  final List<TypeTab> tabs;
+  final String? selected;
+  final ValueChanged<String?> onSelect;
+  final EdgeInsetsGeometry? padding;
+
+  const TypeTabs({super.key, required this.tabs, required this.selected, required this.onSelect, this.padding});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: padding,
+      child: Row(
+        children: [
+          for (final t in tabs)
+            Semantics(
+              button: true,
+              selected: t.key == selected,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  if (t.key != selected) Haptics.tick();
+                  onSelect(t.key);
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 18),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: t.key == selected ? AppColors.accent : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        t.label,
+                        style: AppText.sans(
+                          size: 13.5,
+                          weight: t.key == selected ? FontWeight.w500 : FontWeight.w400,
+                          color: t.key == selected ? AppColors.ink : AppColors.mutedTag,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text('${t.count}', style: AppText.mono(size: 10, color: AppColors.mutedSoft)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A saved outfit as it was laid out on the canvas, in miniature: the
+/// cards placed as on a canvas of the reference size ([CanvasGeometry]),
+/// cropped to the area they cover and scaled to fit. Photos are decoded for
+/// the small size they're shown at, not the virtual one.
+class OutfitPreview extends StatelessWidget {
+  final List<SavedSlot> slots;
+  final ClothingItem? Function(String id) itemById;
+
+  /// What to call an item — shown on a card that has no photo.
+  final String Function(ClothingItem item) nameOf;
+
+  const OutfitPreview({super.key, required this.slots, required this.itemById, required this.nameOf});
+
+  @override
+  Widget build(BuildContext context) {
+    const w = CanvasGeometry.refWidth, h = CanvasGeometry.refHeight;
+    final cards = [
+      for (final s in slots)
+        (
+          slot: s,
+          rect: () {
+            final r = CanvasGeometry.cardRect(width: w, height: h, unit: 1, x: s.x, y: s.y, scale: s.scale);
+            return Rect.fromLTWH(r.left, r.top, r.width, r.height);
+          }(),
+        ),
+    ];
+    if (cards.isEmpty) return const SizedBox.expand();
+    // Room around the cards for their tilt and shadow.
+    final bounds = cards.map((c) => c.rect).reduce((a, b) => a.expandToInclude(b)).inflate(18);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final scale = math.min(constraints.maxWidth / bounds.width, constraints.maxHeight / bounds.height);
+        final media = MediaQuery.of(context);
+        // Transparent: the card it sits in draws the background (and its
+        // border, which a fill here would paint over).
+        return ClipRect(
+          child: Center(
+            child: FittedBox(
+              child: MediaQuery(
+                data: media.copyWith(devicePixelRatio: media.devicePixelRatio * scale),
+                child: SizedBox(
+                  width: bounds.width,
+                  height: bounds.height,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      for (final c in cards)
+                        Positioned.fromRect(
+                          rect: c.rect.shift(-bounds.topLeft),
+                          child: GarmentCard(
+                            width: c.rect.width,
+                            height: c.rect.height,
+                            rotationDeg: CanvasGeometry.tilt(c.slot.id),
+                            imagePath: c.slot.itemId == null ? null : itemById(c.slot.itemId!)?.imagePath,
+                            // Without a photo, its name says what it is.
+                            name: switch (c.slot.itemId == null ? null : itemById(c.slot.itemId!)) {
+                              final it? when it.imagePath == null => nameOf(it),
+                              _ => null,
+                            },
+                            shadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 2))],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Makes [child] easier to hit: taps up to [minSize] wide/tall (centered on
+/// it) count as on it, without changing how it looks or takes up space.
+/// For small controls — chips, pins, icons — where the drawn size is well
+/// under the ~44 pt a finger needs.
+///
+/// The extra area only works inside whatever bounds the parent hit-tests
+/// (e.g. not past the edge of a Stack it overhangs).
+class TapArea extends SingleChildRenderObjectWidget {
+  final double minSize;
+  const TapArea({super.key, this.minSize = 44, required super.child});
+
+  @override
+  RenderTapArea createRenderObject(BuildContext context) => RenderTapArea(minSize);
+
+  @override
+  void updateRenderObject(BuildContext context, RenderTapArea renderObject) => renderObject.minSize = minSize;
+}
+
+/// The render object behind [TapArea].
+class RenderTapArea extends RenderProxyBox {
+  RenderTapArea(this.minSize);
+
+  double minSize;
+
+  @override
+  bool hitTest(BoxHitTestResult result, {required Offset position}) {
+    final dx = math.max(0.0, (minSize - size.width) / 2);
+    final dy = math.max(0.0, (minSize - size.height) / 2);
+    if (!Rect.fromLTRB(-dx, -dy, size.width + dx, size.height + dy).contains(position)) return false;
+    // A tap off the child is handed to it at its center — inside it even if
+    // it's round — so its gesture detectors take it; the pointer events
+    // still carry the real position.
+    final inside = size.contains(position) ? position : size.center(Offset.zero);
+    if (hitTestChildren(result, position: inside)) {
+      result.add(BoxHitTestEntry(this, position));
+      return true;
+    }
+    return false;
+  }
 }
