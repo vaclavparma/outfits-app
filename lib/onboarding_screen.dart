@@ -501,7 +501,7 @@ enum _Example {
   halfZip,
   wideTrousers;
 
-  String get asset => 'assets/examples/$name.png';
+  String get asset => 'assets/examples/$name.jpg';
 }
 
 /// [example] on a white card, as a photo of a garment would be.
