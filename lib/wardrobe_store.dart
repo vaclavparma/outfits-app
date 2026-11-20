@@ -15,6 +15,7 @@ import 'color_detect.dart';
 import 'color_names.dart';
 import 'l10n/app_localizations.dart';
 import 'models.dart';
+import 'outfit_harmony.dart';
 import 'review_prompt.dart';
 
 /// Holds the entire app state: the wardrobes and their clothing, the kinds
@@ -1107,32 +1108,82 @@ class WardrobeStore extends ChangeNotifier {
     return true;
   }
 
-  /// Randomizes every card — except any whose item is [ClothingItem.pinned],
-  /// which is left exactly as it is. No garment ends up on two cards.
+  /// Puts a new outfit on the cards — except any whose item is
+  /// [ClothingItem.pinned], which is left exactly as it is. No garment ends
+  /// up on two cards.
+  ///
+  /// Not just any random one: of a few dozen random outfits, the ones whose
+  /// colors go together ([colorHarmony]) and that aren't what was just worn
+  /// are the likeliest to come up — so it still varies.
   void shuffle() {
     _shuffleSelection();
     notifyListeners();
   }
 
+  static const _shuffleCandidates = 40;
+
   void _shuffleSelection() {
     final rng = Random();
     final slots = visibleSlots;
-    final used = <String>{};
-    final keep = <String>{};
+    final pinned = <String, String>{};
     for (final s in slots) {
       final it = itemInSlot(s.id);
-      if (it != null && it.pinned && used.add(it.id)) keep.add(s.id);
+      if (it != null && it.pinned && !pinned.containsValue(it.id)) pinned[s.id] = it.id;
+    }
+    final current = {for (final s in slots) ?itemInSlot(s.id)?.id};
+    final stats = wearStats;
+    final now = DateTime.now();
+    final recently = DateTime(now.year, now.month, now.day - 2);
+
+    // A random outfit: an item per card, none twice.
+    Map<String, String> randomOutfit() {
+      final pick = {...pinned};
+      final used = {...pinned.values};
+      for (final s in slots) {
+        if (pick.containsKey(s.id)) continue;
+        final pool = itemsOfKind(s.kindId).where((i) => !used.contains(i.id)).toList();
+        if (pool.isEmpty) continue;
+        final it = pool[rng.nextInt(pool.length)];
+        pick[s.id] = it.id;
+        used.add(it.id);
+      }
+      return pick;
+    }
+
+    double score(Map<String, String> pick) {
+      final picked = [for (final id in pick.values) ?itemById(id)];
+      var score = colorHarmony([for (final it in picked) it.colors]);
+      // Clothes worn in the last couple of days count against it a little,
+      // and the outfit already on the canvas a lot.
+      for (final it in picked) {
+        final last = stats[it.id]?.last;
+        if (last != null && !last.isBefore(recently)) score -= 0.1;
+      }
+      if (pick.values.toSet().containsAll(current) && current.length == pick.length) score -= 1;
+      return score;
+    }
+
+    // Drawn by score, steeply: the best ones come up most, but every one
+    // that goes well takes turns, and one that clashes hardly ever does.
+    final candidates = [
+      for (var i = 0; i < _shuffleCandidates; i++)
+        if (randomOutfit() case final pick) (pick: pick, weight: pow(max(score(pick), 0), 4)),
+    ];
+    final total = candidates.fold<num>(0, (sum, c) => sum + c.weight);
+    var draw = rng.nextDouble() * total;
+    var chosen = candidates.first.pick;
+    for (final c in candidates) {
+      if (c.weight > 0) chosen = c.pick;
+      draw -= c.weight;
+      if (draw < 0) break;
     }
     for (final s in slots) {
-      if (keep.contains(s.id)) continue;
-      final pool = itemsOfKind(s.kindId).where((i) => !used.contains(i.id)).toList();
-      if (pool.isEmpty) {
+      final id = chosen[s.id];
+      if (id == null) {
         _worn.remove(s.id);
-        continue;
+      } else {
+        _worn[s.id] = id;
       }
-      final picked = pool[rng.nextInt(pool.length)];
-      used.add(picked.id);
-      _worn[s.id] = picked.id;
     }
   }
 
