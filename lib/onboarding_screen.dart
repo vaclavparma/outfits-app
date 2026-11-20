@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'garment_art.dart';
 import 'l10n/app_localizations.dart';
 import 'settings_screen.dart';
 import 'theme.dart';
@@ -136,9 +135,8 @@ class _Welcome extends StatelessWidget {
                         Positioned(
                           left: 10 * u,
                           top: 10 * u,
-                          child: GarmentArtCard(
-                            art: GarmentArt.shirt,
-                            color: const Color(0xFF7D8F64),
+                          child: _ExampleCard(
+                            _Example.coat,
                             width: 150 * u,
                             height: 175 * u,
                             rotationDeg: -5,
@@ -147,9 +145,8 @@ class _Welcome extends StatelessWidget {
                         Positioned(
                           right: 6 * u,
                           top: 36 * u,
-                          child: GarmentArtCard(
-                            art: GarmentArt.stripedTee,
-                            color: const Color(0xFFE6DFD0),
+                          child: _ExampleCard(
+                            _Example.tee,
                             width: 165 * u,
                             height: 180 * u,
                             rotationDeg: 4,
@@ -158,9 +155,8 @@ class _Welcome extends StatelessWidget {
                         Positioned(
                           left: 86 * u,
                           top: 172 * u,
-                          child: GarmentArtCard(
-                            art: GarmentArt.trousers,
-                            color: const Color(0xFF6E3B2E),
+                          child: _ExampleCard(
+                            _Example.trousers,
                             width: 150 * u,
                             height: 170 * u,
                             rotationDeg: -2,
@@ -489,10 +485,59 @@ class _PrimaryButton extends StatelessWidget {
 // Previews: what each step's choices look like, kept up to date as they
 // change. Decoration only — screen readers skip them.
 
-const _shirtColor = Color(0xFF7D8F64);
-const _creamColor = Color(0xFFE6DFD0);
-const _trouserColor = Color(0xFF6E3B2E);
-const _navyColor = Color(0xFF2E3B58);
+/// The garments the previews (and the welcome) show: drawings in the
+/// style of the app's own photos, in assets/examples.
+enum _Example {
+  // The welcome.
+  coat,
+  tee,
+  trousers,
+  // The phone in "Look".
+  hoodie,
+  fittedTee,
+  jeans,
+  // The wardrobe's rail.
+  cardigan,
+  halfZip,
+  wideTrousers;
+
+  String get asset => 'assets/examples/$name.png';
+}
+
+/// [example] on a white card, as a photo of a garment would be.
+class _ExampleCard extends StatelessWidget {
+  final _Example example;
+  final double width;
+  final double height;
+  final double rotationDeg;
+  const _ExampleCard(this.example, {required this.width, required this.height, this.rotationDeg = 0});
+
+  @override
+  Widget build(BuildContext context) {
+    // Corners and shadow in proportion: the welcome's cards are ~150 wide,
+    // the ones in the phone a third of that.
+    final k = width / 150;
+    return Transform.rotate(
+      angle: rotationDeg * math.pi / 180,
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22 * k),
+          boxShadow: [BoxShadow(color: const Color(0x40000000), blurRadius: 24 * k, offset: Offset(0, 10 * k))],
+        ),
+        padding: EdgeInsets.all(width * 0.12),
+        // Decoded no bigger than shown.
+        child: Image.asset(
+          example.asset,
+          cacheWidth: (width * MediaQuery.devicePixelRatioOf(context)).round(),
+          fit: BoxFit.contain,
+        ),
+      ),
+    );
+  }
+}
 
 /// The look: a big live preview of the app as it'll look — half light,
 /// half dark when it follows the system — and System / Light / Dark under
@@ -602,9 +647,9 @@ class _PhoneScreen extends StatelessWidget {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                Positioned(left: 4, top: 10, child: GarmentArtCard(art: GarmentArt.shirt, color: _shirtColor, width: 48, height: 56, rotationDeg: -4)),
-                Positioned(right: 4, top: 46, child: GarmentArtCard(art: GarmentArt.trousers, color: _trouserColor, width: 46, height: 54, rotationDeg: 3)),
-                Positioned(left: 14, bottom: 4, child: GarmentArtCard(art: GarmentArt.sneaker, color: _creamColor, width: 44, height: 40, rotationDeg: -2)),
+                Positioned(left: 4, top: 10, child: _ExampleCard(_Example.hoodie, width: 48, height: 56, rotationDeg: -4)),
+                Positioned(right: 4, top: 46, child: _ExampleCard(_Example.jeans, width: 46, height: 54, rotationDeg: 3)),
+                Positioned(left: 14, bottom: 4, child: _ExampleCard(_Example.fittedTee, width: 44, height: 44, rotationDeg: -2)),
               ],
             ),
           ),
@@ -662,16 +707,16 @@ class _WardrobePreview extends StatelessWidget {
             right: 10,
             child: Container(height: 6, decoration: BoxDecoration(color: AppColors.muted, borderRadius: BorderRadius.circular(3))),
           ),
-          for (final (x, art, color, deg) in const [
-            (24.0, GarmentArt.shirt, _shirtColor, -3.0),
-            (102.0, GarmentArt.dress, _navyColor, 2.0),
-            (178.0, GarmentArt.stripedTee, _creamColor, -2.0),
+          for (final (x, example, deg) in const [
+            (24.0, _Example.cardigan, -3.0),
+            (102.0, _Example.wideTrousers, 2.0),
+            (178.0, _Example.halfZip, -2.0),
           ]) ...[
             Positioned(left: x + 37, top: 8, child: Container(width: 4, height: 22, color: AppColors.muted)),
             Positioned(
               left: x,
               top: 28,
-              child: GarmentArtCard(art: art, color: color, width: 78, height: 96, rotationDeg: deg),
+              child: _ExampleCard(example, width: 78, height: 96, rotationDeg: deg),
             ),
           ],
           Positioned(

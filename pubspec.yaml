@@ -96,6 +96,8 @@ flutter:
     # In-app copy (onboarding, about); the full-size app_icon.png is only
     # the source for the launcher icons and splash screen generators.
     - assets/icon/app_icon_small.png
+    # Garments shown in the onboarding.
+    - assets/examples/
 
   # Bundled locally (not fetched via google_fonts at runtime) so the app
   # works fully offline — see lib/theme.dart.
