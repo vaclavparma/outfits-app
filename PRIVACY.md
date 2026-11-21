@@ -42,4 +42,4 @@ If this policy ever changes — for example, if a future version of the app adds
 
 ## Contact
 
-Questions about this policy or the app: **vaclav@oscillator.cz**
+Questions about this policy or the app: **support@theoutfits.app**
