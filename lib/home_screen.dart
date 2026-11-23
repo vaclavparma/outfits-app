@@ -10,6 +10,7 @@ import 'models.dart';
 import 'outfits_tab.dart';
 import 'outfit_tab.dart';
 import 'settings_screen.dart';
+import 'share_outfit.dart';
 import 'sheets.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
@@ -302,25 +303,20 @@ class _TabRoot extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Semantics(
-                  button: true,
-                  label: AppLocalizations.of(context)!.settingsTitle,
-                  // 40 × 40 to tap; pulled out by the extra padding so the
-                  // icon stays where it was.
-                  child: Transform.translate(
-                    offset: const Offset(6, 0),
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => openSettingsScreen(context),
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Icon(
-                          Icons.settings_outlined,
-                          size: 20,
-                          color: AppColors.mutedSoft,
-                        ),
+                // 40 × 40 to tap; pulled out by the extra padding so the
+                // icons stay where they were.
+                Transform.translate(
+                  offset: const Offset(6, 0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (kind == WardrobeTabKind.outfit) const _ShareCanvasButton(),
+                      _HeaderIcon(
+                        icon: Icons.settings_outlined,
+                        label: AppLocalizations.of(context)!.settingsTitle,
+                        onTap: () => openSettingsScreen(context),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ],
@@ -342,6 +338,48 @@ class _TabRoot extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// A plain icon in the header, with a 40 × 40 target.
+class _HeaderIcon extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _HeaderIcon({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Icon(icon, size: 20, color: AppColors.mutedSoft),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shares what's on the canvas as an image — only there while some
+/// clothes are (empty cards alone make no outfit).
+class _ShareCanvasButton extends StatelessWidget {
+  const _ShareCanvasButton();
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<WardrobeStore>();
+    if (store.currentOutfitItems.isEmpty) return const SizedBox.shrink();
+    return _HeaderIcon(
+      icon: shareIcon(context),
+      label: AppLocalizations.of(context)!.shareOutfit,
+      onTap: () => openShareOutfitSheet(context, store.canvasSnapshot()),
     );
   }
 }

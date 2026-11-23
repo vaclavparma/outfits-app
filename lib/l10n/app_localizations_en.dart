@@ -51,6 +51,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saveOutfitButton => 'Save outfit';
 
   @override
+  String get shareOutfit => 'Share outfit';
+
+  @override
+  String get share => 'Share';
+
+  @override
+  String get shareFailed => 'The image couldn’t be created.';
+
+  @override
   String get categoryHorni => 'Top';
 
   @override

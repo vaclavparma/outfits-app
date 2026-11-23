@@ -17,6 +17,9 @@
 
   "shuffleButton": "Zamíchat",
   "saveOutfitButton": "Uložit outfit",
+  "shareOutfit": "Sdílet outfit",
+  "share": "Sdílet",
+  "shareFailed": "Obrázek se nepodařilo vytvořit.",
 
   "categoryHorni": "Horní díl",
   "categorySaty": "Šaty",

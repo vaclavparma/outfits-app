@@ -89,6 +89,11 @@ class GarmentCard extends StatelessWidget {
   final String? name;
   final String caption;
   final String? imagePath;
+
+  /// Shown in place of the photo at [imagePath], when the caller has it
+  /// ready already (the image made for sharing an outfit — see
+  /// share_outfit.dart).
+  final Widget? photo;
   final VoidCallback? onTap;
   final void Function(int direction)? onSwipe;
 
@@ -109,6 +114,7 @@ class GarmentCard extends StatelessWidget {
     this.name,
     this.caption = '',
     this.imagePath,
+    this.photo,
     this.onTap,
     this.onSwipe,
     this.borderColor,
@@ -119,7 +125,7 @@ class GarmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = imagePath != null;
+    final hasImage = imagePath != null || photo != null;
     Widget card = Container(
       width: width,
       height: height,
@@ -137,7 +143,12 @@ class GarmentCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          if (hasImage) Positioned.fill(child: GarmentImage(imagePath!)) else const DiagonalStripes(),
+          if (photo != null)
+            Positioned.fill(child: photo!)
+          else if (imagePath != null)
+            Positioned.fill(child: GarmentImage(imagePath!))
+          else
+            const DiagonalStripes(),
           // Only darken the bottom of the photo when there's actually a
           // caption sitting on top of it — otherwise this was just dimming
           // the photo itself for no reason (e.g. every card on the outfit
@@ -1172,7 +1183,12 @@ class OutfitPreview extends StatelessWidget {
   /// What to call an item — shown on a card that has no photo.
   final String Function(ClothingItem item) nameOf;
 
-  const OutfitPreview({super.key, required this.slots, required this.itemById, required this.nameOf});
+  /// Photos decoded ahead by the caller, by item: given, the cards show
+  /// these (or none, for an item missing here) rather than loading their
+  /// own — see [GarmentCard.photo].
+  final Widget? Function(ClothingItem item)? photoOf;
+
+  const OutfitPreview({super.key, required this.slots, required this.itemById, required this.nameOf, this.photoOf});
 
   @override
   Widget build(BuildContext context) {
@@ -1185,6 +1201,7 @@ class OutfitPreview extends StatelessWidget {
             final r = CanvasGeometry.cardRect(width: w, height: h, unit: 1, x: s.x, y: s.y, scale: s.scale);
             return Rect.fromLTWH(r.left, r.top, r.width, r.height);
           }(),
+          item: s.itemId == null ? null : itemById(s.itemId!),
         ),
     ];
     if (cards.isEmpty) return const SizedBox.expand();
@@ -1208,19 +1225,17 @@ class OutfitPreview extends StatelessWidget {
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      for (final c in cards)
+                      for (final (:slot, :rect, :item) in cards)
                         Positioned.fromRect(
-                          rect: c.rect.shift(-bounds.topLeft),
+                          rect: rect.shift(-bounds.topLeft),
                           child: GarmentCard(
-                            width: c.rect.width,
-                            height: c.rect.height,
-                            rotationDeg: CanvasGeometry.tilt(c.slot.id),
-                            imagePath: c.slot.itemId == null ? null : itemById(c.slot.itemId!)?.imagePath,
+                            width: rect.width,
+                            height: rect.height,
+                            rotationDeg: CanvasGeometry.tilt(slot.id),
+                            imagePath: photoOf == null ? item?.imagePath : null,
+                            photo: photoOf != null && item != null ? photoOf!(item) : null,
                             // Without a photo, its name says what it is.
-                            name: switch (c.slot.itemId == null ? null : itemById(c.slot.itemId!)) {
-                              final it? when it.imagePath == null => nameOf(it),
-                              _ => null,
-                            },
+                            name: item != null && item.imagePath == null ? nameOf(item) : null,
                             shadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 2))],
                           ),
                         ),

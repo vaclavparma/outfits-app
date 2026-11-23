@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 
 import 'l10n/app_localizations.dart';
 import 'models.dart';
+import 'share_outfit.dart';
 import 'theme.dart';
 import 'wardrobe_store.dart';
 import 'widgets.dart';
@@ -2156,6 +2157,17 @@ class _LogOutfitState extends State<_LogOutfit> {
   }
 }
 
+/// Shares an outfit laid out as [slots] — the canvas, or a saved outfit —
+/// as an image: a preview of it, and the button that sends it on.
+void openShareOutfitSheet(BuildContext context, List<SavedSlot> slots) {
+  _showSheet(
+    context,
+    (ctx) => AppLocalizations.of(ctx)!.shareOutfit,
+    ShareOutfitPanel(slots: slots),
+    maxHeightFactor: ShareOutfitPanel.sheetHeightFactor,
+  );
+}
+
 /// A saved outfit up close: how much it's been worn, what's in it, its
 /// layout, and wearing it today, editing it on the canvas or deleting it.
 void openOutfitDetail(BuildContext context, SavedOutfit outfit) {
@@ -2210,6 +2222,19 @@ class _OutfitPage extends StatelessWidget {
                               style: AppText.sans(size: 16, weight: FontWeight.w500, color: AppColors.ink),
                             ),
                           ),
+                        ),
+                      ),
+                    ),
+                    Semantics(
+                      button: true,
+                      label: l10n.shareOutfit,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => openShareOutfitSheet(context, outfit.slots),
+                        child: SizedBox(
+                          width: 44,
+                          height: 44,
+                          child: Icon(shareIcon(context), size: 21, color: AppColors.muted),
                         ),
                       ),
                     ),

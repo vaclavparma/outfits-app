@@ -17,6 +17,9 @@
 
   "shuffleButton": "Shuffle",
   "saveOutfitButton": "Save outfit",
+  "shareOutfit": "Share outfit",
+  "share": "Share",
+  "shareFailed": "The image couldn’t be created.",
 
   "categoryHorni": "Top",
   "categorySaty": "Dresses",

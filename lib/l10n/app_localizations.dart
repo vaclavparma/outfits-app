@@ -182,6 +182,24 @@ abstract class AppLocalizations {
   /// **'Uložit outfit'**
   String get saveOutfitButton;
 
+  /// No description provided for @shareOutfit.
+  ///
+  /// In cs, this message translates to:
+  /// **'Sdílet outfit'**
+  String get shareOutfit;
+
+  /// No description provided for @share.
+  ///
+  /// In cs, this message translates to:
+  /// **'Sdílet'**
+  String get share;
+
+  /// No description provided for @shareFailed.
+  ///
+  /// In cs, this message translates to:
+  /// **'Obrázek se nepodařilo vytvořit.'**
+  String get shareFailed;
+
   /// No description provided for @categoryHorni.
   ///
   /// In cs, this message translates to:

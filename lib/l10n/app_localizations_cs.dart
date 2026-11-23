@@ -51,6 +51,15 @@ class AppLocalizationsCs extends AppLocalizations {
   String get saveOutfitButton => 'Uložit outfit';
 
   @override
+  String get shareOutfit => 'Sdílet outfit';
+
+  @override
+  String get share => 'Sdílet';
+
+  @override
+  String get shareFailed => 'Obrázek se nepodařilo vytvořit.';
+
+  @override
   String get categoryHorni => 'Horní díl';
 
   @override

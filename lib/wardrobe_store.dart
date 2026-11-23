@@ -1321,7 +1321,7 @@ class WardrobeStore extends ChangeNotifier {
         id: _newId('o'),
         catKeys: parts.map((i) => i.cat).toList(),
         itemIds: parts.map((i) => i.id).toList(),
-        slots: _canvasSnapshot(),
+        slots: canvasSnapshot(),
       ),
     ];
     notifyListeners();
@@ -1330,8 +1330,8 @@ class WardrobeStore extends ChangeNotifier {
     return true;
   }
 
-  /// The canvas as it is now, for saving or the diary.
-  List<SavedSlot> _canvasSnapshot() => [
+  /// The canvas as it is now, for saving, the diary or sharing.
+  List<SavedSlot> canvasSnapshot() => [
     for (final s in visibleSlots)
       SavedSlot(id: s.id, kindId: s.kindId, x: s.x, y: s.y, scale: s.scale, itemId: itemInSlot(s.id)?.id),
   ];
@@ -1378,7 +1378,7 @@ class WardrobeStore extends ChangeNotifier {
   /// Writes down what's on the canvas now as worn on [day]. Returns false
   /// (and writes nothing) when the canvas shows no clothes.
   bool logCanvas(DateTime day) {
-    final slots = _canvasSnapshot();
+    final slots = canvasSnapshot();
     if (!slots.any((s) => s.itemId != null)) return false;
     _addDiaryEntry(day, slots);
     return true;

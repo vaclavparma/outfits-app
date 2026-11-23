@@ -1,2 +1,3 @@
 "NSCameraUsageDescription" = "Aplikace potřebuje přístup ke fotoaparátu pro vyfocení oblečení do šatníku.";
 "NSPhotoLibraryUsageDescription" = "Aplikace potřebuje přístup k fotkám pro výběr oblečení do šatníku.";
+"NSPhotoLibraryAddUsageDescription" = "Aplikace potřebuje přístup k fotkám, aby do nich mohla uložit obrázek sdíleného outfitu.";

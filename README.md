@@ -10,6 +10,7 @@ A local-first wardrobe app for planning outfits: photograph what you own, mix to
 - **Wardrobe** — add clothing with a camera photo or one from your gallery, sorted into kinds and types (e.g. Tops → Shirts, T-shirts), with detected colors and optional details (name, seller, size, price, note), and search across all of it.
 - **Kinds and types** — fully your own: create, rename, reorder or delete them in settings, and move clothing between them (or between wardrobes) at any time.
 - **Collection** — every saved outfit in one place: search them by the clothes in them, heart your favorites, and filter by favorites, worn often or not worn lately; open one for its wear stats.
+- **Sharing** — share the outfit on the canvas (or any saved one) as a story-sized image with a small app logo, made on the device.
 - **Diary and stats** — log what you wore each day (with an optional daily reminder) and see how often each piece and color gets worn.
 - **Offline, on-device storage** — wardrobe data is a single JSON file and photos are plain files in the app's documents directory; nothing leaves the device.
 
@@ -43,6 +44,7 @@ lib/
   home_screen.dart             # Scaffold, tab switching, toast
   outfit_tab.dart              # Outfit canvas (cards, layout editing)
   outfits_tab.dart             # Saved outfits: search, favorites, filters
+  share_outfit.dart            # The image an outfit is shared as
   diary_tab.dart               # Diary calendar and stats
   wardrobe_tab.dart            # Wardrobe, one section per kind with type folders
   type_detail_screen.dart      # One type's clothing
